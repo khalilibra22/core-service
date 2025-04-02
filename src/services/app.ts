@@ -5,7 +5,7 @@ const port = process.env.PORT || 5001;
 
 app.use(express.json());
 
-app.get("/", (req: Request, res: Response) => {
+app.get("/", async (req: Request, res: Response) => {
   res.send("Hello World!");
 });
 

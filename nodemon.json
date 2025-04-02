@@ -1,0 +1,7 @@
+{
+  "restartable": "rs",
+  "ignore": ["node_modules/**", "dist/**"],
+  "verbose": true,
+  "exec": "cmd /c cls && ts-node index.ts",
+  "ext": "ts"
+}
