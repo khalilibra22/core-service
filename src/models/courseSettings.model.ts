@@ -17,9 +17,6 @@ export class CourseSettingsModel {
   @Column({ nullable: true })
   isPaid?: boolean;
 
-  @Column({ nullable: true, name: "is_remote" })
-  isRemote?: boolean;
-
   @Column({ nullable: true })
   address?: string;
 

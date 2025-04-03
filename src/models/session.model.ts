@@ -10,6 +10,7 @@ import {
 } from "typeorm";
 import { CourseModel } from "./course.model";
 import { ParticipantModel } from "./participant.model";
+import { SessionTimeChangeRequestModel } from "./sessionTimeChangeRequest.model";
 
 @Entity("sessions")
 export class SessionModel {
@@ -51,6 +52,9 @@ export class SessionModel {
 
   @OneToMany(() => ParticipantModel, (participant) => participant.session)
   participants?: ParticipantModel[];
+
+  @OneToMany(() => SessionTimeChangeRequestModel, (request) => request.session)
+  sessionTimeChangeRequests?: SessionTimeChangeRequestModel[];
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;

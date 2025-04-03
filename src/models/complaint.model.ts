@@ -17,6 +17,9 @@ export class ComplaintModel {
   @Column({ name: "student_id" })
   studentId?: string;
 
+  @Column({ name: "complaint_type", default: "general" })
+  type?: string; // Type of complaint (e.g., general, refund, technical, content-related, etc.)
+
   @Column({ name: "complaint_text" })
   complaintText?: string;
 

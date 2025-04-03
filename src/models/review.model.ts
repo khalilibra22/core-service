@@ -17,10 +17,13 @@ export class ReviewModel {
   @Column({ name: "student_id" })
   studentId?: string;
 
-  @Column({ name: "rating" })
+  @Column()
   rating?: number;
 
-  @Column({ name: "comment" })
+  @Column()
+  title?: string;
+
+  @Column()
   comment?: string;
 
   @ManyToOne(() => CourseModel, (course) => course.reviews)

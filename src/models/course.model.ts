@@ -14,6 +14,7 @@ import { ComplaintModel } from "./complaint.model";
 import { ReviewModel } from "./review.model";
 import { CertificateModel } from "./certificate.model";
 import { SessionModel } from "./session.model";
+import { EnrollmentModel } from "./enrollment.model";
 
 @Entity("courses")
 export class CourseModel {
@@ -32,6 +33,9 @@ export class CourseModel {
   @Column()
   type?: string; // "one_on_one" | "group" | "live" | "prerecorded";
 
+  @Column({ default: true, name: "is_remote" })
+  isRemote?: boolean;
+
   @Column({ nullable: true })
   maxParticipants?: number;
 
@@ -47,6 +51,9 @@ export class CourseModel {
 
   @OneToMany(() => SessionModel, (session) => session.course)
   sessions?: SessionModel[];
+
+  @OneToMany(() => EnrollmentModel, (session) => session.course)
+  enrollments?: EnrollmentModel[];
 
   @OneToMany(() => ComplaintModel, (complaint) => complaint.course)
   complaints?: ComplaintModel[];
