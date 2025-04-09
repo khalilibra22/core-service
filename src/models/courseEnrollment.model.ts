@@ -7,21 +7,21 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
-import { SessionModel } from "./session.model";
+import { CourseModel } from "./course.model";
 
-@Entity("participants")
-export class ParticipantModel {
+@Entity("course_enrollments")
+export class CourseEnrollmentModel {
   @PrimaryGeneratedColumn("uuid")
   id?: string;
 
   @Column({ name: "student_id" })
   studentId?: string;
 
-  @Column({ name: "course_id", nullable: true })
-  isPresent?: boolean;
+  @Column({ default: "pending" })
+  status?: string; // "pending" | "approved" | "rejected"
 
-  @ManyToOne(() => SessionModel, (session) => session.participants)
-  session?: SessionModel;
+  @ManyToOne(() => CourseModel, (course) => course.enrollments)
+  course?: CourseModel;
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;

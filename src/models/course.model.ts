@@ -14,7 +14,7 @@ import { ComplaintModel } from "./complaint.model";
 import { ReviewModel } from "./review.model";
 import { CertificateModel } from "./certificate.model";
 import { SessionModel } from "./session.model";
-import { EnrollmentModel } from "./enrollment.model";
+import { CourseEnrollmentModel } from "./courseEnrollment.model";
 
 @Entity("courses")
 export class CourseModel {
@@ -52,8 +52,11 @@ export class CourseModel {
   @OneToMany(() => SessionModel, (session) => session.course)
   sessions?: SessionModel[];
 
-  @OneToMany(() => EnrollmentModel, (session) => session.course)
-  enrollments?: EnrollmentModel[];
+  @OneToMany(
+    () => CourseEnrollmentModel,
+    (courseEnrollment) => courseEnrollment.course
+  )
+  enrollments?: CourseEnrollmentModel[];
 
   @OneToMany(() => ComplaintModel, (complaint) => complaint.course)
   complaints?: ComplaintModel[];

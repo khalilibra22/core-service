@@ -9,8 +9,8 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { CourseModel } from "./course.model";
-import { ParticipantModel } from "./participant.model";
 import { SessionTimeChangeRequestModel } from "./sessionTimeChangeRequest.model";
+import { SessionEnrollmentModel } from "./sessionEnrollment.model";
 
 @Entity("sessions")
 export class SessionModel {
@@ -38,6 +38,9 @@ export class SessionModel {
   @Column({ name: "is_paid", default: true })
   isPaid?: boolean;
 
+  @Column({ name: "is_reserved", default: false })
+  isReserved?: boolean;
+
   @Column({ nullable: true })
   url?: string; // URL for the session (e.g., Zoom link)
 
@@ -50,8 +53,11 @@ export class SessionModel {
   @ManyToOne(() => CourseModel, (course) => course.sessions)
   course?: CourseModel;
 
-  @OneToMany(() => ParticipantModel, (participant) => participant.session)
-  participants?: ParticipantModel[];
+  @OneToMany(
+    () => SessionEnrollmentModel,
+    (sessionEnrollment) => sessionEnrollment.session
+  )
+  enrollments?: SessionEnrollmentModel[];
 
   @OneToMany(() => SessionTimeChangeRequestModel, (request) => request.session)
   sessionTimeChangeRequests?: SessionTimeChangeRequestModel[];
