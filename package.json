@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts",
+    "dev": "nodemon index.ts",
     "prestart": "npm run build"
   },
   "repository": {
@@ -24,13 +24,16 @@
   "dependencies": {
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "multer": "^1.4.5-lts.2",
     "pg": "^8.14.1",
     "reflect-metadata": "^0.2.2",
     "typeorm": "^0.3.21"
   },
   "devDependencies": {
     "@types/express": "^5.0.1",
+    "@types/multer": "^1.4.12",
     "@types/node": "^22.13.14",
+    "nodemon": "^3.1.9",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.2"
   }
