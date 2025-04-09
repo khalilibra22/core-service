@@ -20,8 +20,11 @@ export class SessionModel {
   @Column({ type: "timestamp", nullable: true })
   date?: Date;
 
+  @Column({ nullable: true, type: "decimal", precision: 10, scale: 2 })
+  duration?: number;
+
   @Column({ nullable: true })
-  duration?: string;
+  durationUnit?: string; // "hours" | "minutes"
 
   @Column({ name: "topic_id" })
   topicId?: string;
