@@ -17,8 +17,6 @@ export class CertificateModel {
   @Column({ name: "student_id" })
   studentId?: string;
 
-  courseId?: string;
-
   @Column({ name: "issue_date", type: "timestamp", nullable: true })
   issueDate?: Date;
 

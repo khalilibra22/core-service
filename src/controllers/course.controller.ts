@@ -35,4 +35,40 @@ export class CourseController {
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
+
+  // create a certificate
+  async createCertificate(req: Request, res: Response): Promise<void> {
+    try {
+      const course = await this.courseService.getCourseById(req.params.id);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+      const certificateBody = {
+        ...req.body,
+        course: course,
+      };
+      const certificate = await this.courseService.createCertificate(
+        certificateBody
+      );
+      res.status(201).json(certificate);
+    } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  async getCourseSessions(req: Request, res: Response): Promise<void> {
+    try {
+      const id = req.params.id;
+      const course = await this.courseService.getCourseById(id);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+      const sessions = await this.courseService.getCourseSessions(id);
+      res.status(200).json(sessions);
+    } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
 }

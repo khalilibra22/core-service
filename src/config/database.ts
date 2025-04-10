@@ -1,4 +1,3 @@
-// src/config/ormconfig.ts
 import { DataSource } from "typeorm";
 
 export const AppDataSource = new DataSource({
