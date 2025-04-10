@@ -38,4 +38,16 @@ export class CoursService {
       throw new Error("Error creating course session: " + error.message);
     }
   }
+
+  async getSessionById(id: string): Promise<SessionModel | null> {
+    try {
+      return await this.sessionRepo.findOne({
+        where: {
+          id: id,
+        },
+      });
+    } catch (error) {
+      throw new Error("Error fetching session by ID");
+    }
+  }
 }

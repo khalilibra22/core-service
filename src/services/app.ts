@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import { courseRouter } from "../routes/course.routes";
+import { feedbackRouter } from "../routes/feedback.routes";
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction): void => {
 });
 
 app.use("/courses", courseRouter);
+app.use("/feedbacks", feedbackRouter);
 
 app.get("/", async (req: Request, res: Response) => {
   res.send("Hello World!");

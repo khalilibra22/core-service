@@ -20,7 +20,7 @@ export class ReviewModel {
   @Column()
   rating?: number;
 
-  @Column()
+  @Column({ nullable: true })
   title?: string;
 
   @Column()

@@ -11,6 +11,7 @@ import {
 import { CourseModel } from "./course.model";
 import { SessionTimeChangeRequestModel } from "./sessionTimeChangeRequest.model";
 import { SessionEnrollmentModel } from "./sessionEnrollment.model";
+import { ComplaintModel } from "./complaint.model";
 
 @Entity("sessions")
 export class SessionModel {
@@ -64,6 +65,9 @@ export class SessionModel {
 
   @OneToMany(() => SessionTimeChangeRequestModel, (request) => request.session)
   sessionTimeChangeRequests?: SessionTimeChangeRequestModel[];
+
+  @OneToMany(() => ComplaintModel, (complaint) => complaint.session)
+  complaints?: ComplaintModel[];
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;
