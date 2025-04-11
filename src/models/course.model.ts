@@ -43,7 +43,8 @@ export class CourseModel {
 
   @OneToOne(
     () => CourseSettingsModel,
-    (courseSettings) => courseSettings.course
+    (courseSettings) => courseSettings.course,
+    { cascade: true }
   )
   @JoinColumn({ name: "courese_settings_id" })
   couresSettings?: CourseSettingsModel;

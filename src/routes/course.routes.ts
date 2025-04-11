@@ -2,18 +2,28 @@ import express from "express";
 import { CourseController } from "../controllers/course.controller";
 import { FeedbackController } from "../controllers/feedback.controller";
 import { EnrollmentController } from "../controllers/enrollment.controller";
+import { SessionTimeRequestController } from "../controllers/sessionTimeRequest.controller";
 
 const router = express.Router();
 
 const courseController = new CourseController();
 const feedbackController = new FeedbackController();
 const enrollmentController = new EnrollmentController();
+const sessionTimeRequestController = new SessionTimeRequestController();
 
 router.post(
   "/",
   //AuthMiddleware.verifyToken,
   //ValidationMiddleware.validate(academicBackgroundSchema),
   async (req, res) => await courseController.createCourse(req, res)
+);
+
+// get course by id
+router.get(
+  "/:id",
+  //AuthMiddleware.verifyToken,
+  //ValidationMiddleware.validate(academicBackgroundSchema),
+  async (req, res) => await courseController.getCourseById(req, res)
 );
 
 router.post(
@@ -61,6 +71,22 @@ router.get(
   //AuthMiddleware.verifyToken,
   //ValidationMiddleware.validate(academicBackgroundSchema),
   async (req, res) => await courseController.getCourseSessions(req, res)
+);
+
+//cancel course
+router.patch(
+  "/:id/cancel",
+  //AuthMiddleware.verifyToken,
+  //ValidationMiddleware.validate(academicBackgroundSchema),
+  async (req, res) => await courseController.cancelCourse(req, res)
+);
+
+router.post(
+  "/:id/sessions/:sessionId/session-time-requests/",
+  //AuthMiddleware.verifyToken,
+  //ValidationMiddleware.validate(academicBackgroundSchema),
+  async (req, res) =>
+    await sessionTimeRequestController.createSessionTimeRequest(req, res)
 );
 
 export { router as courseRouter };

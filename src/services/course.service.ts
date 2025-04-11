@@ -1,14 +1,17 @@
 import { AppDataSource } from "../config/database";
 import { CertificateModel } from "../models/certificate.model";
 import { CourseModel } from "../models/course.model";
+import { CourseSettingsModel } from "../models/courseSettings.model";
 import { SessionModel } from "../models/session.model";
 
 export class CoursService {
   courseRepo: any;
+  courseSettingsRepo: any;
   sessionRepo: any;
   certificateRepo: any;
   constructor() {
     this.courseRepo = AppDataSource.getRepository(CourseModel);
+    this.courseSettingsRepo = AppDataSource.getRepository(CourseSettingsModel);
     this.sessionRepo = AppDataSource.getRepository(SessionModel);
     this.certificateRepo = AppDataSource.getRepository(CertificateModel);
   }
@@ -21,6 +24,17 @@ export class CoursService {
     }
   }
 
+  // create course settings
+  async createCourseSettings(
+    courseSettings: CourseSettingsModel
+  ): Promise<CourseSettingsModel> {
+    try {
+      return await this.courseSettingsRepo.save(courseSettings);
+    } catch (error) {
+      throw new Error("Error creating course settings");
+    }
+  }
+
   // get course by id
   async getCourseById(id: string): Promise<CourseModel | null> {
     try {
@@ -28,9 +42,10 @@ export class CoursService {
         where: {
           id: id,
         },
+        relations: ["couresSettings"],
       });
-    } catch (error) {
-      throw new Error("Error fetching course by ID");
+    } catch (error: any) {
+      throw new Error("Error fetching course by ID : " + error.message);
     }
   }
 
@@ -84,6 +99,15 @@ export class CoursService {
       });
     } catch (error) {
       throw new Error("Error fetching course sessions");
+    }
+  }
+
+  // update course
+  async updateCourse(course: CourseModel): Promise<CourseModel> {
+    try {
+      return await this.courseRepo.save(course);
+    } catch (error) {
+      throw new Error("Error updating course");
     }
   }
 }
