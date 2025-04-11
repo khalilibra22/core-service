@@ -10,7 +10,6 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { CourseSettingsModel } from "./courseSettings.model";
-import { ComplaintModel } from "./complaint.model";
 import { ReviewModel } from "./review.model";
 import { CertificateModel } from "./certificate.model";
 import { SessionModel } from "./session.model";
@@ -44,7 +43,8 @@ export class CourseModel {
 
   @OneToOne(
     () => CourseSettingsModel,
-    (courseSettings) => courseSettings.course
+    (courseSettings) => courseSettings.course,
+    { cascade: true }
   )
   @JoinColumn({ name: "courese_settings_id" })
   couresSettings?: CourseSettingsModel;
@@ -57,9 +57,6 @@ export class CourseModel {
     (courseEnrollment) => courseEnrollment.course
   )
   enrollments?: CourseEnrollmentModel[];
-
-  @OneToMany(() => ComplaintModel, (complaint) => complaint.course)
-  complaints?: ComplaintModel[];
 
   @OneToMany(() => ReviewModel, (review) => review.course)
   reviews?: ReviewModel[];

@@ -26,7 +26,11 @@ export class SessionTimeChangeRequestModel {
   @Column({ nullable: true })
   reason?: string;
 
-  @ManyToOne(() => SessionModel, (session) => session.sessionTimeChangeRequests)
+  @ManyToOne(
+    () => SessionModel,
+    (session) => session.sessionTimeChangeRequests,
+    { cascade: true }
+  )
   session?: SessionModel;
 
   @CreateDateColumn({ type: "timestamp" })
