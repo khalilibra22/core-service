@@ -27,7 +27,7 @@ export class SessionModel {
   @Column({ nullable: true })
   durationUnit?: string; // "hours" | "minutes"
 
-  @Column({ name: "topic_id" })
+  @Column({ name: "topic_id", nullable: true })
   topicId?: string;
 
   @Column({ nullable: true })

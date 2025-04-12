@@ -3,6 +3,12 @@ import { CourseController } from "../controllers/course.controller";
 import { FeedbackController } from "../controllers/feedback.controller";
 import { EnrollmentController } from "../controllers/enrollment.controller";
 import { SessionTimeRequestController } from "../controllers/sessionTimeRequest.controller";
+import { ValidationMiddleware } from "../utils/validation.middleware";
+import {
+  courseValidationSchema,
+  createCourseValidationSchema,
+  sessionValidationSchema,
+} from "../validations/course.validation";
 
 const router = express.Router();
 
@@ -14,8 +20,16 @@ const sessionTimeRequestController = new SessionTimeRequestController();
 router.post(
   "/",
   //AuthMiddleware.verifyToken,
-  //ValidationMiddleware.validate(academicBackgroundSchema),
-  async (req, res) => await courseController.createCourse(req, res)
+  ValidationMiddleware.validate(createCourseValidationSchema),
+  async (req, res) => await courseController.createDraftCourse(req, res)
+);
+
+//update course
+router.put(
+  "/:id",
+  //AuthMiddleware.verifyToken,
+  ValidationMiddleware.validate(courseValidationSchema),
+  async (req, res) => await courseController.updateCourse(req, res)
 );
 
 // get course by id
@@ -29,7 +43,7 @@ router.get(
 router.post(
   "/:id/sessions",
   //AuthMiddleware.verifyToken,
-  //ValidationMiddleware.validate(academicBackgroundSchema),
+  ValidationMiddleware.validate(sessionValidationSchema),
   async (req, res) => await courseController.createCourseSession(req, res)
 );
 

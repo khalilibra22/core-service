@@ -1,0 +1,95 @@
+import Joi from "joi";
+
+export const createCourseValidationSchema = Joi.object({
+  teacherId: Joi.string().uuid().required(),
+  type: Joi.string()
+    .valid("one-on-one", "group", "live", "prerecorded")
+    .required(),
+});
+
+// Shared Fields
+const sharedFields = {
+  name: Joi.string().required(),
+  description: Joi.string().required(),
+  topicId: Joi.number().required(),
+  isPaid: Joi.boolean().required(),
+  price: Joi.number().min(0).required(),
+  isRemote: Joi.boolean().required(),
+};
+
+// Base schema for group
+const groupSchema = Joi.object({
+  type: Joi.string().valid("group").required(),
+  ...sharedFields,
+  maxParticipants: Joi.number().integer().min(1).required(),
+});
+
+// Live schema
+const liveSchema = Joi.object({
+  type: Joi.string().valid("live").required(),
+  ...sharedFields,
+  maxParticipants: Joi.number().integer().min(1).required(),
+  address: Joi.string().required(),
+  grade: Joi.string().required(),
+  introVideo: Joi.string().uri().optional(),
+  thumbnail: Joi.string().uri().optional(),
+  objectives: Joi.array().items(Joi.string()).required(),
+  prerequisites: Joi.array().items(Joi.string()).required(),
+  targetAudience: Joi.array().items(Joi.string()).required(),
+  isCertified: Joi.boolean().required(),
+  certificateType: Joi.string().required(),
+  certificateShippingType: Joi.string().required(),
+});
+
+// Prerecorded schema
+const prerecordedSchema = Joi.object({
+  type: Joi.string().valid("prerecorded").required(),
+  ...sharedFields,
+  address: Joi.string().required(),
+  grade: Joi.string().required(),
+  introVideo: Joi.string().uri().optional(),
+  thumbnail: Joi.string().uri().optional(),
+  age: Joi.number().integer().min(0).required(),
+  objectives: Joi.array().items(Joi.string()).required(),
+  prerequisites: Joi.array().items(Joi.string()).required(),
+  targetAudience: Joi.array().items(Joi.string()).required(),
+  isCertified: Joi.boolean().required(),
+  certificateType: Joi.string().required(),
+  certificateShippingType: Joi.string().required(),
+});
+
+const oneOnOneSchema = Joi.object({
+  type: Joi.string().valid("one-on-one").required(),
+});
+
+const sessionSchema = Joi.object({
+  type: Joi.string().valid("one-on-one", "group", "live").required(),
+  date: Joi.date().timestamp().required(),
+  duration: Joi.number().min(1).required(),
+  durationUnit: Joi.string().valid("minute", "hour").required(),
+  topicId: Joi.number().integer().optional(),
+  title: Joi.string().optional(),
+  isPaid: Joi.boolean().optional(),
+});
+
+const prerecordedSessionSchema = Joi.object({
+  type: Joi.string().valid("prerecorded").required(),
+  title: Joi.string().required(),
+  description: Joi.string().required(),
+  ordering: Joi.number().integer().min(1).required(),
+  video: Joi.object().optional(),
+});
+
+export const courseValidationSchema = Joi.alternatives()
+  .try(groupSchema, liveSchema, prerecordedSchema, oneOnOneSchema)
+  .messages({
+    "alternatives.match":
+      "Course data is invalid or does not match allowed structure for its type.",
+  });
+
+export const sessionValidationSchema = Joi.alternatives()
+  .try(sessionSchema, prerecordedSessionSchema)
+  .messages({
+    "alternatives.match":
+      "Data is invalid or does not match allowed structure for its type.",
+  });
