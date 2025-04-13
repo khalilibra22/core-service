@@ -14,3 +14,7 @@ export const enrollmentValidationsSchema = Joi.object({
     otherwise: Joi.forbidden(),
   }),
 });
+
+export const enrollmentStatusSchema = Joi.object({
+  status: Joi.string().valid("approved", "rejected").required(),
+});

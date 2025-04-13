@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { CoursService } from "../services/course.service";
 import { EnrollmentService } from "../services/enrollment.service";
+import { EnrollmentDto } from "../dtos/enrollment.dto";
+import { plainToInstance } from "class-transformer";
 
 export class EnrollmentController {
   private enrollmentService: EnrollmentService;
@@ -18,7 +20,10 @@ export class EnrollmentController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
-
+      if (course.couresSettings?.isCanceled) {
+        res.status(409).json({ error: "Course is canceled" });
+        return;
+      }
       delete req.body.type;
 
       if (course.type === "one-on-one") {
@@ -46,11 +51,9 @@ export class EnrollmentController {
 
           await this.enrollmentService.createSessionEnrollment(enrollmentBody);
           session.isReserved = true;
+          session.status = "scheduled";
           await this.courseService.updateSession(session);
         }
-
-        res.status(201).json({ message: "Enrollment(s) created successfully" });
-        return;
       }
 
       const enrollmentBody = {
@@ -58,12 +61,67 @@ export class EnrollmentController {
         course: course,
       };
 
-      const enrollment = await this.enrollmentService.createCourseEnrollment(
-        enrollmentBody
-      );
-      res.status(201).json(enrollment);
+      await this.enrollmentService.createCourseEnrollment(enrollmentBody);
+      res.status(201).json({ message: "Enrollment created successfully" });
     } catch (error) {
       console.error("Error in createEnrollment:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  async getCourseEnrollments(req: Request, res: Response): Promise<void> {
+    try {
+      const id = req.params.id;
+      const course = await this.courseService.getCourseById(id);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+      const enrollments = await this.enrollmentService.getCourseEnrollments(id);
+      const enrollmentDtos = plainToInstance(EnrollmentDto, enrollments, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(enrollmentDtos);
+    } catch (error) {
+      console.error("Error in getCourseEnrollments:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  async getOneOnOneEnrollementByTeacherId(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    try {
+      const teacherId = req.params.id;
+      const enrollments =
+        await this.enrollmentService.getOneOnOneEnrollementByTeacherId(
+          teacherId
+        );
+      res.status(200).json(enrollments);
+    } catch (error) {
+      console.error("Error in getOneOnOneEnrollementByTeacherId:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  async updateCourseEnrollmentStatus(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    try {
+      const enrollment = await this.enrollmentService.getCourseEnrollmentById(
+        req.params.id
+      );
+      if (!enrollment) {
+        res.status(404).json({ error: "Enrollment not found" });
+        return;
+      }
+      enrollment.status = req.body.status;
+      const updatedEnrollment =
+        await this.enrollmentService.updateCourseEnrollment(enrollment);
+      res.status(200).json(updatedEnrollment);
+    } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
   }

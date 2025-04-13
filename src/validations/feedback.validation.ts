@@ -11,3 +11,12 @@ export const complaintValdationSchema = Joi.object({
   studentId: Joi.string().uuid({ version: "uuidv4" }).required(),
   reason: Joi.string().required(),
 });
+
+export const complaintStatusSchema = Joi.object({
+  status: Joi.string().valid("under review", "rejected").required(),
+});
+
+export const resolveComplaintSchema = Joi.object({
+  response: Joi.string().required(),
+  adminId: Joi.string().uuid({ version: "uuidv4" }).required(),
+});

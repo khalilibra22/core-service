@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { SessionTimeRequestService } from "../services/sessionTimeRequest.service";
 import { CoursService } from "../services/course.service";
+import { plainToInstance } from "class-transformer";
+import { SessionTimeChangeRequestDto } from "../dtos/sessionTimeChangeRequest.dto";
 
 export class SessionTimeRequestController {
   private sessionTimeRequestService: SessionTimeRequestService;
@@ -28,7 +30,14 @@ export class SessionTimeRequestController {
         await this.sessionTimeRequestService.createSessionTimeRequest(
           sessionTimeRequestBody
         );
-      res.status(201).json(sessionTimeRequest);
+      const sessionTimeRequestDto = plainToInstance(
+        SessionTimeChangeRequestDto,
+        sessionTimeRequest,
+        {
+          excludeExtraneousValues: true,
+        }
+      );
+      res.status(201).json(sessionTimeRequestDto);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });

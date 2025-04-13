@@ -9,4 +9,7 @@ export class MinimalCourseDto {
 
   @Expose()
   status?: string;
+
+  @Expose()
+  teacherId?: string;
 }

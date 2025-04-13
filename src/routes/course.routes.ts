@@ -6,9 +6,11 @@ import { SessionTimeRequestController } from "../controllers/sessionTimeRequest.
 import { ValidationMiddleware } from "../utils/validation.middleware";
 import {
   certificateValidationSchema,
+  courseCancellationValidationSchema,
   courseValidationSchema,
   createCourseValidationSchema,
   sessionValidationSchema,
+  timeChangeRequestValidationSchema,
 } from "../validations/course.validation";
 import {
   complaintValdationSchema,
@@ -42,7 +44,6 @@ router.put(
 router.get(
   "/:id",
   //AuthMiddleware.verifyToken,
-  //ValidationMiddleware.validate(academicBackgroundSchema),
   async (req, res) => await courseController.getCourseById(req, res)
 );
 
@@ -89,7 +90,6 @@ router.post(
 router.get(
   "/:id/sessions",
   //AuthMiddleware.verifyToken,
-  //ValidationMiddleware.validate(academicBackgroundSchema),
   async (req, res) => await courseController.getCourseSessions(req, res)
 );
 
@@ -97,16 +97,22 @@ router.get(
 router.patch(
   "/:id/cancel",
   //AuthMiddleware.verifyToken,
-  //ValidationMiddleware.validate(academicBackgroundSchema),
+  ValidationMiddleware.validate(courseCancellationValidationSchema),
   async (req, res) => await courseController.cancelCourse(req, res)
 );
 
 router.post(
   "/:id/sessions/:sessionId/session-time-requests/",
   //AuthMiddleware.verifyToken,
-  //ValidationMiddleware.validate(academicBackgroundSchema),
+  ValidationMiddleware.validate(timeChangeRequestValidationSchema),
   async (req, res) =>
     await sessionTimeRequestController.createSessionTimeRequest(req, res)
+);
+
+router.get(
+  "/:id/enrollments",
+  //AuthMiddleware.verifyToken,
+  async (req, res) => await enrollmentController.getCourseEnrollments(req, res)
 );
 
 export { router as courseRouter };

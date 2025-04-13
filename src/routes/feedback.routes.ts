@@ -1,5 +1,10 @@
 import express from "express";
 import { FeedbackController } from "../controllers/feedback.controller";
+import { ValidationMiddleware } from "../utils/validation.middleware";
+import {
+  complaintStatusSchema,
+  resolveComplaintSchema,
+} from "../validations/feedback.validation";
 
 const router = express.Router();
 
@@ -8,12 +13,14 @@ const feedbackController = new FeedbackController();
 // update complaint status
 router.patch(
   "/complaints/:id/status",
+  ValidationMiddleware.validate(complaintStatusSchema),
   async (req, res) => await feedbackController.changeComplaintStatus(req, res)
 );
 
 // resolve complaint
 router.patch(
   "/complaints/:id/resolve",
+  ValidationMiddleware.validate(resolveComplaintSchema),
   async (req, res) => await feedbackController.resolveComplaint(req, res)
 );
 

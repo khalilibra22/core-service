@@ -101,3 +101,18 @@ export const certificateValidationSchema = Joi.object({
   issuedBy: Joi.string().min(2).max(100).required(),
   certificateUrl: Joi.string().optional(),
 });
+
+export const timeChangeRequestValidationSchema = Joi.object({
+  requestedTime: Joi.date().greater("now").required(),
+  userId: Joi.string().uuid({ version: "uuidv4" }).required(),
+  reason: Joi.string().required(),
+});
+
+export const courseCancellationValidationSchema = Joi.object({
+  reasonOfCancellation: Joi.string().required(),
+  canceledBy: Joi.string().uuid({ version: "uuidv4" }).required(),
+});
+
+export const timeChangeRequestStatusSchema = Joi.object({
+  status: Joi.string().valid("approved", "rejected").required(),
+});
