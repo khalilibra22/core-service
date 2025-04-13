@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import { CoursService } from "../services/course.service";
 import { FeedbackService } from "../services/feedback.service";
+import { plainToInstance } from "class-transformer";
+import { ReviewDto } from "../dtos/review.dto";
+import { ComplaintDto } from "../dtos/complaint.dto";
 
 export class FeedbackController {
   private feedbackService: FeedbackService;
@@ -22,7 +25,10 @@ export class FeedbackController {
         course: course,
       };
       const review = await this.feedbackService.createReview(reviewBody);
-      res.status(201).json(review);
+      const reviewDto = plainToInstance(ReviewDto, review, {
+        excludeExtraneousValues: true,
+      });
+      res.status(201).json(reviewDto);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
@@ -51,7 +57,10 @@ export class FeedbackController {
       const complaint = await this.feedbackService.createComplaint(
         complaintBody
       );
-      res.status(201).json(complaint);
+      const complaintDto = plainToInstance(ComplaintDto, complaint, {
+        excludeExtraneousValues: true,
+      });
+      res.status(201).json(complaintDto);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
@@ -110,7 +119,10 @@ export class FeedbackController {
   async getAllReviews(req: Request, res: Response): Promise<void> {
     try {
       const reviews = await this.feedbackService.getAllReviews();
-      res.status(200).json(reviews);
+      const reviewDtos = plainToInstance(ReviewDto, reviews, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(reviewDtos);
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
@@ -119,7 +131,10 @@ export class FeedbackController {
   async getAllComplaints(req: Request, res: Response): Promise<void> {
     try {
       const complaints = await this.feedbackService.getAllComplaints();
-      res.status(200).json(complaints);
+      const complaintDtos = plainToInstance(ComplaintDto, complaints, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(complaintDtos);
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
@@ -134,7 +149,10 @@ export class FeedbackController {
       const complaints = await this.feedbackService.getComplaintsByStudentId(
         studentId
       );
-      res.status(200).json(complaints);
+      const complaintDtos = plainToInstance(ComplaintDto, complaints, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(complaintDtos);
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }

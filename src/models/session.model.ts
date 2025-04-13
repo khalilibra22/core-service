@@ -52,7 +52,7 @@ export class SessionModel {
   videoUrl?: string; // URL for the recorded session (if applicable)
 
   @Column({ nullable: true })
-  status?: string; // "unscheduled" : default status , "scheduled", "canceled", "completed"
+  status?: string; //  "unreserved" : default status, "unscheduled", "scheduled", "canceled", "completed"
 
   @ManyToOne(() => CourseModel, (course) => course.sessions)
   course?: CourseModel;

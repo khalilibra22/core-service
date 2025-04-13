@@ -93,3 +93,11 @@ export const sessionValidationSchema = Joi.alternatives()
     "alternatives.match":
       "Data is invalid or does not match allowed structure for its type.",
   });
+
+export const certificateValidationSchema = Joi.object({
+  studentId: Joi.string().uuid({ version: "uuidv4" }).required(),
+  issueDate: Joi.date().required(),
+  expirationDate: Joi.date().greater(Joi.ref("issueDate")).optional(),
+  issuedBy: Joi.string().min(2).max(100).required(),
+  certificateUrl: Joi.string().optional(),
+});

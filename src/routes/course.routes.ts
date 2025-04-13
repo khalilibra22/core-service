@@ -5,10 +5,16 @@ import { EnrollmentController } from "../controllers/enrollment.controller";
 import { SessionTimeRequestController } from "../controllers/sessionTimeRequest.controller";
 import { ValidationMiddleware } from "../utils/validation.middleware";
 import {
+  certificateValidationSchema,
   courseValidationSchema,
   createCourseValidationSchema,
   sessionValidationSchema,
 } from "../validations/course.validation";
+import {
+  complaintValdationSchema,
+  reviewValdationSchema,
+} from "../validations/feedback.validation";
+import { enrollmentValidationsSchema } from "../validations/enrollment.validation";
 
 const router = express.Router();
 
@@ -51,7 +57,7 @@ router.post(
 router.post(
   "/:id/reviews",
   //AuthMiddleware.verifyToken,
-  //ValidationMiddleware.validate(academicBackgroundSchema),
+  ValidationMiddleware.validate(reviewValdationSchema),
   async (req, res) => await feedbackController.createReview(req, res)
 );
 
@@ -59,7 +65,7 @@ router.post(
 router.post(
   "/:id/sessions/:sessionId/complaints/",
   //AuthMiddleware.verifyToken,
-  //ValidationMiddleware.validate(academicBackgroundSchema),
+  ValidationMiddleware.validate(complaintValdationSchema),
   async (req, res) => await feedbackController.createComplaint(req, res)
 );
 
@@ -67,7 +73,7 @@ router.post(
 router.post(
   "/:id/certificates",
   //AuthMiddleware.verifyToken,
-  //ValidationMiddleware.validate(academicBackgroundSchema),
+  ValidationMiddleware.validate(certificateValidationSchema),
   async (req, res) => await courseController.createCertificate(req, res)
 );
 
@@ -75,7 +81,7 @@ router.post(
 router.post(
   "/:id/enrollments",
   //AuthMiddleware.verifyToken,
-  //ValidationMiddleware.validate(academicBackgroundSchema),
+  ValidationMiddleware.validate(enrollmentValidationsSchema),
   async (req, res) => await enrollmentController.createEnrollment(req, res)
 );
 

@@ -18,15 +18,27 @@ export class EnrollmentController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
+
+      delete req.body.type;
+
       if (course.type === "one-on-one") {
         const sessionArray = req.body.sessions as string[];
         delete req.body.sessions;
-        sessionArray.forEach(async (sessionId) => {
+
+        for (const sessionId of sessionArray) {
           const session = await this.courseService.getSessionById(sessionId);
           if (!session) {
             res.status(404).json({ error: "Session not found" });
             return;
           }
+
+          if (session.isReserved) {
+            res.status(409).json({
+              error: `Session on ${session.date} is already reserved`,
+            });
+            return;
+          }
+
           const enrollmentBody = {
             ...req.body,
             session: session,
@@ -34,18 +46,24 @@ export class EnrollmentController {
 
           await this.enrollmentService.createSessionEnrollment(enrollmentBody);
           session.isReserved = true;
-          this.courseService.updateSession(session);
-        });
+          await this.courseService.updateSession(session);
+        }
+
+        res.status(201).json({ message: "Enrollment(s) created successfully" });
+        return;
       }
+
       const enrollmentBody = {
         ...req.body,
         course: course,
       };
+
       const enrollment = await this.enrollmentService.createCourseEnrollment(
         enrollmentBody
       );
       res.status(201).json(enrollment);
     } catch (error) {
+      console.error("Error in createEnrollment:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }

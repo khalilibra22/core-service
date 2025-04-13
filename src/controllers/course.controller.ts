@@ -4,17 +4,14 @@ import { plainToInstance } from "class-transformer";
 import { CourseSettingsModel } from "../models/courseSettings.model";
 import { CourseModel } from "../models/course.model";
 import { MinimalCourseDto } from "../dtos/minimalCourse.dto";
-import { PrerecordedCourseDto } from "../dtos/prerecordedCourse.dto";
-import { GroupClassDto } from "../dtos/groupClass.dto";
-import { LiveCourseDto } from "../dtos/liveCourse.dto";
+import { getCourseDto, getSessionDto } from "../utils";
+import { CertificateDto } from "../dtos/certificate.dto";
 
 export class CourseController {
   private courseService: CoursService;
   constructor() {
     this.courseService = new CoursService();
   }
-
-  // create course as draft status
 
   async createDraftCourse(req: Request, res: Response): Promise<void> {
     try {
@@ -76,12 +73,19 @@ export class CourseController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
+      console.log(course.type, req.body.type);
+      if (course.type !== req.body.type) {
+        res.status(400).json({ error: "Invalid session type" });
+        return;
+      }
+      delete req.body.type;
       const sessionBody = {
         ...req.body,
         course: course,
       };
       const session = await this.courseService.createCourseSession(sessionBody);
-      res.status(201).json(session);
+      const sessionDto = getSessionDto(session, course.type ?? "session");
+      res.status(201).json(sessionDto);
     } catch (error) {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
@@ -103,7 +107,11 @@ export class CourseController {
       const certificate = await this.courseService.createCertificate(
         certificateBody
       );
-      res.status(201).json(certificate);
+
+      const certificateDto = plainToInstance(CertificateDto, certificate, {
+        excludeExtraneousValues: true,
+      });
+      res.status(201).json(certificateDto);
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
@@ -118,7 +126,8 @@ export class CourseController {
         return;
       }
       const sessions = await this.courseService.getCourseSessions(id);
-      res.status(200).json(sessions);
+      const sessionDtos = getSessionDto(sessions, course.type ?? "session");
+      res.status(200).json(sessionDtos);
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
@@ -153,7 +162,6 @@ export class CourseController {
     }
   }
 
-  // get course by id
   async getCourseById(req: Request, res: Response): Promise<void> {
     try {
       const id = req.params.id;
@@ -162,29 +170,7 @@ export class CourseController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
-      let courseDto;
-      switch (course.type) {
-        case "group":
-          courseDto = plainToInstance(GroupClassDto, course, {
-            excludeExtraneousValues: true,
-          });
-          break;
-        case "live":
-          courseDto = plainToInstance(LiveCourseDto, course, {
-            excludeExtraneousValues: true,
-          });
-          break;
-        case "prerecorded":
-          courseDto = plainToInstance(PrerecordedCourseDto, course, {
-            excludeExtraneousValues: true,
-          });
-          break;
-        default:
-          courseDto = plainToInstance(MinimalCourseDto, course, {
-            excludeExtraneousValues: true,
-          });
-          break;
-      }
+      const courseDto = getCourseDto(course, course.type ?? "minimal");
       res.status(200).json(courseDto);
     } catch (error) {
       console.log(error);
