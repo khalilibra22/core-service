@@ -146,7 +146,7 @@ export class CourseController {
       // TODO: check if course is already canceled
       // TODO: check if its canceled by the instructor or student
       // TODO: 50% if it's canceled by the student and 100% if it's canceled by the instructor
-      // TODO: cancelation is only allowed if the course is not started yet and up to 48 hours before the course starts
+      //cancelation is only allowed if the course is not started yet and up to 48 hours before the course starts
 
       if (course.couresSettings) {
         course.couresSettings.isCanceled = true;
@@ -173,7 +173,27 @@ export class CourseController {
       const courseDto = getCourseDto(course, course.type ?? "minimal");
       res.status(200).json(courseDto);
     } catch (error) {
-      console.log(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  //get teachers by courses by teacher id
+  async getCoursesByTeacherId(req: Request, res: Response): Promise<void> {
+    try {
+      const id = req.params.id;
+      const courseType = req.query.type as string;
+      const courseTypeList = ["one-on-one", "group", "live", "prerecorded"];
+      if (!courseTypeList.includes(courseType)) {
+        res.status(400).json({ error: "Invalid course type" });
+        return;
+      }
+      const courses = await this.courseService.getCoursesByTeacherId(
+        id,
+        courseType
+      );
+      const courseDtos = getCourseDto(courses, courseType);
+      res.status(200).json(courseDtos);
+    } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
   }

@@ -62,6 +62,7 @@ export class EnrollmentService {
             },
           },
         },
+        relations: ["session", "session.course"],
       });
     } catch (error) {
       throw new Error("Error fetching session enrollments");

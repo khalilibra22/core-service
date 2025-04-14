@@ -3,6 +3,7 @@ import { CoursService } from "../services/course.service";
 import { EnrollmentService } from "../services/enrollment.service";
 import { EnrollmentDto } from "../dtos/enrollment.dto";
 import { plainToInstance } from "class-transformer";
+import { OneOnOneEnollmentDto } from "../dtos/oneOnOneEnrollment.dto";
 
 export class EnrollmentController {
   private enrollmentService: EnrollmentService;
@@ -15,7 +16,9 @@ export class EnrollmentController {
 
   async createEnrollment(req: Request, res: Response): Promise<void> {
     try {
-      const course = await this.courseService.getCourseById(req.params.id);
+      const course = await this.courseService.getCourseByIdWithEnrollments(
+        req.params.id
+      );
       if (!course) {
         res.status(404).json({ error: "Course not found" });
         return;
@@ -25,6 +28,17 @@ export class EnrollmentController {
         return;
       }
       delete req.body.type;
+
+      if (course.type === "group" || course.type === "live") {
+        if (
+          (course.enrollments?.length ?? 0) >= (course.maxParticipants ?? 0)
+        ) {
+          res.status(409).json({
+            error: `Course is full. Max students: ${course.maxParticipants}`,
+          });
+          return;
+        }
+      }
 
       if (course.type === "one-on-one") {
         const sessionArray = req.body.sessions as string[];
@@ -98,7 +112,14 @@ export class EnrollmentController {
         await this.enrollmentService.getOneOnOneEnrollementByTeacherId(
           teacherId
         );
-      res.status(200).json(enrollments);
+      const enrollmentDtos = plainToInstance(
+        OneOnOneEnollmentDto,
+        enrollments,
+        {
+          excludeExtraneousValues: true,
+        }
+      );
+      res.status(200).json(enrollmentDtos);
     } catch (error) {
       console.error("Error in getOneOnOneEnrollementByTeacherId:", error);
       res.status(500).json({ error: "Internal Server Error" });

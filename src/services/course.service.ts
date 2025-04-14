@@ -110,4 +110,36 @@ export class CoursService {
       throw new Error("Error updating course");
     }
   }
+
+  // get course by id with enrollments
+  async getCourseByIdWithEnrollments(id: string): Promise<CourseModel | null> {
+    try {
+      return await this.courseRepo.findOne({
+        where: {
+          id: id,
+        },
+        relations: ["enrollments", "couresSettings"],
+      });
+    } catch (error) {
+      throw new Error("Error fetching course by ID with enrollments");
+    }
+  }
+
+  //getCoursesByTeacherId
+  async getCoursesByTeacherId(
+    teacherId: string,
+    type: string
+  ): Promise<CourseModel[]> {
+    try {
+      return await this.courseRepo.find({
+        where: {
+          teacherId: teacherId,
+          type: type,
+        },
+        relations: ["couresSettings"],
+      });
+    } catch (error) {
+      throw new Error("Error fetching courses by teacher ID");
+    }
+  }
 }
