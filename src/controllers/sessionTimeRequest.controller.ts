@@ -57,14 +57,14 @@ export class SessionTimeRequestController {
         res.status(404).json({ error: "Session time request not found" });
         return;
       }
-      if (["accepted", "rejected"].includes(sessionTimeRequest.status ?? "")) {
+      if (["approved", "rejected"].includes(sessionTimeRequest.status ?? "")) {
         res.status(400).json({
           error: `Session time request already ${sessionTimeRequest.status}`,
         });
         return;
       }
       const status = req.body.status;
-      if (status === "accepted") {
+      if (status === "approved") {
         if (sessionTimeRequest.session) {
           sessionTimeRequest.session.date = sessionTimeRequest.requestedTime;
         }
@@ -75,7 +75,9 @@ export class SessionTimeRequestController {
         await this.sessionTimeRequestService.updateSessionTimeRequest(
           sessionTimeRequest
         );
-      res.status(200).json(updatedSessionTimeRequest);
+      res
+        .status(200)
+        .json({ message: "Session time request status updated successfully" });
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });

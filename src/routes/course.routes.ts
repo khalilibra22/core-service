@@ -17,6 +17,7 @@ import {
   reviewValdationSchema,
 } from "../validations/feedback.validation";
 import { enrollmentValidationsSchema } from "../validations/enrollment.validation";
+import { AuthMiddleware } from "../utils/auth.middleware";
 
 const router = express.Router();
 
@@ -27,7 +28,7 @@ const sessionTimeRequestController = new SessionTimeRequestController();
 
 router.post(
   "/",
-  //AuthMiddleware.verifyToken,
+  AuthMiddleware.verifyToken,
   ValidationMiddleware.validate(createCourseValidationSchema),
   async (req, res) => await courseController.createDraftCourse(req, res)
 );
@@ -35,7 +36,7 @@ router.post(
 //update course
 router.put(
   "/:id",
-  //AuthMiddleware.verifyToken,
+  AuthMiddleware.verifyToken,
   ValidationMiddleware.validate(courseValidationSchema),
   async (req, res) => await courseController.updateCourse(req, res)
 );
@@ -43,13 +44,13 @@ router.put(
 // get course by id
 router.get(
   "/:id",
-  //AuthMiddleware.verifyToken,
+  AuthMiddleware.verifyToken,
   async (req, res) => await courseController.getCourseById(req, res)
 );
 
 router.post(
   "/:id/sessions",
-  //AuthMiddleware.verifyToken,
+  AuthMiddleware.verifyToken,
   ValidationMiddleware.validate(sessionValidationSchema),
   async (req, res) => await courseController.createCourseSession(req, res)
 );
@@ -57,7 +58,7 @@ router.post(
 //create a review
 router.post(
   "/:id/reviews",
-  //AuthMiddleware.verifyToken,
+  AuthMiddleware.verifyToken,
   ValidationMiddleware.validate(reviewValdationSchema),
   async (req, res) => await feedbackController.createReview(req, res)
 );
@@ -65,7 +66,7 @@ router.post(
 //create a complaint
 router.post(
   "/:id/sessions/:sessionId/complaints/",
-  //AuthMiddleware.verifyToken,
+  AuthMiddleware.verifyToken,
   ValidationMiddleware.validate(complaintValdationSchema),
   async (req, res) => await feedbackController.createComplaint(req, res)
 );
@@ -73,7 +74,7 @@ router.post(
 //create a certificate
 router.post(
   "/:id/certificates",
-  //AuthMiddleware.verifyToken,
+  AuthMiddleware.verifyToken,
   ValidationMiddleware.validate(certificateValidationSchema),
   async (req, res) => await courseController.createCertificate(req, res)
 );
@@ -81,7 +82,7 @@ router.post(
 // Create course enrollment
 router.post(
   "/:id/enrollments",
-  //AuthMiddleware.verifyToken,
+  AuthMiddleware.verifyToken,
   ValidationMiddleware.validate(enrollmentValidationsSchema),
   async (req, res) => await enrollmentController.createEnrollment(req, res)
 );
@@ -89,21 +90,21 @@ router.post(
 // Get all course sessions
 router.get(
   "/:id/sessions",
-  //AuthMiddleware.verifyToken,
+  AuthMiddleware.verifyToken,
   async (req, res) => await courseController.getCourseSessions(req, res)
 );
 
 //cancel course
 router.patch(
   "/:id/cancel",
-  //AuthMiddleware.verifyToken,
+  AuthMiddleware.verifyToken,
   ValidationMiddleware.validate(courseCancellationValidationSchema),
   async (req, res) => await courseController.cancelCourse(req, res)
 );
 
 router.post(
   "/:id/sessions/:sessionId/session-time-requests/",
-  //AuthMiddleware.verifyToken,
+  AuthMiddleware.verifyToken,
   ValidationMiddleware.validate(timeChangeRequestValidationSchema),
   async (req, res) =>
     await sessionTimeRequestController.createSessionTimeRequest(req, res)
@@ -111,7 +112,7 @@ router.post(
 
 router.get(
   "/:id/enrollments",
-  //AuthMiddleware.verifyToken,
+  AuthMiddleware.verifyToken,
   async (req, res) => await enrollmentController.getCourseEnrollments(req, res)
 );
 

@@ -1,4 +1,4 @@
-import { Expose } from "class-transformer";
+import { Expose, Transform } from "class-transformer";
 
 export class MinimalCourseDto {
   @Expose()
@@ -12,4 +12,8 @@ export class MinimalCourseDto {
 
   @Expose()
   teacherId?: string;
+
+  @Expose()
+  @Transform(({ obj }) => obj.createdAt)
+  creationDate?: Date;
 }

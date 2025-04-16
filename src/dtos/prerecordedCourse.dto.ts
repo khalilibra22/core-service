@@ -89,4 +89,8 @@ export class PrerecordedCourseDto {
   @Expose()
   @Transform(({ obj }) => obj.couresSettings?.canceledBy)
   canceledBy?: string;
+
+  @Expose()
+  @Transform(({ obj }) => obj.createdAt)
+  creationDate?: Date;
 }

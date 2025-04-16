@@ -28,7 +28,7 @@ export class SessionModel {
   durationUnit?: string; // "hours" | "minutes"
 
   @Column({ name: "topic_id", nullable: true })
-  topicId?: string;
+  topicId?: number;
 
   @Column({ nullable: true })
   title?: string; // Title of the video
