@@ -8,7 +8,6 @@ const router = express.Router();
 
 const sessionTimeRequestController = new SessionTimeRequestController();
 
-// update complaint status
 router.patch(
   "/:id/status",
   AuthMiddleware.verifyToken,

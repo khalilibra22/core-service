@@ -84,7 +84,10 @@ export class FeedbackController {
       const updatedComplaint = await this.feedbackService.updateComplaint(
         complaint
       );
-      res.status(200).json(updatedComplaint);
+      const complaintDto = plainToInstance(ComplaintDto, updatedComplaint, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(complaintDto);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
@@ -110,7 +113,10 @@ export class FeedbackController {
       const updatedComplaint = await this.feedbackService.updateComplaint(
         complaintBody
       );
-      res.status(200).json(updatedComplaint);
+      const complaintDto = plainToInstance(ComplaintDto, updatedComplaint, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(complaintDto);
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }

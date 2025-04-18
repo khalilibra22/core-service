@@ -116,7 +116,7 @@ router.get(
   async (req, res) => await enrollmentController.getCourseEnrollments(req, res)
 );
 
-router.get("/teachers/:id", async (req, res) => {
+router.get("/teachers/:id", AuthMiddleware.verifyToken, async (req, res) => {
   const id = req.params.id;
   await courseController.getCoursesByTeacherId(req, res);
 });

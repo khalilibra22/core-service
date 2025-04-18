@@ -141,7 +141,9 @@ export class EnrollmentController {
       enrollment.status = req.body.status;
       const updatedEnrollment =
         await this.enrollmentService.updateCourseEnrollment(enrollment);
-      res.status(200).json(updatedEnrollment);
+      res
+        .status(200)
+        .json({ message: "Enrollment status updated successfully" });
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
