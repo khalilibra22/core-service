@@ -21,13 +21,16 @@ export class CourseSettingsModel {
   address?: string;
 
   @Column({ nullable: true, name: "intro_video_url" })
-  introVideoUrl?: string;
+  introVideo?: string;
 
   @Column({ nullable: true })
   syllabus?: string;
 
   @Column({ nullable: true, name: "thumbnail_url" })
-  thumbnailUrl?: string;
+  thumbnail?: string;
+
+  @Column({ nullable: true })
+  topicId?: number;
 
   @Column({ type: "simple-array", nullable: true })
   objectives?: string[];
@@ -50,8 +53,8 @@ export class CourseSettingsModel {
   @Column({ nullable: true })
   grade?: string;
 
-  @Column({ nullable: true })
-  age?: string;
+  @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
+  age?: number;
 
   @Column({ nullable: true, name: "is_canceled", default: false })
   isCanceled?: boolean;

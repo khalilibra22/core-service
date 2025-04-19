@@ -20,13 +20,16 @@ export class CourseModel {
   @PrimaryGeneratedColumn("uuid")
   id?: string;
 
-  @Column()
+  @Column({ nullable: true })
   name?: string;
 
-  @Column()
+  @Column({ nullable: true })
   description?: string;
 
-  @Column()
+  @Column({ default: "draft" })
+  status?: string; // "draft" | "published";
+
+  @Column({ nullable: true })
   teacherId?: string;
 
   @Column()

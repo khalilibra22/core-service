@@ -4,6 +4,7 @@ import cors from "cors";
 import { courseRouter } from "../routes/course.routes";
 import { feedbackRouter } from "../routes/feedback.routes";
 import { sessionTimeRequestRouter } from "../routes/sessionTimeRequest.routes";
+import { enrollmentRouter } from "../routes/enrollment.routes";
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction): void => {
 app.use("/courses", courseRouter);
 app.use("/feedbacks", feedbackRouter);
 app.use("/session-time-requests", sessionTimeRequestRouter);
+app.use("/enrollments", enrollmentRouter);
 
 app.get("/", async (req: Request, res: Response) => {
   res.send("Hello World!");

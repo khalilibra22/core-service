@@ -27,8 +27,8 @@ export class SessionModel {
   @Column({ nullable: true })
   durationUnit?: string; // "hours" | "minutes"
 
-  @Column({ name: "topic_id" })
-  topicId?: string;
+  @Column({ name: "topic_id", nullable: true })
+  topicId?: number;
 
   @Column({ nullable: true })
   title?: string; // Title of the video
@@ -52,7 +52,7 @@ export class SessionModel {
   videoUrl?: string; // URL for the recorded session (if applicable)
 
   @Column({ nullable: true })
-  status?: string; // "unscheduled" : default status , "scheduled", "canceled", "completed"
+  status?: string; //  "unreserved" : default status, "unscheduled", "scheduled", "canceled", "completed"
 
   @ManyToOne(() => CourseModel, (course) => course.sessions)
   course?: CourseModel;
