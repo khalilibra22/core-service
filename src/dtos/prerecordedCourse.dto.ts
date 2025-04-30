@@ -14,6 +14,7 @@ export class PrerecordedCourseDto {
   description?: string;
 
   @Expose()
+  @Transform(({ obj }) => obj.ownerId)
   teacherId?: string;
 
   @Expose()

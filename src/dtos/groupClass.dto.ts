@@ -17,6 +17,7 @@ export class GroupClassDto {
   maxParticipants?: number;
 
   @Expose()
+  @Transform(({ obj }) => obj.ownerId)
   teacherId?: string;
 
   @Expose()
