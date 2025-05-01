@@ -58,7 +58,7 @@ export class EnrollmentService {
         where: {
           session: {
             course: {
-              teacherId: teacherId,
+              ownerId: teacherId,
             },
           },
         },

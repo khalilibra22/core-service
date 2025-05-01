@@ -133,7 +133,7 @@ export class CoursService {
     try {
       return await this.courseRepo.find({
         where: {
-          teacherId: teacherId,
+          ownerId: teacherId,
           type: type,
         },
         relations: ["couresSettings"],

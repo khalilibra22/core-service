@@ -17,8 +17,12 @@ export class LiveCourseDto {
   maxParticipants?: number;
 
   @Expose()
-  @Transform(({ obj }) => obj.ownerId)
-  teacherId?: string;
+  //@Transform(({ obj }) => obj.ownerId)
+  ownerId?: string;
+
+  @Expose()
+  @Transform(({ obj }) => obj.instructorId ?? undefined)
+  instructorId?: string;
 
   @Expose()
   isRemote?: boolean;

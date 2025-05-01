@@ -1,7 +1,7 @@
 import Joi from "joi";
 
 export const createCourseValidationSchema = Joi.object({
-  teacherId: Joi.string().uuid().required(),
+  ownerId: Joi.string().uuid().required(),
   type: Joi.string()
     .valid("one-on-one", "group", "live", "prerecorded")
     .required(),
@@ -28,6 +28,7 @@ const groupSchema = Joi.object({
 const liveSchema = Joi.object({
   type: Joi.string().valid("live").required(),
   ...sharedFields,
+  instructorId: Joi.string().uuid().optional(),
   maxParticipants: Joi.number().integer().min(1).required(),
   address: Joi.string().required(),
   grade: Joi.string().required(),
@@ -45,6 +46,7 @@ const liveSchema = Joi.object({
 const prerecordedSchema = Joi.object({
   type: Joi.string().valid("prerecorded").required(),
   ...sharedFields,
+  instructorId: Joi.string().uuid().optional(),
   address: Joi.string().required(),
   grade: Joi.string().required(),
   introVideo: Joi.string().uri().optional(),
