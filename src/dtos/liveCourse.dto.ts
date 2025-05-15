@@ -21,6 +21,10 @@ export class LiveCourseDto {
   ownerId?: string;
 
   @Expose()
+  @Transform(({ obj }) => obj.enrollments.length ?? undefined)
+  enrollmentsNumber?: number;
+
+  @Expose()
   @Transform(({ obj }) => obj.instructorId ?? undefined)
   instructorId?: string;
 

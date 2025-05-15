@@ -28,6 +28,14 @@ export class PrerecordedCourseDto {
   price?: number | string;
 
   @Expose()
+  @Transform(({ obj }) => obj.enrollments.length ?? undefined)
+  enrollmentsNumber?: number;
+
+  @Expose()
+  @Transform(({ obj }) => obj.sessions.length ?? undefined)
+  sectionsNumber?: number;
+
+  @Expose()
   @Transform(({ obj }) => obj.couresSettings?.isPaid)
   isPaid?: boolean;
 

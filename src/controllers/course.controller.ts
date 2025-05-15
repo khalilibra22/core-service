@@ -197,4 +197,48 @@ export class CourseController {
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
+
+  //get all courses of type live using pagination
+  async getAllLiveCourses(req: Request, res: Response): Promise<void> {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const courses = await this.courseService.getAllLiveCourses(page, limit);
+      const courseDtos = getCourseDto(courses, "live");
+      res.status(200).json(courseDtos);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  async getAllGroupCourses(req: Request, res: Response): Promise<void> {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const courses = await this.courseService.getAllGroupCourses(page, limit);
+      const courseDtos = getCourseDto(courses, "group");
+      res.status(200).json(courseDtos);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  //get all courses of type prerecorded using pagination
+  async getAllPrerecordedCourses(req: Request, res: Response): Promise<void> {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const courses = await this.courseService.getAllPrerecordedCourses(
+        page,
+        limit
+      );
+      const courseDtos = getCourseDto(courses, "prerecorded");
+      res.status(200).json(courseDtos);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
 }

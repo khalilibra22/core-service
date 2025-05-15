@@ -142,4 +142,60 @@ export class CoursService {
       throw new Error("Error fetching courses by teacher ID");
     }
   }
+
+  //get all courses of type live using pagination
+  async getAllLiveCourses(page: number, limit: number): Promise<CourseModel[]> {
+    try {
+      return await this.courseRepo.find({
+        where: {
+          type: "live",
+        },
+        relations: ["couresSettings", "enrollments"],
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+    } catch (error) {
+      console.log(error);
+      throw new Error("Error fetching all courses of type live");
+    }
+  }
+
+  async getAllGroupCourses(
+    page: number,
+    limit: number
+  ): Promise<CourseModel[]> {
+    try {
+      return await this.courseRepo.find({
+        where: {
+          type: "group",
+        },
+        relations: ["couresSettings", "enrollments"],
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+    } catch (error) {
+      console.log(error);
+      throw new Error("Error fetching all courses of type group");
+    }
+  }
+
+  //get all courses of type prerecorded using pagination
+  async getAllPrerecordedCourses(
+    page: number,
+    limit: number
+  ): Promise<CourseModel[]> {
+    try {
+      return await this.courseRepo.find({
+        where: {
+          type: "prerecorded",
+        },
+        relations: ["couresSettings", "enrollments", "sessions"],
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+    } catch (error) {
+      console.log(error);
+      throw new Error("Error fetching all courses of type prerecorded");
+    }
+  }
 }

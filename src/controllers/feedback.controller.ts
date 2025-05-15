@@ -174,4 +174,25 @@ export class FeedbackController {
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
+
+  // get reviews of prerecorded course using pagination
+  async getReviewsOfPrerecordedCourses(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const reviews = await this.feedbackService.getReviewsOfPrerecordedCourses(
+        page,
+        limit
+      );
+      const reviewDtos = plainToInstance(ReviewDto, reviews, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(reviewDtos);
+    } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
 }
