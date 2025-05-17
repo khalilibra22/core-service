@@ -56,4 +56,12 @@ router.delete(
   async (req, res) => await feedbackController.deleteComplaint(req, res)
 );
 
+// get reviews of prerecorded course using pagination
+router.get(
+  "/reviews/prerecorded",
+  AuthMiddleware.verifyToken,
+  async (req, res) =>
+    await feedbackController.getReviewsOfPrerecordedCourses(req, res)
+);
+
 export { router as feedbackRouter };

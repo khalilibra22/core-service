@@ -43,7 +43,7 @@ router.put(
 
 // get course by id
 router.get(
-  "/:id",
+  "/:id/details",
   AuthMiddleware.verifyToken,
   async (req, res) => await courseController.getCourseById(req, res)
 );
@@ -120,5 +120,25 @@ router.get("/teachers/:id", AuthMiddleware.verifyToken, async (req, res) => {
   const id = req.params.id;
   await courseController.getCoursesByTeacherId(req, res);
 });
+
+// get all live courses
+router.get(
+  "/live",
+  AuthMiddleware.verifyToken,
+  async (req, res) => await courseController.getAllLiveCourses(req, res)
+);
+
+router.get(
+  "/group",
+  AuthMiddleware.verifyToken,
+  async (req, res) => await courseController.getAllGroupCourses(req, res)
+);
+
+// get all prerecorded courses
+router.get(
+  "/prerecorded",
+  AuthMiddleware.verifyToken,
+  async (req, res) => await courseController.getAllPrerecordedCourses(req, res)
+);
 
 export { router as courseRouter };

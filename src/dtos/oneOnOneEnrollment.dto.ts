@@ -55,7 +55,7 @@ export class OneOnOneEnollmentDto {
   studentId?: string;
 
   @Expose()
-  @Transform(({ obj }) => obj.session.course?.teacherId)
+  @Transform(({ obj }) => obj.session.course?.ownerId)
   teacherId?: string;
 
   @Expose()

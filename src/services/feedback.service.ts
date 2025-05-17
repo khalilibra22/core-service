@@ -124,4 +124,24 @@ export class FeedbackService {
       throw new Error("Error deleting complaint");
     }
   }
+
+  //get reviews of prerecorded courses using pagination
+  async getReviewsOfPrerecordedCourses(
+    page: number,
+    limit: number
+  ): Promise<ReviewModel[]> {
+    try {
+      return await this.reviewRepo.find({
+        where: {
+          course: {
+            type: "prerecorded",
+          },
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+    } catch (error) {
+      throw new Error("Error fetching reviews of prerecorded courses");
+    }
+  }
 }

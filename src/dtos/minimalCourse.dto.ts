@@ -11,7 +11,8 @@ export class MinimalCourseDto {
   status?: string;
 
   @Expose()
-  teacherId?: string;
+  //@Transform(({ obj }) => obj.ownerId)
+  ownerId?: string;
 
   @Expose()
   @Transform(({ obj }) => obj.createdAt)

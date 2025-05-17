@@ -29,11 +29,14 @@ export class CourseModel {
   @Column({ default: "draft" })
   status?: string; // "draft" | "published";
 
-  @Column({ nullable: true })
-  teacherId?: string;
-
   @Column()
   type?: string; // "one_on_one" | "group" | "live" | "prerecorded";
+
+  @Column({ nullable: true })
+  ownerId?: string; // userId of the course owner : teacher or academy
+
+  @Column({ nullable: true })
+  instructorId?: string; // userId of the instructor ; this field used by the academy to assign an instructor to the course
 
   @Column({ default: true, name: "is_remote" })
   isRemote?: boolean;

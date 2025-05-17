@@ -14,13 +14,26 @@ export class PrerecordedCourseDto {
   description?: string;
 
   @Expose()
-  teacherId?: string;
+  //@Transform(({ obj }) => obj.ownerId)
+  ownerId?: string;
+
+  @Expose()
+  @Transform(({ obj }) => obj.instructorId ?? undefined)
+  instructorId?: string;
 
   @Expose()
   isRemote?: boolean;
 
   @Expose()
   price?: number | string;
+
+  @Expose()
+  @Transform(({ obj }) => obj.enrollments.length ?? undefined)
+  enrollmentsNumber?: number;
+
+  @Expose()
+  @Transform(({ obj }) => obj.sessions.length ?? undefined)
+  sectionsNumber?: number;
 
   @Expose()
   @Transform(({ obj }) => obj.couresSettings?.isPaid)
