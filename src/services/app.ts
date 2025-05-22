@@ -5,6 +5,7 @@ import { courseRouter } from "../routes/course.routes";
 import { feedbackRouter } from "../routes/feedback.routes";
 import { sessionTimeRequestRouter } from "../routes/sessionTimeRequest.routes";
 import { enrollmentRouter } from "../routes/enrollment.routes";
+import { settingRouter } from "../routes/setting.routes";
 
 dotenv.config();
 
@@ -27,9 +28,10 @@ app.use("/courses", courseRouter);
 app.use("/feedbacks", feedbackRouter);
 app.use("/session-time-requests", sessionTimeRequestRouter);
 app.use("/enrollments", enrollmentRouter);
+app.use("/settings", settingRouter);
 
 app.get("/", async (req: Request, res: Response) => {
-  res.send("Hello World!");
+  res.send("running !");
 });
 
 app.listen(port, () => {

@@ -2,10 +2,10 @@ import { AppDataSource } from "../config/database";
 import { SessionTimeChangeRequestModel } from "../models/sessionTimeChangeRequest.model";
 
 export class SessionTimeRequestService {
-  sessionTimeRequest: any;
+  sessionTimeRequestRepo: any;
 
   constructor() {
-    this.sessionTimeRequest = AppDataSource.getRepository(
+    this.sessionTimeRequestRepo = AppDataSource.getRepository(
       SessionTimeChangeRequestModel
     );
   }
@@ -15,7 +15,7 @@ export class SessionTimeRequestService {
     sessionTimeRequest: SessionTimeChangeRequestModel
   ): Promise<SessionTimeChangeRequestModel> {
     try {
-      return await this.sessionTimeRequest.save(sessionTimeRequest);
+      return await this.sessionTimeRequestRepo.save(sessionTimeRequest);
     } catch (error) {
       throw new Error("Error creating session time change request");
     }
@@ -26,7 +26,7 @@ export class SessionTimeRequestService {
     id: string
   ): Promise<SessionTimeChangeRequestModel | null> {
     try {
-      return await this.sessionTimeRequest.findOne({
+      return await this.sessionTimeRequestRepo.findOne({
         where: {
           id: id,
         },
@@ -40,7 +40,7 @@ export class SessionTimeRequestService {
   // Get all session time change requests
   async getAllSessionTimeRequests(): Promise<SessionTimeChangeRequestModel[]> {
     try {
-      return await this.sessionTimeRequest.find({
+      return await this.sessionTimeRequestRepo.find({
         relations: ["session"],
       });
     } catch (error) {
@@ -53,7 +53,7 @@ export class SessionTimeRequestService {
     sessionTimeRequest: SessionTimeChangeRequestModel
   ): Promise<SessionTimeChangeRequestModel | null> {
     try {
-      return await this.sessionTimeRequest.save(sessionTimeRequest);
+      return await this.sessionTimeRequestRepo.save(sessionTimeRequest);
     } catch (error) {
       throw new Error("Error updating session time change request");
     }
