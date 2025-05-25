@@ -1,0 +1,27 @@
+import Joi from "joi";
+
+export const settingValidationSchema = Joi.object({
+  siteName: Joi.string().required(),
+  siteEmailOwner: Joi.string().email().required(),
+  siteCountry: Joi.string().required(),
+  siteLanguage: Joi.string().required(),
+  siteCurrency: Joi.string().required(),
+  sitePhoneNumber: Joi.string().required(),
+  siteLogo: Joi.string().uri().optional(),
+  siteFavicon: Joi.string().uri().optional(),
+  twakCode: Joi.string().required(),
+  liveChatEnabled: Joi.boolean().required(),
+  facebookAppId: Joi.string().required(),
+  facebookAppSecret: Joi.string().required(),
+  appleAppId: Joi.string().required(),
+  brevoApiKey: Joi.string().required(),
+  brevoListId: Joi.string().required(),
+  microsoftTextTranslatorKey: Joi.string().required(),
+  googleAnalyticsKey: Joi.string().required(),
+  googleAnalyticsClientJson: Joi.string().required(),
+  googleRecaptchaKey: Joi.string().required(),
+  googleRecaptchaSecret: Joi.string().required(),
+  googleClientJson: Joi.string().required(),
+  googleApiKey: Joi.string().required(),
+  firebaseServerKey: Joi.string().required(),
+});

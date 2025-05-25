@@ -1,8 +1,9 @@
-import { Column, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
+@Entity("settings")
 export class SettingsModel {
-  @PrimaryGeneratedColumn("uuid")
-  id?: string;
+  @PrimaryGeneratedColumn()
+  id?: number;
 
   @Column({ name: "site_name", nullable: true })
   siteName?: string;
