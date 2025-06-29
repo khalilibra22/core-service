@@ -49,6 +49,7 @@ export class CourseController {
           excludeExtraneousValues: false,
         }
       );
+      delete req.body.ownerId; // ownerId is not allowed to be updated
       const courseFromBody = plainToInstance(CourseModel, req.body, {
         excludeExtraneousValues: false,
       });
@@ -73,12 +74,11 @@ export class CourseController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
-      console.log(course.type, req.body.type);
       if (course.type !== req.body.type) {
         res.status(400).json({ error: "Invalid session type" });
         return;
       }
-      delete req.body.type;
+      delete req.body.type, req.body.ownerId; // type and ownerId are not allowed to be updated
       const sessionBody = {
         ...req.body,
         course: course,
@@ -100,6 +100,7 @@ export class CourseController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
+      delete req.body.ownerId;
       const certificateBody = {
         ...req.body,
         course: course,
@@ -173,6 +174,7 @@ export class CourseController {
       const courseDto = getCourseDto(course, course.type ?? "minimal");
       res.status(200).json(courseDto);
     } catch (error) {
+      console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
@@ -194,6 +196,7 @@ export class CourseController {
       const courseDtos = getCourseDto(courses, courseType);
       res.status(200).json(courseDtos);
     } catch (error) {
+      console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }

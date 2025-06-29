@@ -45,6 +45,7 @@ export class CoursService {
         relations: ["couresSettings"],
       });
     } catch (error: any) {
+      console.log(error);
       throw new Error("Error fetching course by ID : " + error.message);
     }
   }
@@ -139,6 +140,7 @@ export class CoursService {
         relations: ["couresSettings"],
       });
     } catch (error) {
+      console.log(error);
       throw new Error("Error fetching courses by teacher ID");
     }
   }

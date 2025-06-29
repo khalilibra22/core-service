@@ -1,7 +1,7 @@
 import Joi from "joi";
 
 export const createCourseValidationSchema = Joi.object({
-  ownerId: Joi.string().uuid().required(),
+  ownerId: Joi.string().uuid().optional(),
   type: Joi.string()
     .valid("one-on-one", "group", "live", "prerecorded")
     .required(),
@@ -15,6 +15,7 @@ const sharedFields = {
   isPaid: Joi.boolean().required(),
   price: Joi.number().min(0).required(),
   isRemote: Joi.boolean().required(),
+  ownerId: Joi.string().uuid().optional(),
 };
 
 // Base schema for group
@@ -72,6 +73,7 @@ const sessionSchema = Joi.object({
   topicId: Joi.number().integer().optional(),
   title: Joi.string().optional(),
   isPaid: Joi.boolean().optional(),
+  ownerId: Joi.string().uuid().optional(),
 });
 
 const prerecordedSessionSchema = Joi.object({
@@ -80,13 +82,14 @@ const prerecordedSessionSchema = Joi.object({
   description: Joi.string().required(),
   ordering: Joi.number().integer().min(1).required(),
   video: Joi.object().optional(),
+  ownerId: Joi.string().uuid().optional(),
 });
 
 export const courseValidationSchema = Joi.alternatives()
   .try(groupSchema, liveSchema, prerecordedSchema, oneOnOneSchema)
   .messages({
     "alternatives.match":
-      "Course data is invalid or does not match allowed structure for its type.",
+      "Course data is invalid or does not match any allowed course type (one-on-one, group, live, prerecorded).",
   });
 
 export const sessionValidationSchema = Joi.alternatives()
@@ -102,11 +105,12 @@ export const certificateValidationSchema = Joi.object({
   expirationDate: Joi.date().greater(Joi.ref("issueDate")).optional(),
   issuedBy: Joi.string().min(2).max(100).required(),
   certificateUrl: Joi.string().optional(),
+  ownerId: Joi.string().uuid().optional(),
 });
 
 export const timeChangeRequestValidationSchema = Joi.object({
   requestedTime: Joi.date().greater("now").required(),
-  userId: Joi.string().uuid({ version: "uuidv4" }).required(),
+  ownerId: Joi.string().uuid().optional(),
   reason: Joi.string().required(),
 });
 
@@ -117,4 +121,5 @@ export const courseCancellationValidationSchema = Joi.object({
 
 export const timeChangeRequestStatusSchema = Joi.object({
   status: Joi.string().valid("approved", "rejected").required(),
+  ownerId: Joi.string().uuid().optional(),
 });

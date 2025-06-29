@@ -22,6 +22,8 @@ export class SessionTimeRequestController {
         res.status(404).json({ error: "Session not found" });
         return;
       }
+      req.body.userId = req.body.ownerId;
+      delete req.body.ownerId;
       const sessionTimeRequestBody = {
         ...req.body,
         session: session,
@@ -58,7 +60,7 @@ export class SessionTimeRequestController {
         return;
       }
       if (["approved", "rejected"].includes(sessionTimeRequest.status ?? "")) {
-        res.status(400).json({
+        res.status(409).json({
           error: `Session time request already ${sessionTimeRequest.status}`,
         });
         return;

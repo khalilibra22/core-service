@@ -9,7 +9,7 @@ export class OneOnOneEnollmentDto {
   sessionId?: string;
 
   @Expose()
-  @Transform(({ obj }) => obj.session.course?.id)
+  @Transform(({ obj }) => obj.session?.course?.id)
   courseId?: string;
 
   @Expose()
@@ -28,15 +28,15 @@ export class OneOnOneEnollmentDto {
   topicName?: string;
 
   @Expose()
-  @Transform(({ obj }) => obj.session.course?.price)
+  @Transform(({ obj }) => obj.session?.course?.price)
   price?: number;
 
   @Expose()
-  @Transform(({ obj }) => obj.session.date)
+  @Transform(({ obj }) => obj.session?.date)
   date?: Date;
 
   @Expose()
-  @Transform(({ obj }) => obj.session.isPaid)
+  @Transform(({ obj }) => obj.session?.isPaid)
   isPaid?: boolean;
 
   @Expose()
@@ -55,11 +55,11 @@ export class OneOnOneEnollmentDto {
   studentId?: string;
 
   @Expose()
-  @Transform(({ obj }) => obj.session.course?.ownerId)
+  @Transform(({ obj }) => obj.session?.course?.ownerId)
   teacherId?: string;
 
   @Expose()
-  @Transform(({ obj }) => obj.session.course?.type)
+  @Transform(({ obj }) => obj.session?.course?.type)
   type?: string;
 
   @Expose()

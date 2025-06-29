@@ -32,8 +32,8 @@ export class ComplaintModel {
   @ManyToOne(() => SessionModel, (session) => session.complaints)
   session?: SessionModel;
 
-  @Column({ name: "admin_id", nullable: true })
-  adminId?: string; // ID of the admin or support team member handling the complaint
+  @Column({ name: "resolved_by", nullable: true })
+  resolvedBy?: string; // ID of user who resolved the complaint (e.g., admin or support staff)
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;
