@@ -27,7 +27,8 @@ export class EnrollmentController {
         res.status(409).json({ error: "Course is canceled" });
         return;
       }
-      delete req.body.type;
+      req.body.studentId = req.body.ownerId;
+      delete req.body.type, req.body.ownerId;
 
       if (course.type === "group" || course.type === "live") {
         if (
@@ -40,35 +41,35 @@ export class EnrollmentController {
         }
       }
 
-      if (course.type === "one-on-one") {
-        const sessionArray = req.body.sessions as string[];
-        delete req.body.sessions;
+      // if (course.type === "one-on-one") {
+      //   const sessionArray = req.body.sessions as string[];
+      //   delete req.body.sessions;
 
-        for (const sessionId of sessionArray) {
-          const session = await this.courseService.getSessionById(sessionId);
-          if (!session) {
-            res.status(404).json({ error: "Session not found" });
-            return;
-          }
+      //   for (const sessionId of sessionArray) {
+      //     const session = await this.courseService.getSessionById(sessionId);
+      //     if (!session) {
+      //       res.status(404).json({ error: "Session not found" });
+      //       return;
+      //     }
 
-          if (session.isReserved) {
-            res.status(409).json({
-              error: `Session on ${session.date} is already reserved`,
-            });
-            return;
-          }
+      //     if (session.isReserved) {
+      //       res.status(409).json({
+      //         error: `Session on ${session.date} is already reserved`,
+      //       });
+      //       return;
+      //     }
 
-          const enrollmentBody = {
-            ...req.body,
-            session: session,
-          };
+      //     const enrollmentBody = {
+      //       ...req.body,
+      //       session: session,
+      //     };
 
-          await this.enrollmentService.createSessionEnrollment(enrollmentBody);
-          session.isReserved = true;
-          session.status = "scheduled";
-          await this.courseService.updateSession(session);
-        }
-      }
+      //     await this.enrollmentService.createSessionEnrollment(enrollmentBody);
+      //     session.isReserved = true;
+      //     session.status = "scheduled";
+      //     await this.courseService.updateSession(session);
+      //   }
+      // }
 
       const enrollmentBody = {
         ...req.body,

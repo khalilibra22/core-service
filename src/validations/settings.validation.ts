@@ -24,4 +24,5 @@ export const settingValidationSchema = Joi.object({
   googleClientJson: Joi.string().required(),
   googleApiKey: Joi.string().required(),
   firebaseServerKey: Joi.string().required(),
+  ownerId: Joi.string().uuid().required(),
 });
