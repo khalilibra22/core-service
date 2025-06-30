@@ -1,11 +1,12 @@
-import { Expose } from "class-transformer";
+import { Expose, Transform } from "class-transformer";
 
 export class CertificateDto {
   @Expose()
   id?: string;
 
   @Expose()
-  studentId?: string;
+  @Transform(() => "to be filled")
+  studentFullname?: string;
 
   @Expose()
   issueDate?: Date;
