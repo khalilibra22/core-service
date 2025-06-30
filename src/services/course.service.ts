@@ -140,7 +140,6 @@ export class CoursService {
         relations: ["couresSettings"],
       });
     } catch (error) {
-      console.log(error);
       throw new Error("Error fetching courses by teacher ID");
     }
   }

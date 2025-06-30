@@ -196,7 +196,6 @@ export class CourseController {
       const courseDtos = getCourseDto(courses, courseType);
       res.status(200).json(courseDtos);
     } catch (error) {
-      console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
