@@ -4,10 +4,10 @@ import { EnrollmentService } from "../services/enrollment.service";
 import { EnrollmentDto } from "../dtos/enrollment.dto";
 import { plainToInstance } from "class-transformer";
 import { OneOnOneEnollmentDto } from "../dtos/oneOnOneEnrollment.dto";
-import { ExternalService } from "../services/external.service";
-import { stringify } from "querystring";
+import { RestApiSetup } from "../config/restApiSetup";
 import { AvailabilityDto } from "../dtos/availability.dto";
 import { generateSessionsFromAvailabilities } from "../utils";
+import { ExternalService } from "../services/external.service";
 
 export class EnrollmentController {
   private enrollmentService: EnrollmentService;
@@ -54,20 +54,16 @@ export class EnrollmentController {
           res.status(400).json({ error: "No sessions provided" });
           return;
         }
-        const availabilities = await this.externalService.post<
-          AvailabilityDto[]
-        >(
-          "http://localhost:5000/availabilities/check",
-          JSON.stringify({
-            availabilityIds: availabilityIdsArray,
-          })
-        );
+        const availabilities =
+          await this.externalService.checkTeacherAvailabilities(
+            availabilityIdsArray
+          );
 
         const sessions = generateSessionsFromAvailabilities(availabilities, 4);
-        // console.log("availabilities", availabilities);
-        // console.log("sessions", sessions);
+        //console.log("availabilities", availabilities);
+        //console.log("sessions", sessions);
 
-        const createdSessions = await Promise.all(
+        await Promise.all(
           sessions.map(async (session) => {
             const sessionData = {
               ...session,

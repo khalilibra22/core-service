@@ -1,8 +1,8 @@
 import { Expose, Transform } from "class-transformer";
 
 export class OneOnOneEnollmentDto {
-  @Expose()
-  id?: string;
+  // @Expose()
+  // id?: string;
 
   @Expose()
   @Transform(({ obj }) => obj.session?.id)
@@ -34,6 +34,10 @@ export class OneOnOneEnollmentDto {
   @Expose()
   @Transform(({ obj }) => obj.session?.date)
   date?: Date;
+
+  @Expose()
+  @Transform(({ obj }) => obj.session?.url)
+  liveSessionUrl?: string;
 
   @Expose()
   @Transform(({ obj }) => obj.session?.isPaid)
