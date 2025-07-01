@@ -4,14 +4,20 @@ import { EnrollmentService } from "../services/enrollment.service";
 import { EnrollmentDto } from "../dtos/enrollment.dto";
 import { plainToInstance } from "class-transformer";
 import { OneOnOneEnollmentDto } from "../dtos/oneOnOneEnrollment.dto";
+import { ExternalService } from "../services/external.service";
+import { stringify } from "querystring";
+import { AvailabilityDto } from "../dtos/availability.dto";
+import { generateSessionsFromAvailabilities } from "../utils";
 
 export class EnrollmentController {
   private enrollmentService: EnrollmentService;
   private courseService: CoursService;
+  private externalService: ExternalService;
 
   constructor() {
     this.enrollmentService = new EnrollmentService();
     this.courseService = new CoursService();
+    this.externalService = new ExternalService();
   }
 
   async createEnrollment(req: Request, res: Response): Promise<void> {
@@ -41,35 +47,44 @@ export class EnrollmentController {
         }
       }
 
-      // if (course.type === "one-on-one") {
-      //   const sessionArray = req.body.sessions as string[];
-      //   delete req.body.sessions;
+      if (course.type === "one-on-one") {
+        const availabilityIdsArray = req.body.availabilityIds as string[];
+        delete req.body.availabilityIds;
+        if (!availabilityIdsArray || availabilityIdsArray.length === 0) {
+          res.status(400).json({ error: "No sessions provided" });
+          return;
+        }
+        const availabilities = await this.externalService.post<
+          AvailabilityDto[]
+        >(
+          "http://localhost:5000/availabilities/check",
+          JSON.stringify({
+            availabilityIds: availabilityIdsArray,
+          })
+        );
 
-      //   for (const sessionId of sessionArray) {
-      //     const session = await this.courseService.getSessionById(sessionId);
-      //     if (!session) {
-      //       res.status(404).json({ error: "Session not found" });
-      //       return;
-      //     }
+        const sessions = generateSessionsFromAvailabilities(availabilities, 4);
+        // console.log("availabilities", availabilities);
+        // console.log("sessions", sessions);
 
-      //     if (session.isReserved) {
-      //       res.status(409).json({
-      //         error: `Session on ${session.date} is already reserved`,
-      //       });
-      //       return;
-      //     }
-
-      //     const enrollmentBody = {
-      //       ...req.body,
-      //       session: session,
-      //     };
-
-      //     await this.enrollmentService.createSessionEnrollment(enrollmentBody);
-      //     session.isReserved = true;
-      //     session.status = "scheduled";
-      //     await this.courseService.updateSession(session);
-      //   }
-      // }
+        const createdSessions = await Promise.all(
+          sessions.map(async (session) => {
+            const sessionData = {
+              ...session,
+              course: course,
+              isReserved: true,
+              status: "scheduled",
+            };
+            const createdSession = await this.courseService.createCourseSession(
+              sessionData
+            );
+            await this.enrollmentService.createSessionEnrollment({
+              studentId: req.body.studentId,
+              session: createdSession,
+            });
+          })
+        );
+      }
 
       const enrollmentBody = {
         ...req.body,
