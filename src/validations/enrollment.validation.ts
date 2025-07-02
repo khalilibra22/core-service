@@ -5,6 +5,11 @@ export const enrollmentValidationsSchema = Joi.object({
     .valid("one-on-one", "live", "group", "prerecorded")
     .required(),
   ownerId: Joi.string().uuid().optional(),
+  sessionsNumber: Joi.alternatives().conditional("type", {
+    is: "one-on-one",
+    then: Joi.number().integer().min(1).required(),
+    otherwise: Joi.forbidden(),
+  }),
   availabilityIds: Joi.alternatives().conditional("type", {
     is: "one-on-one",
     then: Joi.array()

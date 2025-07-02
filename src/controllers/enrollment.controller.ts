@@ -58,11 +58,11 @@ export class EnrollmentController {
           await this.externalService.checkTeacherAvailabilities(
             availabilityIdsArray
           );
-
-        const sessions = generateSessionsFromAvailabilities(availabilities, 4);
-        //console.log("availabilities", availabilities);
-        //console.log("sessions", sessions);
-
+        const sessionsNumber = req.body.sessionsNumber;
+        const sessions = generateSessionsFromAvailabilities(
+          availabilities,
+          sessionsNumber
+        );
         await Promise.all(
           sessions.map(async (session) => {
             const sessionData = {
@@ -80,6 +80,9 @@ export class EnrollmentController {
             });
           })
         );
+        await this.externalService.updateAvailabilitiesStatus(
+          availabilityIdsArray
+        );
       }
 
       const enrollmentBody = {
@@ -88,9 +91,14 @@ export class EnrollmentController {
       };
 
       await this.enrollmentService.createCourseEnrollment(enrollmentBody);
+
       res.status(201).json({ message: "Enrollment created successfully" });
-    } catch (error) {
-      console.error("Error in createEnrollment:", error);
+    } catch (error: any) {
+      if (error.message.includes("Some availabilities are not available")) {
+        res.status(404).json({ error: "Some availabilities not available" });
+        return;
+      }
+
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
@@ -108,8 +116,13 @@ export class EnrollmentController {
         excludeExtraneousValues: true,
       });
       res.status(200).json(enrollmentDtos);
-    } catch (error) {
-      console.error("Error in getCourseEnrollments:", error);
+    } catch (error: any) {
+      if (error.message === "Error fetching user") {
+        res
+          .status(404)
+          .json({ error: "Some availabilities are not available" });
+        return;
+      }
       res.status(500).json({ error: "Internal Server Error" });
     }
   }

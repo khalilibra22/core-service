@@ -47,55 +47,61 @@ export class RestApiSetup {
     return process.env.API_TOKEN || null;
   }
 
-  async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+  async get<T>(
+    url: string,
+    config?: AxiosRequestConfig
+  ): Promise<AxiosResponse<T, any>> {
     const response: AxiosResponse<T> = await this.httpClient.get(url, config);
-    return response.data;
+    return response;
   }
 
   async post<T>(
     url: string,
     data?: any,
     config?: AxiosRequestConfig
-  ): Promise<T> {
+  ): Promise<AxiosResponse<T, any>> {
     const response: AxiosResponse<T> = await this.httpClient.post(
       url,
       data,
       config
     );
-    return response.data;
+    return response;
   }
 
   async put<T>(
     url: string,
     data?: any,
     config?: AxiosRequestConfig
-  ): Promise<T> {
+  ): Promise<AxiosResponse<T, any>> {
     const response: AxiosResponse<T> = await this.httpClient.put(
       url,
       data,
       config
     );
-    return response.data;
+    return response;
   }
 
-  async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+  async delete<T>(
+    url: string,
+    config?: AxiosRequestConfig
+  ): Promise<AxiosResponse<T, any>> {
     const response: AxiosResponse<T> = await this.httpClient.delete(
       url,
       config
     );
-    return response.data;
+    return response;
   }
 
   async patch<T>(
     url: string,
     data?: any,
     config?: AxiosRequestConfig
-  ): Promise<T> {
+  ): Promise<AxiosResponse<T, any>> {
     const response: AxiosResponse<T> = await this.httpClient.patch(
       url,
       data,
       config
     );
-    return response.data;
+    return response;
   }
 }

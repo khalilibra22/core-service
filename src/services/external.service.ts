@@ -13,12 +13,36 @@ export class ExternalService {
   async checkTeacherAvailabilities(
     availabilityIdsArray: string[]
   ): Promise<AvailabilityDto[]> {
-    const availabilities = await this.api.post<AvailabilityDto[]>(
-      "/availabilities/check",
-      JSON.stringify({
-        availabilityIds: availabilityIdsArray,
-      })
-    );
-    return availabilities;
+    try {
+      const response = await this.api.post<AvailabilityDto[]>(
+        "/availabilities/check",
+        JSON.stringify({
+          availabilityIds: availabilityIdsArray,
+        })
+      );
+      if (response.status !== 200) {
+        throw new Error("Failed to fetch availabilities");
+      }
+
+      return response.data;
+    } catch (error) {
+      throw new Error("Some availabilities are not available");
+    }
+  }
+
+  async updateAvailabilitiesStatus(availabilityIds: string[]): Promise<void> {
+    try {
+      const response = await this.api.patch(
+        "/availabilities/bulk-unavailable",
+        JSON.stringify({
+          availabilityIds,
+        })
+      );
+      if (response.status !== 200) {
+        throw new Error("Failed to update availabilities status");
+      }
+    } catch (error) {
+      throw new Error("Failed to update availabilities status");
+    }
   }
 }

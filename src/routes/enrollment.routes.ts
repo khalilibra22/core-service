@@ -11,9 +11,8 @@ const enrollmentController = new EnrollmentController();
 router.get(
   "/teachers/:id/one-on-one-sessions",
   AuthMiddleware.verifyToken,
-  async (req, res) => {
-    await enrollmentController.getOneOnOneEnrollementByTeacherId(req, res);
-  }
+  async (req, res) =>
+    await enrollmentController.getOneOnOneEnrollementByTeacherId(req, res)
 );
 
 router.patch(
