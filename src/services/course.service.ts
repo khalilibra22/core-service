@@ -137,7 +137,7 @@ export class CoursService {
           ownerId: teacherId,
           type: type,
         },
-        relations: ["couresSettings"],
+        relations: ["couresSettings", "enrollments", "sessions"],
       });
     } catch (error) {
       throw new Error("Error fetching courses by teacher ID");
@@ -197,6 +197,14 @@ export class CoursService {
     } catch (error) {
       console.log(error);
       throw new Error("Error fetching all courses of type prerecorded");
+    }
+  }
+
+  async deleteSession(id: string): Promise<void> {
+    try {
+      await this.sessionRepo.softDelete(id);
+    } catch (error: any) {
+      throw new Error("Error deleting session");
     }
   }
 }

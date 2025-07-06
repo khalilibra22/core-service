@@ -116,7 +116,7 @@ export const timeChangeRequestValidationSchema = Joi.object({
 
 export const courseCancellationValidationSchema = Joi.object({
   reasonOfCancellation: Joi.string().required(),
-  canceledBy: Joi.string().uuid({ version: "uuidv4" }).required(),
+  ownerId: Joi.string().uuid().optional(),
 });
 
 export const timeChangeRequestStatusSchema = Joi.object({

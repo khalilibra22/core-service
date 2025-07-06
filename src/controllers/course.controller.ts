@@ -92,6 +92,64 @@ export class CourseController {
     }
   }
 
+  async updateCourseSession(req: Request, res: Response): Promise<void> {
+    try {
+      const courseId = req.params.id;
+      const sessionId = req.params.sessionId;
+
+      const course = await this.courseService.getCourseById(courseId);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+
+      const session = await this.courseService.getSessionById(sessionId);
+      if (!session) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+
+      delete req.body.type, req.body.ownerId; // type and ownerId are not allowed to be updated
+
+      const sessionBody = {
+        id: sessionId,
+        ...session,
+        ...req.body,
+      };
+
+      const sessionu = await this.courseService.updateSession(sessionBody);
+      res.status(200).json({ message: "Session updated successfully" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  async deleteCourseSession(req: Request, res: Response): Promise<void> {
+    try {
+      const courseId = req.params.id;
+      const sessionId = req.params.sessionId;
+
+      const course = await this.courseService.getCourseById(courseId);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+
+      const session = await this.courseService.getSessionById(sessionId);
+      if (!session) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+
+      await this.courseService.deleteSession(sessionId);
+      res.status(204).json({ message: "Session deleted successfully" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
   // create a certificate
   async createCertificate(req: Request, res: Response): Promise<void> {
     try {
@@ -153,7 +211,7 @@ export class CourseController {
         course.couresSettings.isCanceled = true;
         course.couresSettings.reasonOfCancellation =
           req.body.reasonOfCancellation;
-        course.couresSettings.canceledBy = req.body.canceledBy;
+        course.couresSettings.canceledBy = req.body.ownerId;
       }
       await this.courseService.updateCourse(course);
 
@@ -184,7 +242,7 @@ export class CourseController {
     try {
       const id = req.params.id;
       const courseType = req.query.type as string;
-      const courseTypeList = ["one-on-one", "group", "live", "prerecorded"];
+      const courseTypeList = ["group", "live", "prerecorded"];
       if (!courseTypeList.includes(courseType)) {
         res.status(400).json({ error: "Invalid course type" });
         return;

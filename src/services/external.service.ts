@@ -6,7 +6,7 @@ export class ExternalService {
   private baseURL: string;
 
   constructor() {
-    this.baseURL = "http://localhost:5000";
+    this.baseURL = "http://127.0.0.1:5000";
     this.api = new RestApiSetup(this.baseURL);
   }
 
