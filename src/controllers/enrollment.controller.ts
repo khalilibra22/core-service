@@ -4,8 +4,6 @@ import { EnrollmentService } from "../services/enrollment.service";
 import { EnrollmentDto } from "../dtos/enrollment.dto";
 import { plainToInstance } from "class-transformer";
 import { OneOnOneEnollmentDto } from "../dtos/oneOnOneEnrollment.dto";
-import { RestApiSetup } from "../config/restApiSetup";
-import { AvailabilityDto } from "../dtos/availability.dto";
 import { generateSessionsFromAvailabilities } from "../utils";
 import { ExternalService } from "../services/external.service";
 
