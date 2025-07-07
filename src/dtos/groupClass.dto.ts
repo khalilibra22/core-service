@@ -17,22 +17,30 @@ export class GroupClassDto {
   maxParticipants?: number;
 
   @Expose()
-  @Transform(({ obj }) => obj.ownerId)
-  teacherId?: string;
+  @Transform(({ obj }) => obj.enrollments?.length || 0)
+  participantsCount?: number;
+
+  @Expose()
+  @Transform(({ obj }) => obj.sessions[0]?.date || null)
+  startTime?: Date;
 
   @Expose()
   isRemote?: boolean;
 
   @Expose()
-  price?: number | string;
+  price?: number;
 
   @Expose()
   @Transform(({ obj }) => obj.couresSettings?.isPaid)
   isPaid?: boolean;
 
   @Expose()
-  @Transform(({ obj }) => obj.couresSettings?.topicId)
-  topicId?: number;
+  @Transform(() => "to be filled")
+  subject?: string;
+
+  @Expose()
+  @Transform(() => "to be filled")
+  topic?: string;
 
   @Expose()
   @Transform(({ obj }) => obj.couresSettings?.isCanceled)

@@ -55,6 +55,21 @@ router.post(
   async (req, res) => await courseController.createCourseSession(req, res)
 );
 
+//update session
+router.put(
+  "/:id/sessions/:sessionId",
+  AuthMiddleware.verifyToken,
+  ValidationMiddleware.validate(sessionValidationSchema),
+  async (req, res) => await courseController.updateCourseSession(req, res)
+);
+
+// delete session
+router.delete(
+  "/:id/sessions/:sessionId",
+  AuthMiddleware.verifyToken,
+  async (req, res) => await courseController.deleteCourseSession(req, res)
+);
+
 //create a review
 router.post(
   "/:id/reviews",

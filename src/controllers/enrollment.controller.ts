@@ -4,14 +4,18 @@ import { EnrollmentService } from "../services/enrollment.service";
 import { EnrollmentDto } from "../dtos/enrollment.dto";
 import { plainToInstance } from "class-transformer";
 import { OneOnOneEnollmentDto } from "../dtos/oneOnOneEnrollment.dto";
+import { generateSessionsFromAvailabilities } from "../utils";
+import { ExternalService } from "../services/external.service";
 
 export class EnrollmentController {
   private enrollmentService: EnrollmentService;
   private courseService: CoursService;
+  private externalService: ExternalService;
 
   constructor() {
     this.enrollmentService = new EnrollmentService();
     this.courseService = new CoursService();
+    this.externalService = new ExternalService();
   }
 
   async createEnrollment(req: Request, res: Response): Promise<void> {
@@ -27,7 +31,8 @@ export class EnrollmentController {
         res.status(409).json({ error: "Course is canceled" });
         return;
       }
-      delete req.body.type;
+      req.body.studentId = req.body.ownerId;
+      delete req.body.type, req.body.ownerId;
 
       if (course.type === "group" || course.type === "live") {
         if (
@@ -41,33 +46,41 @@ export class EnrollmentController {
       }
 
       if (course.type === "one-on-one") {
-        const sessionArray = req.body.sessions as string[];
-        delete req.body.sessions;
-
-        for (const sessionId of sessionArray) {
-          const session = await this.courseService.getSessionById(sessionId);
-          if (!session) {
-            res.status(404).json({ error: "Session not found" });
-            return;
-          }
-
-          if (session.isReserved) {
-            res.status(409).json({
-              error: `Session on ${session.date} is already reserved`,
-            });
-            return;
-          }
-
-          const enrollmentBody = {
-            ...req.body,
-            session: session,
-          };
-
-          await this.enrollmentService.createSessionEnrollment(enrollmentBody);
-          session.isReserved = true;
-          session.status = "scheduled";
-          await this.courseService.updateSession(session);
+        const availabilityIdsArray = req.body.availabilityIds as string[];
+        delete req.body.availabilityIds;
+        if (!availabilityIdsArray || availabilityIdsArray.length === 0) {
+          res.status(400).json({ error: "No sessions provided" });
+          return;
         }
+        const availabilities =
+          await this.externalService.checkTeacherAvailabilities(
+            availabilityIdsArray
+          );
+        const sessionsNumber = req.body.sessionsNumber;
+        const sessions = generateSessionsFromAvailabilities(
+          availabilities,
+          sessionsNumber
+        );
+        await Promise.all(
+          sessions.map(async (session) => {
+            const sessionData = {
+              ...session,
+              course: course,
+              isReserved: true,
+              status: "scheduled",
+            };
+            const createdSession = await this.courseService.createCourseSession(
+              sessionData
+            );
+            await this.enrollmentService.createSessionEnrollment({
+              studentId: req.body.studentId,
+              session: createdSession,
+            });
+          })
+        );
+        await this.externalService.updateAvailabilitiesStatus(
+          availabilityIdsArray
+        );
       }
 
       const enrollmentBody = {
@@ -76,9 +89,14 @@ export class EnrollmentController {
       };
 
       await this.enrollmentService.createCourseEnrollment(enrollmentBody);
+
       res.status(201).json({ message: "Enrollment created successfully" });
-    } catch (error) {
-      console.error("Error in createEnrollment:", error);
+    } catch (error: any) {
+      if (error.message.includes("Some availabilities are not available")) {
+        res.status(404).json({ error: "Some availabilities not available" });
+        return;
+      }
+
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
@@ -96,8 +114,13 @@ export class EnrollmentController {
         excludeExtraneousValues: true,
       });
       res.status(200).json(enrollmentDtos);
-    } catch (error) {
-      console.error("Error in getCourseEnrollments:", error);
+    } catch (error: any) {
+      if (error.message === "Error fetching user") {
+        res
+          .status(404)
+          .json({ error: "Some availabilities are not available" });
+        return;
+      }
       res.status(500).json({ error: "Internal Server Error" });
     }
   }

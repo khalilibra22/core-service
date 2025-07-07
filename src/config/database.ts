@@ -1,4 +1,14 @@
 import { DataSource } from "typeorm";
+import { CourseModel } from "../models/course.model";
+import { CourseEnrollmentModel } from "../models/courseEnrollment.model";
+import { ComplaintModel } from "../models/complaint.model";
+import { CertificateModel } from "../models/certificate.model";
+import { CourseSettingsModel } from "../models/courseSettings.model";
+import { ReviewModel } from "../models/review.model";
+import { SessionModel } from "../models/session.model";
+import { SessionEnrollmentModel } from "../models/sessionEnrollment.model";
+import { SessionTimeChangeRequestModel } from "../models/sessionTimeChangeRequest.model";
+import { SettingsModel } from "../models/settings.model";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -8,7 +18,18 @@ export const AppDataSource = new DataSource({
   password: "AVNS_0vhpVNq82FydIBgv2ow",
   database: "course-service-db",
   ssl: { rejectUnauthorized: false },
-  entities: ["src/models/**/*.ts", "dist/models/**/*.js"],
+  entities: [
+    CourseModel,
+    CourseEnrollmentModel,
+    ComplaintModel,
+    CertificateModel,
+    CourseSettingsModel,
+    ReviewModel,
+    SessionModel,
+    SessionEnrollmentModel,
+    SessionTimeChangeRequestModel,
+    SettingsModel,
+  ],
   synchronize: true,
 });
 

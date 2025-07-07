@@ -26,6 +26,7 @@ class AuthMiddleware {
       }
 
       const decoded = await AuthMiddleware.decodeToken(token);
+      req.body.ownerId = decoded.id; // Assuming the token contains an 'id' field
       next();
     } catch (error) {
       res.status(401).json({ message: "Invalid or expired token" });

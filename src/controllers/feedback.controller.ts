@@ -20,6 +20,8 @@ export class FeedbackController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
+      req.body.studentId = req.body.ownerId;
+      delete req.body.ownerId;
       const reviewBody = {
         ...req.body,
         course: course,
@@ -49,6 +51,8 @@ export class FeedbackController {
         res.status(404).json({ error: "Session not found" });
         return;
       }
+      req.body.studentId = req.body.ownerId;
+      delete req.body.ownerId;
 
       const complaintBody = {
         ...req.body,
@@ -77,7 +81,7 @@ export class FeedbackController {
         return;
       }
       if (complaint.status === "resolved") {
-        res.status(400).json({ error: "Complaint already resolved" });
+        res.status(409).json({ error: "Complaint already resolved" });
         return;
       }
       complaint.status = req.body.status;
@@ -104,6 +108,8 @@ export class FeedbackController {
         res.status(404).json({ error: "Complaint not found" });
         return;
       }
+      req.body.resolvedBy = req.body.ownerId; // Assuming the resolver is the owner
+      delete req.body.ownerId;
       const complaintBody = {
         ...complaint,
         ...req.body,

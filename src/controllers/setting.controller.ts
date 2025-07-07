@@ -9,6 +9,7 @@ export class SettingController {
   async createOrUpdateSettings(req: Request, res: Response): Promise<void> {
     try {
       const settings = await this.settingService.getSettingsById(1);
+      delete req.body.ownerId;
       let settingsBody = req.body;
       if (settings) {
         settingsBody = { id: 1, ...req.body };

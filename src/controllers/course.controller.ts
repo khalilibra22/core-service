@@ -49,6 +49,7 @@ export class CourseController {
           excludeExtraneousValues: false,
         }
       );
+      delete req.body.ownerId; // ownerId is not allowed to be updated
       const courseFromBody = plainToInstance(CourseModel, req.body, {
         excludeExtraneousValues: false,
       });
@@ -73,12 +74,11 @@ export class CourseController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
-      console.log(course.type, req.body.type);
       if (course.type !== req.body.type) {
         res.status(400).json({ error: "Invalid session type" });
         return;
       }
-      delete req.body.type;
+      delete req.body.type, req.body.ownerId; // type and ownerId are not allowed to be updated
       const sessionBody = {
         ...req.body,
         course: course,
@@ -86,6 +86,64 @@ export class CourseController {
       const session = await this.courseService.createCourseSession(sessionBody);
       const sessionDto = getSessionDto(session, course.type ?? "session");
       res.status(201).json(sessionDto);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  async updateCourseSession(req: Request, res: Response): Promise<void> {
+    try {
+      const courseId = req.params.id;
+      const sessionId = req.params.sessionId;
+
+      const course = await this.courseService.getCourseById(courseId);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+
+      const session = await this.courseService.getSessionById(sessionId);
+      if (!session) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+
+      delete req.body.type, req.body.ownerId; // type and ownerId are not allowed to be updated
+
+      const sessionBody = {
+        id: sessionId,
+        ...session,
+        ...req.body,
+      };
+
+      const sessionu = await this.courseService.updateSession(sessionBody);
+      res.status(200).json({ message: "Session updated successfully" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  async deleteCourseSession(req: Request, res: Response): Promise<void> {
+    try {
+      const courseId = req.params.id;
+      const sessionId = req.params.sessionId;
+
+      const course = await this.courseService.getCourseById(courseId);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+
+      const session = await this.courseService.getSessionById(sessionId);
+      if (!session) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+
+      await this.courseService.deleteSession(sessionId);
+      res.status(204).json({ message: "Session deleted successfully" });
     } catch (error) {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
@@ -100,6 +158,7 @@ export class CourseController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
+      delete req.body.ownerId;
       const certificateBody = {
         ...req.body,
         course: course,
@@ -152,7 +211,7 @@ export class CourseController {
         course.couresSettings.isCanceled = true;
         course.couresSettings.reasonOfCancellation =
           req.body.reasonOfCancellation;
-        course.couresSettings.canceledBy = req.body.canceledBy;
+        course.couresSettings.canceledBy = req.body.ownerId;
       }
       await this.courseService.updateCourse(course);
 
@@ -173,6 +232,7 @@ export class CourseController {
       const courseDto = getCourseDto(course, course.type ?? "minimal");
       res.status(200).json(courseDto);
     } catch (error) {
+      console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
@@ -182,7 +242,7 @@ export class CourseController {
     try {
       const id = req.params.id;
       const courseType = req.query.type as string;
-      const courseTypeList = ["one-on-one", "group", "live", "prerecorded"];
+      const courseTypeList = ["group", "live", "prerecorded"];
       if (!courseTypeList.includes(courseType)) {
         res.status(400).json({ error: "Invalid course type" });
         return;

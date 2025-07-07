@@ -4,8 +4,8 @@ export class SessionTimeChangeRequestDto {
   @Expose()
   id?: string;
 
-  @Expose()
-  userId?: string;
+  // @Expose()
+  // userId?: string;
 
   @Expose()
   @Transform(() => "to be filled")

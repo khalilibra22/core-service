@@ -17,16 +17,20 @@ export class LiveCourseDto {
   maxParticipants?: number;
 
   @Expose()
-  //@Transform(({ obj }) => obj.ownerId)
-  ownerId?: string;
+  @Transform(({ obj }) => obj.enrollments?.length || 0)
+  participantsCount?: number;
 
   @Expose()
-  @Transform(({ obj }) => obj.enrollments.length ?? undefined)
+  @Transform(({ obj }) => obj.sessions[0]?.date || null)
+  startTime?: Date;
+
+  @Expose()
+  @Transform(({ obj }) => obj.enrollments?.length ?? undefined)
   enrollmentsNumber?: number;
 
   @Expose()
   @Transform(({ obj }) => obj.instructorId ?? undefined)
-  instructorId?: string;
+  instructor?: string;
 
   @Expose()
   isRemote?: boolean;
@@ -55,8 +59,12 @@ export class LiveCourseDto {
   thumbnailUrl?: string;
 
   @Expose()
-  @Transform(({ obj }) => obj.couresSettings?.topicId)
-  topicId?: number;
+  @Transform(() => "to be filled")
+  subject?: string;
+
+  @Expose()
+  @Transform(() => "to be filled")
+  topic?: string;
 
   @Expose()
   @Transform(({ obj }) => obj.couresSettings?.objectives)
