@@ -11,6 +11,9 @@ export class PrerecordedCourseDto {
   type?: string;
 
   @Expose()
+  status?: string;
+
+  @Expose()
   description?: string;
 
   @Expose()

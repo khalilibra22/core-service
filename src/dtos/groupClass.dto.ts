@@ -11,6 +11,9 @@ export class GroupClassDto {
   type?: string;
 
   @Expose()
+  status?: string;
+
+  @Expose()
   description?: string;
 
   @Expose()
@@ -21,7 +24,7 @@ export class GroupClassDto {
   participantsCount?: number;
 
   @Expose()
-  @Transform(({ obj }) => obj.sessions[0]?.date || null)
+  @Transform(({ obj }) => obj.sessions?.[0]?.date || null)
   startTime?: Date;
 
   @Expose()
