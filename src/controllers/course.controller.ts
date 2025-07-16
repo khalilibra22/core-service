@@ -67,6 +67,48 @@ export class CourseController {
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
+
+  async updateDraftCourse(req: Request, res: Response): Promise<void> {
+    try {
+      const id = req.params.id;
+      const course = await this.courseService.getCourseById(req.params.id);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+      if (course.status !== "draft") {
+        res.status(409).json({ error: "Course is not in draft status" });
+        return;
+      }
+      if (course.type !== req.body.type) {
+        res.status(400).json({ error: "Course type cannot be changed" });
+        return;
+      }
+      const courseSettingsFromBody = plainToInstance(
+        CourseSettingsModel,
+        req.body,
+        {
+          excludeExtraneousValues: false,
+        }
+      );
+      delete req.body.ownerId; // ownerId is not allowed to be updated
+      const courseFromBody = plainToInstance(CourseModel, req.body, {
+        excludeExtraneousValues: false,
+      });
+
+      const courseBody = {
+        id: id,
+        ...course,
+        ...courseFromBody,
+        couresSettings: { ...course.couresSettings, ...courseSettingsFromBody },
+      };
+      await this.courseService.updateCourse(courseBody);
+      res.status(200).json({ message: "Course updated successfully" });
+    } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
   async createCourseSession(req: Request, res: Response): Promise<void> {
     try {
       const course = await this.courseService.getCourseById(req.params.id);

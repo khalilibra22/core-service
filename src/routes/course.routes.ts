@@ -41,6 +41,13 @@ router.put(
   async (req, res) => await courseController.updateCourse(req, res)
 );
 
+router.put(
+  "/:id/draft",
+  AuthMiddleware.verifyToken,
+  ValidationMiddleware.validate(courseValidationSchema),
+  async (req, res) => await courseController.updateDraftCourse(req, res)
+);
+
 // get course by id
 router.get(
   "/:id/details",
