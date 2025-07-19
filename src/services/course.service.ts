@@ -207,4 +207,12 @@ export class CoursService {
       throw new Error("Error deleting session");
     }
   }
+
+  async deleteCourse(id: string): Promise<void> {
+    try {
+      await this.courseRepo.softDelete(id);
+    } catch (error: any) {
+      throw new Error("Error deleting course");
+    }
+  }
 }

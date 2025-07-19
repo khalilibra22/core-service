@@ -12,6 +12,9 @@ export class SessionDto {
   date?: Date;
 
   @Expose()
+  title?: string;
+
+  @Expose()
   duration?: number;
 
   @Expose()
@@ -28,8 +31,6 @@ export class SessionDto {
 
   @Expose()
   status?: string;
-
-  title?: string;
 
   url?: string;
 

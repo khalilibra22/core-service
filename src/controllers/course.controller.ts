@@ -343,4 +343,20 @@ export class CourseController {
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
+
+  async deleteCourse(req: Request, res: Response): Promise<void> {
+    try {
+      const id = req.params.id;
+      const course = await this.courseService.getCourseById(id);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+      await this.courseService.deleteCourse(id);
+      res.status(204).send();
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
 }

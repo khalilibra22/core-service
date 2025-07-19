@@ -47,6 +47,9 @@ export class CourseModel {
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
   price?: number;
 
+  @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
+  sellingPrice?: number;
+
   @OneToOne(
     () => CourseSettingsModel,
     (courseSettings) => courseSettings.course,

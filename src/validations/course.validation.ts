@@ -14,6 +14,7 @@ const sharedFields = {
   topicId: Joi.number().required(),
   isPaid: Joi.boolean().required(),
   price: Joi.number().min(0).required(),
+  sellingPrice: Joi.number().min(0).required(),
   isRemote: Joi.boolean().required(),
   ownerId: Joi.string().uuid().optional(),
 };

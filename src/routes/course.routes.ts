@@ -48,6 +48,13 @@ router.put(
   async (req, res) => await courseController.updateDraftCourse(req, res)
 );
 
+//delete course
+router.delete(
+  "/:id",
+  AuthMiddleware.verifyToken,
+  async (req, res) => await courseController.deleteCourse(req, res)
+);
+
 // get course by id
 router.get(
   "/:id/details",
