@@ -34,6 +34,9 @@ export class GroupClassDto {
   price?: number;
 
   @Expose()
+  sellingPrice?: number;
+
+  @Expose()
   @Transform(({ obj }) => obj.couresSettings?.isPaid)
   isPaid?: boolean;
 

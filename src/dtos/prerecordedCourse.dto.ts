@@ -25,7 +25,10 @@ export class PrerecordedCourseDto {
   instructorId?: string;
 
   @Expose()
-  price?: number | string;
+  price?: number;
+
+  @Expose()
+  sellingPrice?: number;
 
   @Expose()
   @Transform(({ obj }) => obj.enrollments?.length ?? undefined)

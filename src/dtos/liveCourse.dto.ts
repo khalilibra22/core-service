@@ -39,7 +39,10 @@ export class LiveCourseDto {
   isRemote?: boolean;
 
   @Expose()
-  price?: number | string;
+  price?: number;
+
+  @Expose()
+  sellingPrice?: number;
 
   @Expose()
   @Transform(({ obj }) => obj.couresSettings?.isPaid)
@@ -92,6 +95,16 @@ export class LiveCourseDto {
   @Expose()
   @Transform(({ obj }) => obj.couresSettings?.certificateShippingType)
   certificateShippingType?: string;
+
+  @Expose()
+  @Transform(({ obj }) => obj.couresSettings?.accordinationNumber)
+  accordinationNumber?: string;
+
+  @Expose()
+  @Transform(
+    ({ obj }) => obj.couresSettings?.internationalAccordingOrganization
+  )
+  internationalAccordingOrganization?: string;
 
   @Expose()
   @Transform(({ obj }) => obj.couresSettings?.grade)
