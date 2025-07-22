@@ -50,6 +50,12 @@ export class CourseSettingsModel {
   @Column({ nullable: true, name: "certificate_shipping_type" })
   certificateShippingType?: string;
 
+  @Column({ nullable: true, name: "international_according_organization" })
+  internationalAccordingOrganization?: string;
+
+  @Column({ nullable: true, name: "accordination_number" })
+  accordinationNumber?: string;
+
   @Column({ nullable: true })
   grade?: string;
 

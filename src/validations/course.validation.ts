@@ -40,8 +40,26 @@ const liveSchema = Joi.object({
   prerequisites: Joi.array().items(Joi.string()).required(),
   targetAudience: Joi.array().items(Joi.string()).required(),
   isCertified: Joi.boolean().required(),
-  certificateType: Joi.string().required(),
-  certificateShippingType: Joi.string().required(),
+  certificateType: Joi.string().when("isCertified", {
+    is: true,
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  internationalAccordingOrganization: Joi.string().when("isCertified", {
+    is: true,
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  accordinationNumber: Joi.string().when("isCertified", {
+    is: true,
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  certificateShippingType: Joi.string().when("isCertified", {
+    is: true,
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
 });
 
 // Prerecorded schema
