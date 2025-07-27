@@ -1,0 +1,59 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
+} from "typeorm";
+import { CourseModel } from "./course.model";
+import { QuestionModel } from "./question.model";
+import { QuizAttemptModel } from "./quizAttempt.model";
+
+@Entity("quizzes")
+export class QuizModel {
+  @PrimaryGeneratedColumn("uuid")
+  id?: string;
+
+  @Column()
+  title?: string;
+
+  @Column({ type: "text", nullable: true })
+  description?: string;
+
+  @Column({ type: "int", default: 10 })
+  timeLimit?: number; // in minutes
+
+  @Column({ type: "int", default: 1 })
+  maxAttempts?: number;
+
+  @Column({ type: "decimal", precision: 5, scale: 2, default: 0 })
+  passingScore?: number;
+
+  @Column({ default: true, name: "is_active" })
+  isActive?: boolean;
+
+  @ManyToOne(() => CourseModel, (course) => course.quizzes)
+  course?: CourseModel;
+
+  @OneToMany(() => QuestionModel, (question) => question.quiz)
+  questions?: QuestionModel[];
+
+  @OneToMany(() => QuizAttemptModel, (attempt) => attempt.quiz, {
+    cascade: true,
+  })
+  attempts?: QuizAttemptModel[];
+
+  @CreateDateColumn({ type: "timestamp" })
+  createdAt?: Date;
+
+  @UpdateDateColumn({
+    type: "timestamp",
+  })
+  updatedAt?: Date;
+
+  @DeleteDateColumn({ type: "timestamp", nullable: true })
+  deletedAt?: Date;
+}

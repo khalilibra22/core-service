@@ -9,6 +9,10 @@ import { SessionModel } from "../models/session.model";
 import { SessionEnrollmentModel } from "../models/sessionEnrollment.model";
 import { SessionTimeChangeRequestModel } from "../models/sessionTimeChangeRequest.model";
 import { SettingsModel } from "../models/settings.model";
+import { QuizModel } from "../models/quiz.model";
+import { AnswerModel } from "../models/answer.model";
+import { QuestionModel } from "../models/question.model";
+import { QuizAttemptModel } from "../models/quizAttempt.model";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -29,6 +33,10 @@ export const AppDataSource = new DataSource({
     SessionEnrollmentModel,
     SessionTimeChangeRequestModel,
     SettingsModel,
+    QuizModel,
+    QuizAttemptModel,
+    QuestionModel,
+    AnswerModel,
   ],
   synchronize: true,
 });
