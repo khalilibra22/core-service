@@ -19,4 +19,7 @@ export class RecordedSessionDto {
 
   @Expose()
   videoUrl?: string;
+
+  @Expose()
+  attachmentUrls?: string[];
 }

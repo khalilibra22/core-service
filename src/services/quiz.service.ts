@@ -1,0 +1,124 @@
+import { AppDataSource } from "../config/database";
+import { AnswerModel } from "../models/answer.model";
+import { QuestionModel } from "../models/question.model";
+import { QuizModel } from "../models/quiz.model";
+import { QuizAttemptModel } from "../models/quizAttempt.model";
+
+export class QuizService {
+  quizRepo: any;
+  questionRepo: any;
+  answerRepo: any;
+  quizAttemptRepo: any;
+
+  constructor() {
+    this.quizRepo = AppDataSource.getRepository(QuizModel);
+    this.questionRepo = AppDataSource.getRepository(QuestionModel);
+    this.answerRepo = AppDataSource.getRepository(AnswerModel);
+    this.quizAttemptRepo = AppDataSource.getRepository(QuizAttemptModel);
+  }
+
+  async createQuiz(quiz: QuizModel): Promise<QuizModel> {
+    try {
+      return await this.quizRepo.save(quiz);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error creating quiz");
+    }
+  }
+
+  async updateQuiz(quiz: QuizModel): Promise<void> {
+    try {
+      await this.quizRepo.save(quiz);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error updating quiz");
+    }
+  }
+
+  async createQuestion(question: QuestionModel): Promise<QuestionModel> {
+    try {
+      return await this.questionRepo.save(question);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error creating question");
+    }
+  }
+
+  async updateQuestion(question: QuestionModel): Promise<void> {
+    try {
+      await this.questionRepo.save(question);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error updating question");
+    }
+  }
+
+  async deleteQuestion(questionId: string): Promise<void> {
+    try {
+      await this.questionRepo.softDelete(questionId);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error deleting question");
+    }
+  }
+
+  async createAnswer(answer: AnswerModel): Promise<AnswerModel> {
+    try {
+      return await this.answerRepo.save(answer);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error creating answer");
+    }
+  }
+
+  async createQuizAttempt(
+    quizAttempt: QuizAttemptModel
+  ): Promise<QuizAttemptModel> {
+    try {
+      return await this.quizAttemptRepo.save(quizAttempt);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error creating quiz attempt");
+    }
+  }
+
+  async getQuizById(quizId: string): Promise<QuizModel | null> {
+    try {
+      return await this.quizRepo.findOneBy({ id: quizId });
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error fetching quiz by ID");
+    }
+  }
+
+  async deleteQuiz(quizId: string): Promise<void> {
+    try {
+      await this.quizRepo.softDelete(quizId);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error deleting quiz");
+    }
+  }
+
+  async getQuestionById(questionId: string): Promise<QuestionModel | null> {
+    try {
+      return await this.questionRepo.findOneBy({ id: questionId });
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error fetching question by ID");
+    }
+  }
+
+  async getCourseQuizzes(courseId: string): Promise<QuizModel[]> {
+    try {
+      return await this.quizRepo.find({
+        where: { course: { id: courseId } },
+        relations: ["questions"],
+        order: { order: "ASC" },
+      });
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error fetching course quizzes");
+    }
+  }
+}

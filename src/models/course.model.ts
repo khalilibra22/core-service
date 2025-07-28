@@ -14,6 +14,7 @@ import { ReviewModel } from "./review.model";
 import { CertificateModel } from "./certificate.model";
 import { SessionModel } from "./session.model";
 import { CourseEnrollmentModel } from "./courseEnrollment.model";
+import { QuizModel } from "./quiz.model";
 
 @Entity("courses")
 export class CourseModel {
@@ -50,6 +51,12 @@ export class CourseModel {
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
   sellingPrice?: number;
 
+  @Column({ default: false, name: "coupon_applicable" })
+  couponApplicable?: boolean;
+
+  @Column({ nullable: true })
+  language?: string;
+
   @OneToOne(
     () => CourseSettingsModel,
     (courseSettings) => courseSettings.course,
@@ -72,6 +79,9 @@ export class CourseModel {
 
   @OneToMany(() => CertificateModel, (certificate) => certificate.course)
   certificates?: CertificateModel[];
+
+  @OneToMany(() => QuizModel, (quiz) => quiz.course)
+  quizzes?: QuizModel[];
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;

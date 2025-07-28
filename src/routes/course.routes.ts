@@ -18,6 +18,8 @@ import {
 } from "../validations/feedback.validation";
 import { enrollmentValidationsSchema } from "../validations/enrollment.validation";
 import { AuthMiddleware } from "../utils/auth.middleware";
+import { QuizController } from "../controllers/Quiz.controller";
+import { quizValidation } from "../validations/quiz.validation";
 
 const router = express.Router();
 
@@ -25,6 +27,7 @@ const courseController = new CourseController();
 const feedbackController = new FeedbackController();
 const enrollmentController = new EnrollmentController();
 const sessionTimeRequestController = new SessionTimeRequestController();
+const quizController = new QuizController();
 
 router.post(
   "/",
@@ -90,6 +93,13 @@ router.post(
   AuthMiddleware.verifyToken,
   ValidationMiddleware.validate(reviewValdationSchema),
   async (req, res) => await feedbackController.createReview(req, res)
+);
+
+//get course reviews
+router.get(
+  "/:id/reviews",
+  AuthMiddleware.verifyToken,
+  async (req, res) => await feedbackController.getReviewsByCourseId(req, res)
 );
 
 //create a complaint
@@ -168,6 +178,36 @@ router.get(
   "/prerecorded",
   AuthMiddleware.verifyToken,
   async (req, res) => await courseController.getAllPrerecordedCourses(req, res)
+);
+
+// Create quiz
+router.post(
+  "/:id/quizzes",
+  AuthMiddleware.verifyToken,
+  ValidationMiddleware.validate(quizValidation),
+  async (req, res) => await quizController.createQuiz(req, res)
+);
+
+// Update quiz
+router.put(
+  "/:id/quizzes/:quizId",
+  AuthMiddleware.verifyToken,
+  ValidationMiddleware.validate(quizValidation),
+  async (req, res) => await quizController.updateQuiz(req, res)
+);
+
+// Delete quiz
+router.delete(
+  "/:id/quizzes/:quizId",
+  AuthMiddleware.verifyToken,
+  async (req, res) => await quizController.deleteQuiz(req, res)
+);
+
+// Get course quizzes
+router.get(
+  "/:id/quizzes",
+  AuthMiddleware.verifyToken,
+  async (req, res) => await quizController.getCourseQuizzes(req, res)
 );
 
 export { router as courseRouter };

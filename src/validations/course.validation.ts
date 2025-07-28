@@ -16,6 +16,8 @@ const sharedFields = {
   price: Joi.number().min(0).required(),
   sellingPrice: Joi.number().min(0).required(),
   isRemote: Joi.boolean().required(),
+  couponApplicable: Joi.boolean().required(),
+  language: Joi.string().optional(),
   ownerId: Joi.string().uuid().optional(),
 };
 
@@ -101,6 +103,7 @@ const prerecordedSessionSchema = Joi.object({
   description: Joi.string().required(),
   ordering: Joi.number().integer().min(1).required(),
   video: Joi.object().optional(),
+  attachmentUrls: Joi.array().items(Joi.string().uri()).optional(),
   ownerId: Joi.string().uuid().optional(),
 });
 

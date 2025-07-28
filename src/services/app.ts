@@ -6,6 +6,7 @@ import { feedbackRouter } from "../routes/feedback.routes";
 import { sessionTimeRequestRouter } from "../routes/sessionTimeRequest.routes";
 import { enrollmentRouter } from "../routes/enrollment.routes";
 import { settingRouter } from "../routes/setting.routes";
+import { quizRouter } from "../routes/quiz.routes";
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use("/feedbacks", feedbackRouter);
 app.use("/session-time-requests", sessionTimeRequestRouter);
 app.use("/enrollments", enrollmentRouter);
 app.use("/settings", settingRouter);
+app.use("/quizzes", quizRouter);
 
 app.get("/", async (req: Request, res: Response) => {
   res.send("running !");
