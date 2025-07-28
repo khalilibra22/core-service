@@ -203,4 +203,11 @@ router.delete(
   async (req, res) => await quizController.deleteQuiz(req, res)
 );
 
+// Get course quizzes
+router.get(
+  "/:id/quizzes",
+  AuthMiddleware.verifyToken,
+  async (req, res) => await quizController.getCourseQuizzes(req, res)
+);
+
 export { router as courseRouter };

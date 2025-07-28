@@ -108,4 +108,17 @@ export class QuizService {
       throw new Error("Error fetching question by ID");
     }
   }
+
+  async getCourseQuizzes(courseId: string): Promise<QuizModel[]> {
+    try {
+      return await this.quizRepo.find({
+        where: { course: { id: courseId } },
+        relations: ["questions"],
+        order: { order: "ASC" },
+      });
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error fetching course quizzes");
+    }
+  }
 }

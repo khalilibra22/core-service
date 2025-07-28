@@ -150,4 +150,24 @@ export class QuizController {
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
+
+  async getCourseQuizzes(req: Request, res: Response): Promise<void> {
+    try {
+      const id = req.params.id;
+      const course = await this.courseService.getCourseById(id);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+      const quizzes = await this.quizService.getCourseQuizzes(id);
+
+      const quizDtos = plainToInstance(QuizDto, quizzes, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(quizDtos);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
 }

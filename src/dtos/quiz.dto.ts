@@ -1,4 +1,5 @@
-import { Expose } from "class-transformer";
+import { Expose, Type } from "class-transformer";
+import { QuestionDto } from "./question.dto";
 
 export class QuizDto {
   @Expose()
@@ -12,4 +13,8 @@ export class QuizDto {
 
   @Expose()
   order?: number;
+
+  @Expose()
+  @Type(() => QuestionDto)
+  questions?: QuestionDto[];
 }
