@@ -32,6 +32,9 @@ export class QuizModel {
   @Column({ type: "decimal", precision: 5, scale: 2, default: 0 })
   passingScore?: number;
 
+  @Column({ type: "int", default: 0 })
+  order?: number;
+
   @Column({ default: true, name: "is_active" })
   isActive?: boolean;
 

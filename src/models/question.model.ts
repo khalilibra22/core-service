@@ -20,6 +20,7 @@ export class QuestionModel {
   @Column({
     type: "enum",
     enum: ["multiple-choice", "true-false"],
+    default: "multiple-choice",
   })
   type?: string;
 
@@ -29,11 +30,6 @@ export class QuestionModel {
   @Column({ type: "text", nullable: true })
   explanation?: string;
 
-  @ManyToOne(() => QuizModel, (quiz) => quiz.questions, {
-    onDelete: "CASCADE",
-  })
-  quiz?: QuizModel;
-
   @Column({ type: "json", nullable: true })
   options?: string[]; // For multiple-choice questions
 
@@ -42,6 +38,11 @@ export class QuestionModel {
 
   @Column({ type: "text", nullable: true })
   answer?: string;
+
+  @ManyToOne(() => QuizModel, (quiz) => quiz.questions, {
+    onDelete: "CASCADE",
+  })
+  quiz?: QuizModel;
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;

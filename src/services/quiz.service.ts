@@ -26,12 +26,39 @@ export class QuizService {
     }
   }
 
+  async updateQuiz(quiz: QuizModel): Promise<void> {
+    try {
+      await this.quizRepo.save(quiz);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error updating quiz");
+    }
+  }
+
   async createQuestion(question: QuestionModel): Promise<QuestionModel> {
     try {
       return await this.questionRepo.save(question);
     } catch (error) {
       console.error(error);
       throw new Error("Error creating question");
+    }
+  }
+
+  async updateQuestion(question: QuestionModel): Promise<void> {
+    try {
+      await this.questionRepo.save(question);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error updating question");
+    }
+  }
+
+  async deleteQuestion(questionId: string): Promise<void> {
+    try {
+      await this.questionRepo.softDelete(questionId);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error deleting question");
     }
   }
 
@@ -52,6 +79,33 @@ export class QuizService {
     } catch (error) {
       console.error(error);
       throw new Error("Error creating quiz attempt");
+    }
+  }
+
+  async getQuizById(quizId: string): Promise<QuizModel | null> {
+    try {
+      return await this.quizRepo.findOneBy({ id: quizId });
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error fetching quiz by ID");
+    }
+  }
+
+  async deleteQuiz(quizId: string): Promise<void> {
+    try {
+      await this.quizRepo.softDelete(quizId);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error deleting quiz");
+    }
+  }
+
+  async getQuestionById(questionId: string): Promise<QuestionModel | null> {
+    try {
+      return await this.questionRepo.findOneBy({ id: questionId });
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error fetching question by ID");
     }
   }
 }
