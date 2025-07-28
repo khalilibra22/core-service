@@ -51,6 +51,9 @@ export class SessionModel {
   @Column({ name: "video_url", nullable: true })
   videoUrl?: string; // URL for the recorded session (if applicable)
 
+  @Column({ name: "attachment_urls", type: "json", nullable: true })
+  attachmentUrls?: string[]; // Array of document/image URLs
+
   @Column({ nullable: true })
   status?: string; //  "unreserved" : default status, "unscheduled", "scheduled", "canceled", "completed"
 

@@ -31,6 +31,12 @@ export class PrerecordedCourseDto {
   sellingPrice?: number;
 
   @Expose()
+  couponApplicable?: boolean;
+
+  @Expose()
+  language?: string;
+
+  @Expose()
   @Transform(({ obj }) => obj.enrollments?.length ?? undefined)
   enrollmentsNumber?: number;
 

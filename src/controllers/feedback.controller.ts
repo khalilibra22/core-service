@@ -201,4 +201,22 @@ export class FeedbackController {
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
+
+  async getReviewsByCourseId(req: Request, res: Response): Promise<void> {
+    try {
+      const courseId = req.params.id;
+      const course = await this.courseService.getCourseById(courseId);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+      const reviews = await this.feedbackService.getReviewsByCourseId(courseId);
+      const reviewDtos = plainToInstance(ReviewDto, reviews, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(reviewDtos);
+    } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
 }

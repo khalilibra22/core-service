@@ -95,6 +95,13 @@ router.post(
   async (req, res) => await feedbackController.createReview(req, res)
 );
 
+//get course reviews
+router.get(
+  "/:id/reviews",
+  AuthMiddleware.verifyToken,
+  async (req, res) => await feedbackController.getReviewsByCourseId(req, res)
+);
+
 //create a complaint
 router.post(
   "/:id/sessions/:sessionId/complaints/",

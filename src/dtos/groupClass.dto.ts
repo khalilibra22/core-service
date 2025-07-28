@@ -37,8 +37,14 @@ export class GroupClassDto {
   sellingPrice?: number;
 
   @Expose()
+  couponApplicable?: boolean;
+
+  @Expose()
   @Transform(({ obj }) => obj.couresSettings?.isPaid)
   isPaid?: boolean;
+
+  @Expose()
+  language?: string;
 
   @Expose()
   @Transform(() => "to be filled")

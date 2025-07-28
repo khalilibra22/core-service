@@ -45,6 +45,12 @@ export class LiveCourseDto {
   sellingPrice?: number;
 
   @Expose()
+  couponApplicable?: boolean;
+
+  @Expose()
+  language?: string;
+
+  @Expose()
   @Transform(({ obj }) => obj.couresSettings?.isPaid)
   isPaid?: boolean;
 

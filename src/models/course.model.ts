@@ -51,6 +51,12 @@ export class CourseModel {
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
   sellingPrice?: number;
 
+  @Column({ default: false, name: "coupon_applicable" })
+  couponApplicable?: boolean;
+
+  @Column({ nullable: true })
+  language?: string;
+
   @OneToOne(
     () => CourseSettingsModel,
     (courseSettings) => courseSettings.course,
