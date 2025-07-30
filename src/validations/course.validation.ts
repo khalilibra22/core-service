@@ -102,7 +102,7 @@ const prerecordedSessionSchema = Joi.object({
   title: Joi.string().required(),
   description: Joi.string().required(),
   ordering: Joi.number().integer().min(1).required(),
-  video: Joi.object().optional(),
+  videoUrl: Joi.string().uri().optional(),
   attachmentUrls: Joi.array().items(Joi.string().uri()).optional(),
   ownerId: Joi.string().uuid().optional(),
 });
