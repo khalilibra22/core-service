@@ -13,13 +13,4 @@ export class RecordedSessionDto {
 
   @Expose()
   description?: string;
-
-  @Expose()
-  ordering?: number;
-
-  @Expose()
-  videoUrl?: string;
-
-  @Expose()
-  attachmentUrls?: string[];
 }

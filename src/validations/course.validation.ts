@@ -101,9 +101,6 @@ const prerecordedSessionSchema = Joi.object({
   type: Joi.string().valid("prerecorded").required(),
   title: Joi.string().required(),
   description: Joi.string().required(),
-  ordering: Joi.number().integer().min(1).required(),
-  videoUrl: Joi.string().uri().optional(),
-  attachmentUrls: Joi.array().items(Joi.string().uri()).optional(),
   ownerId: Joi.string().uuid().optional(),
 });
 
@@ -145,3 +142,25 @@ export const timeChangeRequestStatusSchema = Joi.object({
   status: Joi.string().valid("approved", "rejected").required(),
   ownerId: Joi.string().uuid().optional(),
 });
+
+export const lessonValidationSchema = Joi.alternatives()
+  .try(
+    Joi.object({
+      title: Joi.string().required(),
+      description: Joi.string().optional(),
+      type: Joi.string().valid("video").required(),
+      videoUrl: Joi.string().uri().required(),
+      ownerId: Joi.string().uuid().optional(),
+    }),
+    Joi.object({
+      title: Joi.string().required(),
+      description: Joi.string().optional(),
+      type: Joi.string().valid("documents").required(),
+      attachmentUrls: Joi.array().items(Joi.string().uri()).required(),
+      ownerId: Joi.string().uuid().optional(),
+    })
+  )
+  .messages({
+    "alternatives.match":
+      "Lesson data is invalid or does not match any allowed lesson type (video, documents).",
+  });

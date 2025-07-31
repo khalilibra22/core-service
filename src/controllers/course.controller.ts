@@ -6,6 +6,7 @@ import { CourseModel } from "../models/course.model";
 import { MinimalCourseDto } from "../dtos/minimalCourse.dto";
 import { getCourseDto, getSessionDto } from "../utils";
 import { CertificateDto } from "../dtos/certificate.dto";
+import { LessonDto } from "../dtos/lesson.dto";
 
 export class CourseController {
   private courseService: CoursService;
@@ -354,6 +355,108 @@ export class CourseController {
       }
       await this.courseService.deleteCourse(id);
       res.status(204).send();
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  async createLesson(req: Request, res: Response): Promise<void> {
+    try {
+      const sessionId = req.params.id;
+      const session = await this.courseService.getSessionById(sessionId);
+      if (!session) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+
+      delete req.body.ownerId;
+      const lessonBody = {
+        ...req.body,
+        session: session,
+      };
+
+      const lesson = await this.courseService.createLesson(lessonBody);
+      const lessonDto = plainToInstance(LessonDto, lesson, {
+        excludeExtraneousValues: true,
+      });
+      res.status(201).json(lessonDto);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  async updateLesson(req: Request, res: Response): Promise<void> {
+    try {
+      const sessionId = req.params.id;
+      const lessonId = req.params.lessonId;
+
+      const session = await this.courseService.getSessionById(sessionId);
+      if (!session) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+
+      const lesson = await this.courseService.getLessonById(lessonId);
+      if (!lesson) {
+        res.status(404).json({ error: "Lesson not found" });
+        return;
+      }
+      delete req.body.ownerId;
+      const lessonBody = {
+        ...lesson,
+        ...req.body,
+      };
+
+      await this.courseService.updateLesson(lessonBody);
+      res.status(200).json({ message: "Lesson updated successfully" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  async deleteLesson(req: Request, res: Response): Promise<void> {
+    try {
+      const sessionId = req.params.id;
+      const lessonId = req.params.lessonId;
+
+      const session = await this.courseService.getSessionById(sessionId);
+      if (!session) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+
+      const lesson = await this.courseService.getLessonById(lessonId);
+      if (!lesson) {
+        res.status(404).json({ error: "Lesson not found" });
+        return;
+      }
+
+      await this.courseService.deleteLesson(lessonId);
+      res.status(204).send();
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  async getLessonsBySessionId(req: Request, res: Response): Promise<void> {
+    try {
+      const sessionId = req.params.id;
+      const session = await this.courseService.getSessionById(sessionId);
+      if (!session) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+      const lessons = await this.courseService.getLessonsBySessionId(sessionId);
+      const lessonDtos = lessons.map((lesson) =>
+        plainToInstance(LessonDto, lesson, {
+          excludeExtraneousValues: true,
+        })
+      );
+      res.status(200).json(lessonDtos);
     } catch (error) {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });

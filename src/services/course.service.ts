@@ -2,6 +2,7 @@ import { AppDataSource } from "../config/database";
 import { CertificateModel } from "../models/certificate.model";
 import { CourseModel } from "../models/course.model";
 import { CourseSettingsModel } from "../models/courseSettings.model";
+import { LessonModel } from "../models/lesson.model";
 import { SessionModel } from "../models/session.model";
 
 export class CoursService {
@@ -9,11 +10,13 @@ export class CoursService {
   courseSettingsRepo: any;
   sessionRepo: any;
   certificateRepo: any;
+  lessonRepo: any;
   constructor() {
     this.courseRepo = AppDataSource.getRepository(CourseModel);
     this.courseSettingsRepo = AppDataSource.getRepository(CourseSettingsModel);
     this.sessionRepo = AppDataSource.getRepository(SessionModel);
     this.certificateRepo = AppDataSource.getRepository(CertificateModel);
+    this.lessonRepo = AppDataSource.getRepository(LessonModel);
   }
 
   async createCourse(course: CourseModel): Promise<CourseModel> {
@@ -213,6 +216,61 @@ export class CoursService {
       await this.courseRepo.softDelete(id);
     } catch (error: any) {
       throw new Error("Error deleting course");
+    }
+  }
+
+  // create lesson
+  async createLesson(lesson: LessonModel): Promise<LessonModel> {
+    try {
+      return await this.lessonRepo.save(lesson);
+    } catch (error: any) {
+      throw new Error("Error creating lesson: " + error.message);
+    }
+  }
+
+  // get lesson by id
+  async getLessonById(id: string): Promise<LessonModel | null> {
+    try {
+      return await this.lessonRepo.findOne({
+        where: {
+          id: id,
+        },
+      });
+    } catch (error: any) {
+      throw new Error("Error fetching lesson by ID: " + error.message);
+    }
+  }
+
+  // get lessons by session id
+  async getLessonsBySessionId(sessionId: string): Promise<LessonModel[]> {
+    try {
+      return await this.lessonRepo.find({
+        where: {
+          session: {
+            id: sessionId,
+          },
+        },
+      });
+    } catch (error: any) {
+      throw new Error("Error fetching lessons by session ID: " + error.message);
+    }
+  }
+
+  // update lesson
+  async updateLesson(lesson: LessonModel): Promise<LessonModel> {
+    try {
+      return await this.lessonRepo.save(lesson);
+    } catch (error: any) {
+      throw new Error("Error updating lesson: " + error.message);
+    }
+  }
+
+  // delete lesson
+  async deleteLesson(id: string): Promise<void> {
+    try {
+      await this.lessonRepo.softDelete(id);
+    } catch (error: any) {
+      throw new Error("Error deleting lesson: " + error.message);
     }
   }
 }

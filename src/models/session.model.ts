@@ -12,6 +12,8 @@ import { CourseModel } from "./course.model";
 import { SessionTimeChangeRequestModel } from "./sessionTimeChangeRequest.model";
 import { SessionEnrollmentModel } from "./sessionEnrollment.model";
 import { ComplaintModel } from "./complaint.model";
+import { LessonModel } from "./lesson.model";
+import { QuizModel } from "./quiz.model";
 
 @Entity("sessions")
 export class SessionModel {
@@ -48,12 +50,6 @@ export class SessionModel {
   @Column({ nullable: true })
   url?: string; // URL for the session (e.g., Zoom link)
 
-  @Column({ name: "video_url", nullable: true })
-  videoUrl?: string; // URL for the recorded session (if applicable)
-
-  @Column({ name: "attachment_urls", type: "json", nullable: true })
-  attachmentUrls?: string[]; // Array of document/image URLs
-
   @Column({ nullable: true })
   status?: string; //  "unreserved" : default status, "unscheduled", "scheduled", "canceled", "completed"
 
@@ -71,6 +67,12 @@ export class SessionModel {
 
   @OneToMany(() => ComplaintModel, (complaint) => complaint.session)
   complaints?: ComplaintModel[];
+
+  @OneToMany(() => LessonModel, (lesson) => lesson.session)
+  lessons?: LessonModel[];
+
+  @OneToMany(() => QuizModel, (quiz) => quiz.session)
+  quizzes?: QuizModel[];
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;

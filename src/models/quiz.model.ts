@@ -11,6 +11,7 @@ import {
 import { CourseModel } from "./course.model";
 import { QuestionModel } from "./question.model";
 import { QuizAttemptModel } from "./quizAttempt.model";
+import { SessionModel } from "./session.model";
 
 @Entity("quizzes")
 export class QuizModel {
@@ -38,8 +39,8 @@ export class QuizModel {
   @Column({ default: true, name: "is_active" })
   isActive?: boolean;
 
-  @ManyToOne(() => CourseModel, (course) => course.quizzes)
-  course?: CourseModel;
+  @ManyToOne(() => SessionModel, (session) => session.quizzes)
+  session?: SessionModel;
 
   @OneToMany(() => QuestionModel, (question) => question.quiz)
   questions?: QuestionModel[];
