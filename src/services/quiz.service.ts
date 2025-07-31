@@ -91,6 +91,18 @@ export class QuizService {
     }
   }
 
+  async getQuizDetails(quizId: string): Promise<QuizModel | null> {
+    try {
+      return await this.quizRepo.findOne({
+        where: { id: quizId },
+        relations: ["questions"],
+      });
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error fetching quiz details");
+    }
+  }
+
   async deleteQuiz(quizId: string): Promise<void> {
     try {
       await this.quizRepo.softDelete(quizId);
@@ -109,10 +121,10 @@ export class QuizService {
     }
   }
 
-  async getCourseQuizzes(courseId: string): Promise<QuizModel[]> {
+  async getSessionQuizzes(sessionId: string): Promise<QuizModel[]> {
     try {
       return await this.quizRepo.find({
-        where: { course: { id: courseId } },
+        where: { session: { id: sessionId } },
         relations: ["questions"],
         order: { order: "ASC" },
       });

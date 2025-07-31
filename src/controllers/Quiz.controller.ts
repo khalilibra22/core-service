@@ -15,15 +15,15 @@ export class QuizController {
 
   async createQuiz(req: Request, res: Response): Promise<void> {
     try {
-      const course = await this.courseService.getCourseById(req.params.id);
-      if (!course) {
-        res.status(404).json({ error: "Course not found" });
+      const session = await this.courseService.getSessionById(req.params.id);
+      if (!session) {
+        res.status(404).json({ error: "Session not found" });
         return;
       }
       delete req.body.ownerId;
       const quizBody = {
         ...req.body,
-        course: course,
+        session: session,
       };
       const quiz = await this.quizService.createQuiz(quizBody);
       const quizDto = plainToInstance(QuizDto, quiz, {
@@ -41,9 +41,9 @@ export class QuizController {
     try {
       const { id, quizId } = req.params;
       const updates = req.body;
-      const course = await this.courseService.getCourseById(id);
-      if (!course) {
-        res.status(404).json({ error: "Course not found" });
+      const session = await this.courseService.getSessionById(id);
+      if (!session) {
+        res.status(404).json({ error: "Session not found" });
         return;
       }
       const quiz = await this.quizService.getQuizById(quizId);
@@ -64,9 +64,9 @@ export class QuizController {
   async deleteQuiz(req: Request, res: Response): Promise<void> {
     try {
       const { id, quizId } = req.params;
-      const course = await this.courseService.getCourseById(id);
-      if (!course) {
-        res.status(404).json({ error: "Course not found" });
+      const session = await this.courseService.getSessionById(id);
+      if (!session) {
+        res.status(404).json({ error: "Session not found" });
         return;
       }
       const quiz = await this.quizService.getQuizById(quizId);
@@ -151,20 +151,38 @@ export class QuizController {
     }
   }
 
-  async getCourseQuizzes(req: Request, res: Response): Promise<void> {
+  async getSessionQuizzes(req: Request, res: Response): Promise<void> {
     try {
       const id = req.params.id;
-      const course = await this.courseService.getCourseById(id);
-      if (!course) {
-        res.status(404).json({ error: "Course not found" });
+      const session = await this.courseService.getSessionById(id);
+      if (!session) {
+        res.status(404).json({ error: "Session not found" });
         return;
       }
-      const quizzes = await this.quizService.getCourseQuizzes(id);
+      const quizzes = await this.quizService.getSessionQuizzes(id);
 
       const quizDtos = plainToInstance(QuizDto, quizzes, {
         excludeExtraneousValues: true,
       });
       res.status(200).json(quizDtos);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  async getQuizDetails(req: Request, res: Response): Promise<void> {
+    try {
+      const quizId = req.params.id;
+      const quiz = await this.quizService.getQuizDetails(quizId);
+      if (!quiz) {
+        res.status(404).json({ error: "Quiz not found" });
+        return;
+      }
+      const quizDto = plainToInstance(QuizDto, quiz, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(quizDto);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
