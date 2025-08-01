@@ -20,4 +20,7 @@ export class LessonDto {
   @Expose()
   @Transform(({ value }) => (value ? value : undefined))
   attachmentUrls?: string[]; // Array of document/image URLs
+
+  @Expose()
+  order?: number;
 }

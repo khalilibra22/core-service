@@ -101,6 +101,7 @@ const prerecordedSessionSchema = Joi.object({
   type: Joi.string().valid("prerecorded").required(),
   title: Joi.string().required(),
   description: Joi.string().required(),
+  order: Joi.number().integer().min(0).required(),
   ownerId: Joi.string().uuid().optional(),
 });
 
@@ -150,6 +151,7 @@ export const lessonValidationSchema = Joi.alternatives()
       description: Joi.string().optional(),
       type: Joi.string().valid("video").required(),
       videoUrl: Joi.string().uri().required(),
+      order: Joi.number().integer().min(0).required(),
       ownerId: Joi.string().uuid().optional(),
     }),
     Joi.object({

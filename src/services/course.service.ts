@@ -273,4 +273,38 @@ export class CoursService {
       throw new Error("Error deleting lesson: " + error.message);
     }
   }
+
+  // get prerecorded session details by id with lessons and quizzes
+  async getPrerecordedSessionDetails(id: string): Promise<SessionModel | null> {
+    try {
+      return await this.sessionRepo.findOne({
+        where: {
+          id: id,
+        },
+        relations: ["lessons", "quizzes", "course"],
+      });
+    } catch (error: any) {
+      throw new Error(
+        "Error fetching prerecorded session details: " + error.message
+      );
+    }
+  }
+
+  // get prerecorded course by id with sessions and sessions lessons and quizzes
+  async getPrerecordedCourseSections(id: string): Promise<CourseModel | null> {
+    try {
+      return await this.sessionRepo.find({
+        where: {
+          course: {
+            id: id,
+          },
+        },
+        relations: ["lessons", "quizzes"],
+      });
+    } catch (error: any) {
+      throw new Error(
+        "Error fetching prerecorded course sections: " + error.message
+      );
+    }
+  }
 }

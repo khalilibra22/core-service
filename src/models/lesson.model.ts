@@ -20,6 +20,9 @@ export class LessonModel {
   @Column({ type: "text", nullable: true })
   description?: string;
 
+  @Column({ type: "int", default: 0 })
+  order?: number;
+
   @Column({
     type: "enum",
     enum: ["video", "documents"],
