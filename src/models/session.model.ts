@@ -38,8 +38,8 @@ export class SessionModel {
   @Column({ nullable: true })
   description?: string; // Description of the video
 
-  @Column({ nullable: true })
-  ordering?: number; // Ordering of the video in the course
+  @Column({ default: 0, nullable: true })
+  order?: number; // Ordering of the video in the course
 
   @Column({ name: "is_paid", default: true })
   isPaid?: boolean;
@@ -69,10 +69,10 @@ export class SessionModel {
   complaints?: ComplaintModel[];
 
   @OneToMany(() => LessonModel, (lesson) => lesson.session)
-  lessons?: LessonModel[];
+  lessons?: LessonModel[]; // for prerecorded sessions
 
   @OneToMany(() => QuizModel, (quiz) => quiz.session)
-  quizzes?: QuizModel[];
+  quizzes?: QuizModel[]; // for prerecorded sessions
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;

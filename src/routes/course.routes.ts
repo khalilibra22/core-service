@@ -129,6 +129,14 @@ router.get(
   async (req, res) => await courseController.getCourseSessions(req, res)
 );
 
+// Get all prerecorded course sections
+router.get(
+  "/:id/prerecorded-sections",
+  AuthMiddleware.verifyToken,
+  async (req, res) =>
+    await courseController.getPrerecordedCourseSections(req, res)
+);
+
 //cancel course
 router.patch(
   "/:id/cancel",

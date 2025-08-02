@@ -7,6 +7,7 @@ import { MinimalCourseDto } from "../dtos/minimalCourse.dto";
 import { getCourseDto, getSessionDto } from "../utils";
 import { CertificateDto } from "../dtos/certificate.dto";
 import { LessonDto } from "../dtos/lesson.dto";
+import { RecordedSessionDto } from "../dtos/recordedSession.dto";
 
 export class CourseController {
   private courseService: CoursService;
@@ -451,12 +452,68 @@ export class CourseController {
         return;
       }
       const lessons = await this.courseService.getLessonsBySessionId(sessionId);
-      const lessonDtos = lessons.map((lesson) =>
-        plainToInstance(LessonDto, lesson, {
-          excludeExtraneousValues: true,
-        })
-      );
+      const lessonDtos = plainToInstance(LessonDto, lessons, {
+        excludeExtraneousValues: true,
+      });
       res.status(200).json(lessonDtos);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  async getPrerecordedSessionDetails(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    try {
+      const sessionId = req.params.id;
+      const sessionDetails =
+        await this.courseService.getPrerecordedSessionDetails(sessionId);
+      if (!sessionDetails) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+
+      if (sessionDetails.course?.type !== "prerecorded") {
+        res.status(400).json({ error: "Session is not a prerecorded session" });
+        return;
+      }
+      const sessionDto = plainToInstance(RecordedSessionDto, sessionDetails, {
+        excludeExtraneousValues: true,
+      });
+
+      res.status(200).json(sessionDto);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  async getPrerecordedCourseSections(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    try {
+      const courseId = req.params.id;
+      const course = await this.courseService.getCourseById(courseId);
+
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+
+      if (course.type !== "prerecorded") {
+        res.status(400).json({ error: "Course is not a prerecorded course" });
+        return;
+      }
+      const sections = await this.courseService.getPrerecordedCourseSections(
+        courseId
+      );
+      const sectionDtos = plainToInstance(RecordedSessionDto, sections, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(sectionDtos);
     } catch (error) {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });

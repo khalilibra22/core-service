@@ -67,4 +67,12 @@ router.get(
   async (req, res) => await quizController.getSessionQuizzes(req, res)
 );
 
+// Get session details with lessons and quizzes
+router.get(
+  "/:id/prerecorded",
+  AuthMiddleware.verifyToken,
+  async (req, res) =>
+    await courseController.getPrerecordedSessionDetails(req, res)
+);
+
 export { router as sessionRouter };
