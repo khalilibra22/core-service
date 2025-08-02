@@ -159,6 +159,7 @@ export const lessonValidationSchema = Joi.alternatives()
       description: Joi.string().optional(),
       type: Joi.string().valid("documents").required(),
       attachmentUrls: Joi.array().items(Joi.string().uri()).required(),
+      order: Joi.number().integer().min(0).required(),
       ownerId: Joi.string().uuid().optional(),
     })
   )
