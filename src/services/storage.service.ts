@@ -1,8 +1,14 @@
-import { S3 } from "aws-sdk";
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v4 as uuidv4 } from "uuid";
 
 export class StorageService {
-  private s3: S3;
+  private s3: S3Client;
   private bucketName: string;
   private endpoint: string;
 
@@ -17,46 +23,67 @@ export class StorageService {
     //   s3ForcePathStyle: true,
     // });
     this.endpoint = "http://localhost:9000";
-    this.s3 = new S3({
+    this.s3 = new S3Client({
       endpoint: this.endpoint,
-      accessKeyId: "vrpqFtqOXks6WL8rXWuF",
-      secretAccessKey: "F3tmmfuLa7nV4eAoIA7mAeIJMXm5owDyFCtp3wFC",
-      s3ForcePathStyle: true,
-      signatureVersion: "v4",
+      credentials: {
+        accessKeyId: "vrpqFtqOXks6WL8rXWuF",
+        secretAccessKey: "F3tmmfuLa7nV4eAoIA7mAeIJMXm5owDyFCtp3wFC",
+      },
+      forcePathStyle: true,
+      region: "us-east-1",
     });
 
     this.bucketName = process.env.WASABI_BUCKET_NAME || "assetss"; // Default bucket name if not set in environment variables
   }
 
   async uploadFile(file: Express.Multer.File): Promise<string> {
-    const key = `${uuidv4()}-${file.originalname
-      .toLowerCase()
-      .replace(/\s+/g, "-")}`;
+    try {
+      const key = `${uuidv4()}-${file.originalname
+        .toLowerCase()
+        .replace(/\s+/g, "-")}`;
 
-    const params = {
-      Bucket: this.bucketName,
-      Key: key,
-      Body: file.buffer,
-      ContentType: file.mimetype,
-      ACL: "public-read",
-    };
+      const command = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+        ACL: "public-read", // or omit for private access
+      });
 
-    const result = await this.s3.upload(params).promise();
-    return result.Location;
+      await this.s3.send(command);
+      return key;
+    } catch (error) {
+      throw new Error(`Failed to upload file: ${error}`);
+    }
   }
 
   async deleteFile(fileUrl: string): Promise<void> {
-    const key = fileUrl.split("/").pop();
+    try {
+      const key = fileUrl.split("/").pop();
 
-    const params = {
-      Bucket: this.bucketName,
-      Key: key!,
-    };
-
-    await this.s3.deleteObject(params).promise();
+      if (!key) {
+        throw new Error("File key is required for deletion");
+      }
+      const command = new DeleteObjectCommand({
+        Bucket: this.bucketName,
+        Key: key!,
+      });
+      await this.s3.send(command);
+    } catch (error) {
+      throw new Error(`Failed to delete file: ${error}`);
+    }
   }
 
   async getFileUrl(fileName: string): Promise<string> {
-    return `${this.endpoint}/${this.bucketName}/${fileName}`;
+    try {
+      const command = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: fileName,
+      });
+
+      return getSignedUrl(this.s3, command, { expiresIn: 60 * 5 }); // 5 minutes
+    } catch (error) {
+      throw new Error(`Failed to get file URL: ${error}`);
+    }
   }
 }

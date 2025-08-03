@@ -22,6 +22,8 @@
   },
   "homepage": "https://gitlab.com/e-learning-platform-project1/course-service#readme",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.859.0",
+    "@aws-sdk/s3-request-presigner": "^3.859.0",
     "aws-sdk": "^2.1692.0",
     "axios": "^1.10.0",
     "class-transformer": "^0.5.1",
@@ -33,7 +35,8 @@
     "multer": "^1.4.5-lts.2",
     "pg": "^8.14.1",
     "reflect-metadata": "^0.2.2",
-    "typeorm": "^0.3.21"
+    "typeorm": "^0.3.21",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/aws-sdk": "^0.0.42",
