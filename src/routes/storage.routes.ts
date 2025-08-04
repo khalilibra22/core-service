@@ -11,21 +11,13 @@ router.post(
   "/",
   AuthMiddleware.verifyToken,
   upload.single("file"),
-  (req, res) => storageController.uploadFile(req, res)
+  storageController.uploadFile
 );
 
 // // Get file by ID
-router.get("/files/:filename", AuthMiddleware.verifyToken, (req, res) =>
-  storageController.getFileUrl(req, res)
-);
+router.get("/:id", AuthMiddleware.verifyToken, storageController.getFileUrl);
 
 // // Delete file
-// router.delete('/files/:id', AuthMiddleware.verifyToken, storageController.deleteFile);
-
-// // Get user files
-//router.get('/files', AuthMiddleware.verifyToken, storageController.getUserFiles);
-
-// // Update file metadata
-// router.put('/files/:id', AuthMiddleware.verifyToken, storageController.updateFile);
+router.delete("/:id", AuthMiddleware.verifyToken, storageController.deleteFile);
 
 export { router as storageRouter };
