@@ -23,18 +23,28 @@ export class StorageService {
     //   region: "us-east-1", // Wasabi default region
     //   s3ForcePathStyle: true,
     // });
-    this.endpoint = "http://localhost:9000";
+    this.endpoint = "https://s3.eu-central-2.wasabisys.com";
     this.s3 = new S3Client({
       endpoint: this.endpoint,
       credentials: {
-        accessKeyId: "vrpqFtqOXks6WL8rXWuF",
-        secretAccessKey: "F3tmmfuLa7nV4eAoIA7mAeIJMXm5owDyFCtp3wFC",
+        accessKeyId: "GSQE53P3LXBXHDHYDAPV",
+        secretAccessKey: "wTiv7aijVH9zsKFKBplIigVS8vUJhH29Yc6SdCTs",
       },
       forcePathStyle: true,
       region: "us-east-1",
     });
+    // this.endpoint = "http://localhost:9000";
+    // this.s3 = new S3Client({
+    //   endpoint: this.endpoint,
+    //   credentials: {
+    //     accessKeyId: "vrpqFtqOXks6WL8rXWuF",
+    //     secretAccessKey: "F3tmmfuLa7nV4eAoIA7mAeIJMXm5owDyFCtp3wFC",
+    //   },
+    //   forcePathStyle: true,
+    //   region: "us-east-1",
+    // });
 
-    this.bucketName = process.env.WASABI_BUCKET_NAME || "assetss"; // Default bucket name if not set in environment variables
+    this.bucketName = process.env.WASABI_BUCKET_NAME || "courses-dev-assets"; // Default bucket name if not set in environment variables
   }
 
   async uploadFile(file: Express.Multer.File): Promise<string> {
