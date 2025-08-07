@@ -1,10 +1,11 @@
 import { Request, Response } from "express";
-import { VirtualClassroomService } from "../services/virtualClassroom.service";
+import { VirtualClassroomService } from "../interfaces/virtualClassroomService.interface";
 
 export class VirtualClassroomController {
   private virtualClassroomService: VirtualClassroomService;
-  constructor() {
-    this.virtualClassroomService = new VirtualClassroomService();
+
+  constructor(virtualClassroomService: VirtualClassroomService) {
+    this.virtualClassroomService = virtualClassroomService;
   }
 
   createMeeting = async (req: Request, res: Response): Promise<void> => {
@@ -29,7 +30,7 @@ export class VirtualClassroomController {
         res.status(404).json({ error: "Virtual classroom already ended" });
         return;
       }
-      res.status(204).send();
+      res.status(200).json({ message: "Virtual classroom ended successfully" });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -47,11 +48,11 @@ export class VirtualClassroomController {
 
   joinMeeting = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { fullName, meetingID, password } = req.body;
+      const { fullName, password } = req.body;
+      const { id: meetingID } = req.params;
       const joinUrl = await this.virtualClassroomService.joinMeeting(
-        fullName,
         meetingID,
-        password
+        { fullName, password }
       );
       res.status(200).json({ joinUrl });
     } catch (error: any) {
