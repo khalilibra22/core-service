@@ -1,7 +1,8 @@
 import crypto from "crypto";
 import axios from "axios";
+import { IVirtualClassroomService } from "../interfaces/IVirtualClassroomService";
 
-export class VirtualClassroomService {
+export class VirtualClassroomService implements IVirtualClassroomService {
   private bbbApiUrl: string;
   private bbbSecret: string;
 
@@ -13,22 +14,14 @@ export class VirtualClassroomService {
       process.env.BBB_SECRET || "WpiThAD9tUe7AkQABKQmDIgd3M5XvfgWIjdulDdlOPr";
   }
 
-  async createMeeting(
-    meetingID: string,
-    meetingName: string,
-    moderatorPassword: string,
-    attendeePassword: string,
-    duration: number
-  ): Promise<any> {
-    const params = new URLSearchParams({
-      name: meetingName,
-      meetingID: meetingID,
-      moderatorPW: moderatorPassword,
-      attendeePW: attendeePassword,
-      welcome: `Welcome to ${meetingName}`,
-      record: "false",
-      duration: duration ? duration.toString() : "0",
-    });
+  async createMeeting(meeting: {
+    meetingName: string;
+    meetingID: string;
+    moderatorPassword: string;
+    attendeePassword: string;
+    duration?: string;
+  }): Promise<any> {
+    const params = new URLSearchParams(meeting);
 
     const checksum = this.generateChecksum("create", params.toString());
     const url = `${
