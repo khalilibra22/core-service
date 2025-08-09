@@ -5,11 +5,16 @@ import { CourseController } from "../controllers/course.controller";
 import { QuizController } from "../controllers/Quiz.controller";
 import { quizValidation } from "../validations/quiz.validation";
 import { lessonValidationSchema } from "../validations/course.validation";
+import { VirtualClassroomController } from "../controllers/VirtualClassroom.controller";
+import { BigBlueButtonService } from "../services/bigBlueButton.service";
 
 const router = express.Router();
 
 const courseController = new CourseController();
 const quizController = new QuizController();
+const virtualClassroomController = new VirtualClassroomController(
+  new BigBlueButtonService()
+);
 
 router.post(
   "/:id/lessons",
@@ -73,6 +78,18 @@ router.get(
   AuthMiddleware.verifyToken,
   async (req, res) =>
     await courseController.getPrerecordedSessionDetails(req, res)
+);
+
+router.get(
+  "/:id/launch-meeting",
+  AuthMiddleware.verifyToken,
+  virtualClassroomController.launchMeeting
+);
+
+router.get(
+  "/:id/join-meeting",
+  AuthMiddleware.verifyToken,
+  virtualClassroomController.joinMeeting
 );
 
 export { router as sessionRouter };

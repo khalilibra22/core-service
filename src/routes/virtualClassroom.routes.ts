@@ -3,6 +3,11 @@ import { ValidationMiddleware } from "../utils/validation.middleware";
 import { AuthMiddleware } from "../utils/auth.middleware";
 import { VirtualClassroomController } from "../controllers/VirtualClassroom.controller";
 import { BigBlueButtonService } from "../services/bigBlueButton.service";
+import {
+  endMeetingValidationSchema,
+  joinMeetingValidationSchema,
+  meetingValidationSchema,
+} from "../validations/virtualClassroom.validation";
 
 const router = express.Router();
 
@@ -14,13 +19,15 @@ const virtualClassroomController = new VirtualClassroomController(
 router.post(
   "/meetings",
   AuthMiddleware.verifyToken,
-  virtualClassroomController.createMeeting
+  ValidationMiddleware.validate(meetingValidationSchema),
+  virtualClassroomController.launchMeeting
 );
 
 // join a meeting
 router.post(
   "/meetings/:id/join",
   AuthMiddleware.verifyToken,
+  ValidationMiddleware.validate(joinMeetingValidationSchema),
   virtualClassroomController.joinMeeting
 );
 
@@ -28,6 +35,7 @@ router.post(
 router.patch(
   "/meetings/:id/end",
   AuthMiddleware.verifyToken,
+  ValidationMiddleware.validate(endMeetingValidationSchema),
   virtualClassroomController.endMeeting
 );
 
