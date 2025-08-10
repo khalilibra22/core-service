@@ -7,6 +7,7 @@ import { quizValidation } from "../validations/quiz.validation";
 import { lessonValidationSchema } from "../validations/course.validation";
 import { VirtualClassroomController } from "../controllers/VirtualClassroom.controller";
 import { BigBlueButtonService } from "../services/bigBlueButton.service";
+import { StreamingServiceController } from "../controllers/streaming.controller";
 
 const router = express.Router();
 
@@ -15,6 +16,7 @@ const quizController = new QuizController();
 const virtualClassroomController = new VirtualClassroomController(
   new BigBlueButtonService()
 );
+const streamingServiceController = new StreamingServiceController();
 
 router.post(
   "/:id/lessons",
@@ -90,6 +92,24 @@ router.get(
   "/:id/join-meeting",
   AuthMiddleware.verifyToken,
   virtualClassroomController.joinMeeting
+);
+
+router.get(
+  "/:id/videos/create-entry",
+  AuthMiddleware.verifyToken,
+  streamingServiceController.createVideoEntry
+);
+
+router.get(
+  "/:id/videos/:videoId",
+  AuthMiddleware.verifyToken,
+  streamingServiceController.getVideoById
+);
+
+router.delete(
+  "/:id/videos/:videoId",
+  AuthMiddleware.verifyToken,
+  streamingServiceController.deleteVideoById
 );
 
 export { router as sessionRouter };
