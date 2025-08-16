@@ -10,6 +10,11 @@ export const enrollmentValidationsSchema = Joi.object({
     then: Joi.number().integer().min(1).required(),
     otherwise: Joi.forbidden(),
   }),
+  topicId: Joi.alternatives().conditional("type", {
+    is: "one-on-one",
+    then: Joi.number().integer().min(1).required(),
+    otherwise: Joi.forbidden(),
+  }),
   availabilityIds: Joi.alternatives().conditional("type", {
     is: "one-on-one",
     then: Joi.array()

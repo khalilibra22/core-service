@@ -77,54 +77,61 @@ export function generateSessionsFromAvailabilities(
   numberOfSessions: number,
   startDate: Date = new Date()
 ): SessionModel[] {
-  const sessions: SessionModel[] = [];
+  try {
+    const sessions: SessionModel[] = [];
 
-  // Sort to keep consistency
-  const sortedAvailabilities = availabilities.filter(
-    (a) => a.dayOfWeek && a.startTime && a.endTime
-  );
+    // Sort to keep consistency
+    const sortedAvailabilities = availabilities.filter(
+      (a) => a.dayOfWeek && a.startTime && a.endTime
+    );
 
-  let currentDate = new Date(startDate);
+    let currentDate = new Date(startDate);
 
-  while (sessions.length < numberOfSessions) {
-    for (const availability of sortedAvailabilities) {
-      if (sessions.length >= numberOfSessions) break;
+    while (sessions.length < numberOfSessions) {
+      for (const availability of sortedAvailabilities) {
+        if (sessions.length >= numberOfSessions) break;
 
-      const dayIndex = dayOfWeekMap[availability.dayOfWeek!.toLowerCase()];
-      const tempDate = new Date(currentDate);
+        const dayIndex = dayOfWeekMap[availability.dayOfWeek!.toLowerCase()];
+        const tempDate = new Date(currentDate);
 
-      // Adjust date to the next correct weekday
-      const daysToAdd = (7 + dayIndex - tempDate.getDay()) % 7;
-      tempDate.setDate(tempDate.getDate() + daysToAdd);
+        // Adjust date to the next correct weekday
+        const daysToAdd = (7 + dayIndex - tempDate.getDay()) % 7;
+        tempDate.setDate(tempDate.getDate() + daysToAdd);
 
-      // Parse start time and end time
-      const [startHour, startMinute] = availability
-        .startTime!.split(":")
-        .map(Number);
-      const [endHour, endMinute] = availability.endTime!.split(":").map(Number);
+        // Parse start time and end time
+        const [startHour, startMinute] = availability
+          .startTime!.split(":")
+          .map(Number);
+        const [endHour, endMinute] = availability
+          .endTime!.split(":")
+          .map(Number);
 
-      const start = new Date(tempDate);
-      start.setHours(startHour, startMinute, 0, 0);
+        const start = new Date(tempDate);
+        start.setHours(startHour, startMinute, 0, 0);
 
-      const end = new Date(tempDate);
-      end.setHours(endHour, endMinute, 0, 0);
+        const end = new Date(tempDate);
+        end.setHours(endHour, endMinute, 0, 0);
 
-      const durationMs = end.getTime() - start.getTime();
-      if (durationMs <= 0) continue;
+        const durationMs = end.getTime() - start.getTime();
+        if (durationMs <= 0) continue;
 
-      const durationMinutes = Math.floor(durationMs / (1000 * 60));
+        const durationMinutes = Math.floor(durationMs / (1000 * 60));
 
-      sessions.push({
-        date: new Date(start),
-        duration: durationMinutes,
-        durationUnit: "minutes",
-        isPaid: !availability.isFree,
-      });
+        sessions.push({
+          date: new Date(start),
+          duration: durationMinutes,
+          durationUnit: "minutes",
+          isPaid: !availability.isFree,
+        });
+      }
+
+      // Move to the next week to repeat availabilities
+      currentDate.setDate(currentDate.getDate() + 7);
     }
 
-    // Move to the next week to repeat availabilities
-    currentDate.setDate(currentDate.getDate() + 7);
+    return sessions.slice(0, numberOfSessions); // In case we overshoot
+  } catch (error) {
+    console.error("Error generating sessions:", error);
+    throw new Error("Failed to generate sessions from availabilities");
   }
-
-  return sessions.slice(0, numberOfSessions); // In case we overshoot
 }

@@ -67,6 +67,7 @@ export class EnrollmentController {
               ...session,
               course: course,
               isReserved: true,
+              topicId: req.body.topicId,
               status: "scheduled",
             };
             const createdSession = await this.courseService.createCourseSession(
@@ -93,7 +94,9 @@ export class EnrollmentController {
       res.status(201).json({ message: "Enrollment created successfully" });
     } catch (error: any) {
       if (error.message.includes("Some availabilities are not available")) {
-        res.status(404).json({ error: "Some availabilities not available" });
+        res
+          .status(409)
+          .json({ error: "Some availabilities aleardy scheduled" });
         return;
       }
 

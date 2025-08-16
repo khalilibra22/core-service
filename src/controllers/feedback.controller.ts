@@ -219,4 +219,24 @@ export class FeedbackController {
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
+
+  // get reviews by teacher id
+  async getReviewsByTeacherId(req: Request, res: Response): Promise<void> {
+    try {
+      const teacherId = req.params.id;
+      if (!teacherId) {
+        res.status(400).json({ error: "Teacher ID is required" });
+        return;
+      }
+      const reviews = await this.feedbackService.getReviewsByTeacherId(
+        teacherId
+      );
+      const reviewDtos = plainToInstance(ReviewDto, reviews, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(reviewDtos);
+    } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
 }

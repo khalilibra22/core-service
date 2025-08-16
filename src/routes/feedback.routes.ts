@@ -64,4 +64,11 @@ router.get(
     await feedbackController.getReviewsOfPrerecordedCourses(req, res)
 );
 
+// get reviews by teacher id
+router.get(
+  "/reviews/teachers/:id",
+  AuthMiddleware.verifyToken,
+  async (req, res) => await feedbackController.getReviewsByTeacherId(req, res)
+);
+
 export { router as feedbackRouter };
