@@ -144,4 +144,19 @@ export class FeedbackService {
       throw new Error("Error fetching reviews of prerecorded courses");
     }
   }
+
+  //get reviews by teacher id
+  async getReviewsByTeacherId(teacherId: string): Promise<ReviewModel[]> {
+    try {
+      return await this.reviewRepo.find({
+        where: {
+          course: {
+            ownerId: teacherId,
+          },
+        },
+      });
+    } catch (error) {
+      throw new Error("Error fetching reviews by teacher ID");
+    }
+  }
 }
