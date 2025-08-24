@@ -184,4 +184,10 @@ router.get(
   async (req, res) => await courseController.getAllPrerecordedCourses(req, res)
 );
 
+router.get(
+  "/",
+  //AuthMiddleware.verifyToken,
+  async (req, res) => await courseController.searchCourses(req, res)
+);
+
 export { router as courseRouter };

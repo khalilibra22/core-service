@@ -31,7 +31,7 @@ export class EnrollmentController {
         res.status(409).json({ error: "Course is canceled" });
         return;
       }
-      req.body.studentId = req.body.ownerId;
+      const studentId = req.body.ownerId;
       delete req.body.type, req.body.ownerId;
 
       if (course.type === "group" || course.type === "live") {
@@ -46,11 +46,13 @@ export class EnrollmentController {
       }
       const enrollmentBody = {
         ...req.body,
+        studentId: studentId,
         course: course,
       };
       await this.enrollmentService.createCourseEnrollment(enrollmentBody);
       res.status(201).json({ message: "Enrollment created successfully" });
     } catch (error: any) {
+      console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
@@ -59,6 +61,16 @@ export class EnrollmentController {
     try {
       req.body.studentId = req.body.ownerId;
       delete req.body.type, req.body.ownerId;
+      const isPaid: boolean = req.body.isPaid;
+      if (!isPaid) {
+        //TODO: add logic to
+        //ckeck if possible to have free one-on-one session
+        // for example, check if the teacher has a free session available in their plan
+        // if not possible, return 400 error
+        // Example:
+        //res.status(400).json({ error: "One-on-one sessions must be paid" });
+        //return;
+      }
 
       const availabilityIdsArray = req.body.availabilityIds as string[];
       delete req.body.availabilityIds;

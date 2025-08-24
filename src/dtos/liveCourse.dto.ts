@@ -17,6 +17,29 @@ export class LiveCourseDto {
   description?: string;
 
   @Expose()
+  @Transform(({ obj }) => obj.sessions?.length || 0)
+  sessionsCount?: number;
+
+  @Expose()
+  ownerId?: string;
+
+  @Expose()
+  @Transform(() => "to be filled")
+  ownerName?: string;
+
+  @Expose()
+  @Transform(
+    () =>
+      //random number between 1 and 5
+      Math.floor(Math.random() * 5) + 1
+  )
+  ownerRating?: number;
+
+  @Expose()
+  @Transform(() => Math.floor(Math.random() * 1000))
+  ownerReviewsCount?: number;
+
+  @Expose()
   maxParticipants?: number;
 
   @Expose()

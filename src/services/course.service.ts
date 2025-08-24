@@ -307,4 +307,24 @@ export class CoursService {
       );
     }
   }
+
+  async searchCourses(
+    type: string,
+    page: number,
+    limit: number
+  ): Promise<CourseModel[]> {
+    try {
+      return await this.courseRepo.find({
+        where: {
+          type: type,
+        },
+        relations: ["couresSettings", "enrollments"],
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+    } catch (error) {
+      console.log(error);
+      throw new Error("Error fetching all courses of type live");
+    }
+  }
 }
