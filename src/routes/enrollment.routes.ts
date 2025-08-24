@@ -1,7 +1,10 @@
 import express from "express";
 import { EnrollmentController } from "../controllers/enrollment.controller";
 import { ValidationMiddleware } from "../utils/validation.middleware";
-import { enrollmentStatusSchema } from "../validations/enrollment.validation";
+import {
+  enrollmentStatusSchema,
+  oneOnOneEnrollmentSchema,
+} from "../validations/enrollment.validation";
 import { AuthMiddleware } from "../utils/auth.middleware";
 
 const router = express.Router();
@@ -21,6 +24,15 @@ router.patch(
   ValidationMiddleware.validate(enrollmentStatusSchema),
   async (req, res) =>
     await enrollmentController.updateCourseEnrollmentStatus(req, res)
+);
+
+//create one on one enrollment
+router.post(
+  "/one-on-one",
+  AuthMiddleware.verifyToken,
+  ValidationMiddleware.validate(oneOnOneEnrollmentSchema),
+  async (req, res) =>
+    await enrollmentController.createOneOnOneErollment(req, res)
 );
 
 export { router as enrollmentRouter };

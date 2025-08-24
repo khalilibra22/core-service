@@ -519,4 +519,28 @@ export class CourseController {
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
+
+  //search courses by its type using pagination
+  async searchCourses(req: Request, res: Response): Promise<void> {
+    try {
+      const courseType = req.query.type as string;
+      const courseTypeList = ["group", "live", "prerecorded"];
+      if (!courseTypeList.includes(courseType)) {
+        res.status(400).json({ error: "Invalid course type" });
+        return;
+      }
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const courses = await this.courseService.searchCourses(
+        courseType,
+        page,
+        limit
+      );
+      const courseDtos = getCourseDto(courses, courseType);
+      res.status(200).json(courseDtos);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
 }
