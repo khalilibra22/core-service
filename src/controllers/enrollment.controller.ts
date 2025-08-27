@@ -85,26 +85,14 @@ export class EnrollmentController {
       const sessionsNumber = req.body.sessionsNumber;
       const sessions = generateSessionsFromAvailabilities(
         availabilities,
-        sessionsNumber
+        sessionsNumber,
+        req.body.topicId
       );
-      await Promise.all(
-        sessions.map(async (session) => {
-          const sessionData = {
-            ...session,
-            isReserved: true,
-            topicId: req.body.topicId,
-            isPaid: req.body.isPaid,
-            status: "scheduled",
-          };
-          const createdSession = await this.courseService.createCourseSession(
-            sessionData
-          );
-          await this.enrollmentService.createSessionEnrollment({
-            studentId: req.body.studentId,
-            session: createdSession,
-          });
-        })
-      );
+      const enrollmentBody = {
+        studentId: req.body.studentId,
+        sessions: sessions,
+      };
+      await this.enrollmentService.createSessionEnrollment(enrollmentBody);
       await this.externalService.updateAvailabilitiesStatus(
         availabilityIdsArray
       );
@@ -186,6 +174,52 @@ export class EnrollmentController {
       res
         .status(200)
         .json({ message: "Enrollment status updated successfully" });
+    } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  //get student's enrollments by student id
+  async getStudentEnrollments(req: Request, res: Response): Promise<void> {
+    try {
+      const studentId = req.body.ownerId;
+      const coursesEnrollments =
+        await this.enrollmentService.getStudentCoursesEnrollments(studentId);
+      const oneOnOneEnrollments =
+        await this.enrollmentService.getStudentOneOnOneEnrollments(studentId);
+
+      // merge them by type (live , group, precorded) and one-on-one as type "one-on-one"
+      //lke this: "one-on-one" : [all one-on-one enrollments],
+      // "live": [all live enrollments],
+      // "group": [all group enrollments],
+      const allEnrollments = {
+        "one-on-one": oneOnOneEnrollments,
+        live: coursesEnrollments.filter(
+          (enrollment) => enrollment.course?.type === "live"
+        ),
+        group: coursesEnrollments.filter(
+          (enrollment) => enrollment.course?.type === "group"
+        ),
+      };
+      // const allEnrollments = [
+      //   ...coursesEnrollments.map((enrollment) => ({
+      //     ...enrollment,
+      //     type: enrollment.course?.type,
+      //   })),
+      //   ...oneOnOneEnrollments.map((enrollment) => ({
+      //     ...enrollment,
+      //     type: "one-on-one",
+      //   })),
+      // ];
+
+      const enrollmentDtos = plainToInstance(
+        EnrollmentDto,
+        coursesEnrollments,
+        {
+          excludeExtraneousValues: true,
+        }
+      );
+      res.status(200).json(allEnrollments);
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }

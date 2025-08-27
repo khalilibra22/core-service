@@ -50,6 +50,9 @@ export class SessionModel {
   @Column({ nullable: true })
   url?: string; // URL for the session (e.g., Zoom link)
 
+  @Column({ default: true, name: "is_remote" }) // for one-on-one sessions
+  isRemote?: boolean;
+
   @Column({ nullable: true })
   status?: string; //  "unreserved" : default status, "unscheduled", "scheduled", "canceled", "completed"
 
@@ -58,9 +61,15 @@ export class SessionModel {
 
   @OneToMany(
     () => SessionEnrollmentModel,
-    (sessionEnrollment) => sessionEnrollment.session
+    (sessionEnrollment) => sessionEnrollment.sessions
   )
   enrollments?: SessionEnrollmentModel[];
+
+  @ManyToOne(
+    () => SessionEnrollmentModel,
+    (sessionEnrollment) => sessionEnrollment.sessions
+  )
+  enrollment?: SessionEnrollmentModel;
 
   @OneToMany(() => SessionTimeChangeRequestModel, (request) => request.session)
   sessionTimeChangeRequests?: SessionTimeChangeRequestModel[];

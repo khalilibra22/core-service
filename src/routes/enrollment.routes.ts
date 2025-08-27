@@ -35,4 +35,10 @@ router.post(
     await enrollmentController.createOneOnOneErollment(req, res)
 );
 
+router.get(
+  "/students",
+  AuthMiddleware.verifyToken,
+  async (req, res) => await enrollmentController.getStudentEnrollments(req, res)
+);
+
 export { router as enrollmentRouter };

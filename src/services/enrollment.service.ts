@@ -1,3 +1,4 @@
+import { In } from "typeorm";
 import { AppDataSource } from "../config/database";
 import { CourseModel } from "../models/course.model";
 import { CourseEnrollmentModel } from "../models/courseEnrollment.model";
@@ -88,6 +89,38 @@ export class EnrollmentService {
       });
     } catch (error) {
       throw new Error("Error fetching course enrollment by ID");
+    }
+  }
+
+  //get student ernollments by student id
+  async getStudentCoursesEnrollments(
+    studentId: string
+  ): Promise<CourseEnrollmentModel[]> {
+    try {
+      return await this.courseEnrollmentRepo.find({
+        where: {
+          studentId: studentId,
+          course: { type: In(["live", "group"]) },
+        },
+        relations: ["course"], //group by createdAt , newest first
+        order: { createdAt: "DESC" },
+      });
+    } catch (error) {
+      throw new Error("Error fetching student enrollments");
+    }
+  }
+
+  async getStudentOneOnOneEnrollments(
+    studentId: string
+  ): Promise<SessionEnrollmentModel[]> {
+    try {
+      return await this.sessionEnrollmentRepo.find({
+        where: { studentId: studentId },
+        relations: ["session"],
+        order: { createdAt: "DESC" },
+      });
+    } catch (error) {
+      throw new Error("Error fetching student one-on-one enrollments");
     }
   }
 }
