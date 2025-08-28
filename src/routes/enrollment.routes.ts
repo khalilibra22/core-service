@@ -35,4 +35,17 @@ router.post(
     await enrollmentController.createOneOnOneErollment(req, res)
 );
 
+router.get(
+  "/student",
+  AuthMiddleware.verifyToken,
+  async (req, res) => await enrollmentController.getStudentEnrollments(req, res)
+);
+
+//cancel one on one enrollment
+router.patch(
+  "/one-on-one/:id/cancel",
+  AuthMiddleware.verifyToken,
+  async (req, res) =>
+    await enrollmentController.cancelOneOnOneEnrollment(req, res)
+);
 export { router as enrollmentRouter };

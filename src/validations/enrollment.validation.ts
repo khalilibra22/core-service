@@ -12,6 +12,7 @@ export const enrollmentStatusSchema = Joi.object({
 export const oneOnOneEnrollmentSchema = Joi.object({
   ownerId: Joi.string().uuid().optional(),
   topicId: Joi.number().integer().min(1).required(),
+  teacherId: Joi.string().uuid({ version: "uuidv4" }).required(),
   availabilityIds: Joi.array()
     .items(Joi.string().uuid({ version: "uuidv4" }))
     .min(1)

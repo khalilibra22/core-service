@@ -6,6 +6,7 @@ import { plainToInstance } from "class-transformer";
 import { OneOnOneEnollmentDto } from "../dtos/oneOnOneEnrollment.dto";
 import { generateSessionsFromAvailabilities } from "../utils";
 import { ExternalService } from "../services/external.service";
+import { all } from "axios";
 
 export class EnrollmentController {
   private enrollmentService: EnrollmentService;
@@ -59,9 +60,7 @@ export class EnrollmentController {
 
   async createOneOnOneErollment(req: Request, res: Response): Promise<void> {
     try {
-      req.body.studentId = req.body.ownerId;
-      delete req.body.type, req.body.ownerId;
-      const isPaid: boolean = req.body.isPaid;
+      const { teacherId, ownerId, topicId, sessionsNumber, isPaid } = req.body;
       if (!isPaid) {
         //TODO: add logic to
         //ckeck if possible to have free one-on-one session
@@ -73,7 +72,6 @@ export class EnrollmentController {
       }
 
       const availabilityIdsArray = req.body.availabilityIds as string[];
-      delete req.body.availabilityIds;
       if (!availabilityIdsArray || availabilityIdsArray.length === 0) {
         res.status(400).json({ error: "No sessions provided" });
         return;
@@ -82,35 +80,24 @@ export class EnrollmentController {
         await this.externalService.checkTeacherAvailabilities(
           availabilityIdsArray
         );
-      const sessionsNumber = req.body.sessionsNumber;
       const sessions = generateSessionsFromAvailabilities(
         availabilities,
+        topicId,
         sessionsNumber
       );
-      await Promise.all(
-        sessions.map(async (session) => {
-          const sessionData = {
-            ...session,
-            isReserved: true,
-            topicId: req.body.topicId,
-            isPaid: req.body.isPaid,
-            status: "scheduled",
-          };
-          const createdSession = await this.courseService.createCourseSession(
-            sessionData
-          );
-          await this.enrollmentService.createSessionEnrollment({
-            studentId: req.body.studentId,
-            session: createdSession,
-          });
-        })
-      );
+      const enrollmentBody = {
+        studentId: ownerId,
+        teacherId: teacherId,
+        sessions: sessions,
+      };
+      await this.enrollmentService.createSessionEnrollment(enrollmentBody);
       await this.externalService.updateAvailabilitiesStatus(
         availabilityIdsArray
       );
 
       res.status(201).json({ message: "Enrollment created successfully" });
     } catch (error: any) {
+      console.log("Error in createOneOnOneErollment:", error);
       if (error.message.includes("Some availabilities are not available")) {
         res.status(409).json({ error: "Some time slotes aleardy scheduled" });
         return;
@@ -187,6 +174,83 @@ export class EnrollmentController {
         .status(200)
         .json({ message: "Enrollment status updated successfully" });
     } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  //get student's enrollments by student id
+  async getStudentEnrollments(req: Request, res: Response): Promise<void> {
+    try {
+      const studentId = req.body.ownerId;
+      const coursesEnrollments =
+        await this.enrollmentService.getStudentCoursesEnrollments(studentId);
+      const oneOnOneEnrollments =
+        await this.enrollmentService.getStudentOneOnOneEnrollments(studentId);
+      const liveEnrollments = coursesEnrollments.filter(
+        (enrollment) => enrollment.course?.type === "live"
+      );
+      const groupEnrollments = coursesEnrollments.filter(
+        (enrollment) => enrollment.course?.type === "group"
+      );
+      const allEnrollmentDtos = {
+        "one-on-one": plainToInstance(
+          OneOnOneEnollmentDto,
+          oneOnOneEnrollments,
+          {
+            excludeExtraneousValues: true,
+          }
+        ),
+        live: plainToInstance(EnrollmentDto, liveEnrollments, {
+          excludeExtraneousValues: true,
+        }),
+        group: plainToInstance(EnrollmentDto, groupEnrollments, {
+          excludeExtraneousValues: true,
+        }),
+      };
+
+      res.status(200).json(allEnrollmentDtos);
+    } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  // cancel one on one enrollment by id
+  async cancelOneOnOneEnrollment(req: Request, res: Response): Promise<void> {
+    try {
+      const enrollmentId = req.params.id;
+      const enrollment = await this.enrollmentService.getOneOnOneEnrollmentById(
+        enrollmentId
+      );
+      if (!enrollment) {
+        res.status(404).json({ error: "Enrollment not found" });
+        return;
+      }
+      if (enrollment.status === "canceled") {
+        res.status(409).json({ error: "Enrollment is already canceled" });
+        return;
+      }
+      enrollment.status = "canceled";
+      await this.enrollmentService.updateOneOnOneEnrollment(enrollment);
+      /*
+      TODO: add logic to free up the teacher's availability slots
+      by calling the external service to update the availability status
+
+      Check if is there is a payment service to handle refunds
+      If yes, call the payment service to process the refund, in app refund policy
+      */
+
+      // const availabilityIds = enrollment.sessions.map(
+      //   (session) => session.availabilityId
+      // );
+      // await this.externalService.updateAvailabilitiesStatus(
+      //   availabilityIds,
+      //   "available"
+      // );
+      res
+        .status(200)
+        .json({ message: "One-on-one enrollment canceled successfully" });
+    } catch (error) {
+      console.error("Error in cancelOneOnOneEnrollment:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }

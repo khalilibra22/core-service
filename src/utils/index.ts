@@ -74,6 +74,7 @@ const dayOfWeekMap: Record<string, number> = {
  */
 export function generateSessionsFromAvailabilities(
   availabilities: AvailabilityDto[],
+  topic_id: number,
   numberOfSessions: number,
   startDate: Date = new Date()
 ): SessionModel[] {
@@ -122,6 +123,8 @@ export function generateSessionsFromAvailabilities(
           duration: durationMinutes,
           durationUnit: "minutes",
           isPaid: !availability.isFree,
+          status: "scheduled",
+          topicId: topic_id,
         });
       }
 

@@ -3,7 +3,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
-  ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
@@ -17,8 +17,16 @@ export class SessionEnrollmentModel {
   @Column({ name: "student_id" })
   studentId?: string;
 
-  @ManyToOne(() => SessionModel, (session) => session.enrollments)
-  session?: SessionModel;
+  @Column({ name: "teacher_id", nullable: true })
+  teacherId?: string;
+
+  @OneToMany(() => SessionModel, (session) => session.enrollment, {
+    cascade: true,
+  })
+  sessions?: SessionModel[];
+
+  @Column({ default: "pending" })
+  status?: string; // "pending", "confirmed", "canceled", "completed"
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;

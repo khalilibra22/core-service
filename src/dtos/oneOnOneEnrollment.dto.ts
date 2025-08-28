@@ -1,16 +1,8 @@
 import { Expose, Transform } from "class-transformer";
 
 export class OneOnOneEnollmentDto {
-  // @Expose()
-  // id?: string;
-
   @Expose()
-  @Transform(({ obj }) => obj.session?.id)
-  sessionId?: string;
-
-  @Expose()
-  @Transform(({ obj }) => obj.session?.course?.id)
-  courseId?: string;
+  id?: string;
 
   @Expose()
   @Transform(({ obj }) => "to be filled")
@@ -28,7 +20,11 @@ export class OneOnOneEnollmentDto {
   topicName?: string;
 
   @Expose()
-  @Transform(({ obj }) => obj.session?.course?.price)
+  @Transform(() =>
+    //random price
+    // to be fixed form payment service
+    Math.floor(Math.random() * 1000 + 1000)
+  )
   price?: number;
 
   @Expose()
@@ -36,35 +32,33 @@ export class OneOnOneEnollmentDto {
   date?: Date;
 
   @Expose()
-  @Transform(({ obj }) => obj.session?.url)
-  liveSessionUrl?: string;
-
-  @Expose()
   @Transform(({ obj }) => obj.session?.isPaid)
   isPaid?: boolean;
 
   @Expose()
-  @Transform(({ obj }) => obj.session?.status)
   status?: string;
 
   @Expose()
-  @Transform(({ obj }) => obj.session?.duration)
+  @Transform(() =>
+    //random duration
+    // to be fixed
+    Math.floor(Math.random() * 100 + 100)
+  )
   duration?: number;
 
   @Expose()
-  @Transform(({ obj }) => obj.session?.durationUnit)
+  @Transform(() => "minutes")
   durationUnit?: string;
 
   @Expose()
   studentId?: string;
 
   @Expose()
-  @Transform(({ obj }) => obj.session?.course?.ownerId)
   teacherId?: string;
 
   @Expose()
-  @Transform(({ obj }) => obj.session?.course?.type)
-  type?: string;
+  @Transform(({ obj }) => obj.sessions?.[0]?.date)
+  startDate?: Date;
 
   @Expose()
   @Transform(({ obj }) => obj.createdAt)
