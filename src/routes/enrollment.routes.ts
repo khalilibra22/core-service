@@ -36,7 +36,7 @@ router.post(
 );
 
 router.get(
-  "/students",
+  "/student",
   AuthMiddleware.verifyToken,
   async (req, res) => await enrollmentController.getStudentEnrollments(req, res)
 );
