@@ -35,6 +35,7 @@ export class EnrollmentService {
     try {
       return await this.sessionEnrollmentRepo.save(enrollment);
     } catch (error) {
+      console.log("Error in createSessionEnrollment:", error);
       throw new Error("Error creating session enrollment");
     }
   }
@@ -102,7 +103,7 @@ export class EnrollmentService {
           studentId: studentId,
           course: { type: In(["live", "group"]) },
         },
-        relations: ["course"], //group by createdAt , newest first
+        relations: ["course", "course.couresSettings", "course.sessions"], //group by createdAt , newest first
         order: { createdAt: "DESC" },
       });
     } catch (error) {
@@ -116,11 +117,35 @@ export class EnrollmentService {
     try {
       return await this.sessionEnrollmentRepo.find({
         where: { studentId: studentId },
-        relations: ["session"],
+        relations: ["sessions"],
         order: { createdAt: "DESC" },
       });
     } catch (error) {
       throw new Error("Error fetching student one-on-one enrollments");
+    }
+  }
+
+  // get one on one enrollments by id
+  async getOneOnOneEnrollmentById(
+    enrollmentId: string
+  ): Promise<SessionEnrollmentModel | null> {
+    try {
+      return await this.sessionEnrollmentRepo.findOne({
+        where: { id: enrollmentId },
+      });
+    } catch (error) {
+      throw new Error("Error fetching one-on-one enrollment by ID");
+    }
+  }
+
+  // update one on one enrollment
+  async updateOneOnOneEnrollment(
+    enrollment: SessionEnrollmentModel
+  ): Promise<SessionEnrollmentModel> {
+    try {
+      return await this.sessionEnrollmentRepo.save(enrollment);
+    } catch (error) {
+      throw new Error("Error updating one-on-one enrollment");
     }
   }
 }

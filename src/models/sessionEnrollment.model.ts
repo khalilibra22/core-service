@@ -17,6 +17,9 @@ export class SessionEnrollmentModel {
   @Column({ name: "student_id" })
   studentId?: string;
 
+  @Column({ name: "teacher_id", nullable: true })
+  teacherId?: string;
+
   @OneToMany(() => SessionModel, (session) => session.enrollment, {
     cascade: true,
   })

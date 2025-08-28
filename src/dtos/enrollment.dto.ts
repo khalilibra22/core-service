@@ -8,6 +8,10 @@ export class EnrollmentDto {
   studentId?: string;
 
   @Expose()
+  @Transform(({ obj }) => obj.course.ownerId)
+  teacherId?: string;
+
+  @Expose()
   @Transform(() => "to be filled")
   studentFullname?: string;
 
@@ -17,10 +21,37 @@ export class EnrollmentDto {
 
   @Expose()
   @Transform(({ obj }) => obj.course?.name)
-  course?: string;
+  name?: string;
+
+  @Expose()
+  @Transform(() =>
+    //random duration
+    Math.floor(Math.random() * 100 + 100)
+  )
+  duration?: number;
+
+  @Expose()
+  @Transform(() => "minutes")
+  durationUnit?: string;
+
+  @Expose()
+  @Transform(({ obj }) => obj.course?.sessions?.[0]?.date)
+  startDate?: Date;
 
   @Expose()
   status?: string;
+
+  @Expose()
+  @Transform(({ obj }) => obj.course?.isRemote)
+  isRemote?: boolean;
+
+  @Expose()
+  @Transform(({ obj }) => obj.course?.couresSettings?.isPaid)
+  isPaid?: boolean;
+
+  @Expose()
+  @Transform(({ obj }) => obj.course?.price)
+  price?: boolean;
 
   @Expose()
   @Transform(({ obj }) => obj.createdAt)
