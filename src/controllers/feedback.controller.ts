@@ -39,14 +39,8 @@ export class FeedbackController {
 
   async createComplaint(req: Request, res: Response): Promise<void> {
     try {
-      const course = await this.courseService.getCourseById(req.params.id);
-      if (!course) {
-        res.status(404).json({ error: "Course not found" });
-        return;
-      }
-      const session = await this.courseService.getSessionById(
-        req.params.sessionId
-      );
+      const sessionId = req.params.id;
+      const session = await this.courseService.getSessionById(sessionId);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -223,7 +217,7 @@ export class FeedbackController {
   // get reviews by teacher id
   async getReviewsByTeacherId(req: Request, res: Response): Promise<void> {
     try {
-      const teacherId = req.params.id;
+      const teacherId = req.params.teacherId;
       if (!teacherId) {
         res.status(400).json({ error: "Teacher ID is required" });
         return;
@@ -259,6 +253,45 @@ export class FeedbackController {
       res.status(201).json(reviewDto);
     } catch (error) {
       console.error(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  // get reviews by one-on-one teacher id
+  async getReviewsByOneOnOneTeacherId(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    try {
+      const teacherId = req.params.teacherId;
+      const reviews = await this.feedbackService.getReviewsByOneOnOneTeacherId(
+        teacherId
+      );
+      const reviewDtos = plainToInstance(ReviewDto, reviews, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(reviewDtos);
+    } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  // get all reviews by by teacher id
+  async getAllReviewsByTeacherId(req: Request, res: Response): Promise<void> {
+    try {
+      const teacherId = req.params.teacherId;
+      if (!teacherId) {
+        res.status(400).json({ error: "Teacher ID is required" });
+        return;
+      }
+      const reviews = await this.feedbackService.getAllReviewsByTeacherId(
+        teacherId
+      );
+      const reviewDtos = plainToInstance(ReviewDto, reviews, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(reviewDtos);
+    } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
   }

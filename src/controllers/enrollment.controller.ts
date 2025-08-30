@@ -229,8 +229,13 @@ export class EnrollmentController {
         res.status(409).json({ error: "Enrollment is already canceled" });
         return;
       }
-      enrollment.status = "canceled";
-      await this.enrollmentService.updateOneOnOneEnrollment(enrollment);
+      const enrollmentBody = {
+        ...enrollment,
+        status: "canceled",
+        canceledBy: req.body.ownerId,
+        reason: req.body.reason,
+      };
+      await this.enrollmentService.updateOneOnOneEnrollment(enrollmentBody);
       /*
       TODO: add logic to free up the teacher's availability slots
       by calling the external service to update the availability status

@@ -5,11 +5,14 @@ import { CourseController } from "../controllers/course.controller";
 import { QuizController } from "../controllers/Quiz.controller";
 import { quizValidation } from "../validations/quiz.validation";
 import { lessonValidationSchema } from "../validations/course.validation";
+import { FeedbackController } from "../controllers/feedback.controller";
+import { complaintValdationSchema } from "../validations/feedback.validation";
 
 const router = express.Router();
 
 const courseController = new CourseController();
 const quizController = new QuizController();
+const feedbackController = new FeedbackController();
 
 router.post(
   "/:id/lessons",
@@ -73,6 +76,14 @@ router.get(
   AuthMiddleware.verifyToken,
   async (req, res) =>
     await courseController.getPrerecordedSessionDetails(req, res)
+);
+
+//create a complaint
+router.post(
+  "/:id/complaints",
+  AuthMiddleware.verifyToken,
+  ValidationMiddleware.validate(complaintValdationSchema),
+  async (req, res) => await feedbackController.createComplaint(req, res)
 );
 
 export { router as sessionRouter };

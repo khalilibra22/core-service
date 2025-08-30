@@ -2,6 +2,7 @@ import express from "express";
 import { EnrollmentController } from "../controllers/enrollment.controller";
 import { ValidationMiddleware } from "../utils/validation.middleware";
 import {
+  cancelOneOnOneEnrollmentShcema,
   enrollmentStatusSchema,
   oneOnOneEnrollmentSchema,
 } from "../validations/enrollment.validation";
@@ -42,9 +43,10 @@ router.get(
 );
 
 //cancel one on one enrollment
-router.patch(
+router.post(
   "/one-on-one/:id/cancel",
   AuthMiddleware.verifyToken,
+  ValidationMiddleware.validate(cancelOneOnOneEnrollmentShcema),
   async (req, res) =>
     await enrollmentController.cancelOneOnOneEnrollment(req, res)
 );

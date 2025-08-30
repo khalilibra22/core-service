@@ -12,10 +12,7 @@ import {
   sessionValidationSchema,
   timeChangeRequestValidationSchema,
 } from "../validations/course.validation";
-import {
-  complaintValdationSchema,
-  reviewValdationSchema,
-} from "../validations/feedback.validation";
+import { reviewValdationSchema } from "../validations/feedback.validation";
 import { enrollmentValidationsSchema } from "../validations/enrollment.validation";
 import { AuthMiddleware } from "../utils/auth.middleware";
 
@@ -25,6 +22,7 @@ const courseController = new CourseController();
 const feedbackController = new FeedbackController();
 const enrollmentController = new EnrollmentController();
 const sessionTimeRequestController = new SessionTimeRequestController();
+
 router.post(
   "/",
   AuthMiddleware.verifyToken,
@@ -96,14 +94,6 @@ router.get(
   "/:id/reviews",
   AuthMiddleware.verifyToken,
   async (req, res) => await feedbackController.getReviewsByCourseId(req, res)
-);
-
-//create a complaint
-router.post(
-  "/:id/sessions/:sessionId/complaints/",
-  AuthMiddleware.verifyToken,
-  ValidationMiddleware.validate(complaintValdationSchema),
-  async (req, res) => await feedbackController.createComplaint(req, res)
 );
 
 //create a certificate

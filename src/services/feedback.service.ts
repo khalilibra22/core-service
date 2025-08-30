@@ -159,4 +159,38 @@ export class FeedbackService {
       throw new Error("Error fetching reviews by teacher ID");
     }
   }
+
+  // get reviews by one-on-one teacher id
+  async getReviewsByOneOnOneTeacherId(
+    teacherId: string
+  ): Promise<ReviewModel[]> {
+    try {
+      return await this.reviewRepo.find({
+        where: {
+          teacherId: teacherId,
+        },
+      });
+    } catch (error) {
+      throw new Error("Error fetching reviews by one-on-one teacher ID");
+    }
+  }
+
+  // get all reviews by teacher id
+  async getAllReviewsByTeacherId(teacherId: string): Promise<ReviewModel[]> {
+    try {
+      return await this.reviewRepo.find({
+        where: [
+          { course: { ownerId: teacherId } }, // prerecorded
+          { teacherId }, // one-on-one
+        ],
+      });
+    } catch (error) {
+      // Preserve error context
+      throw new Error(
+        `Error fetching reviews for teacher ${teacherId}: ${
+          error instanceof Error ? error.message : error
+        }`
+      );
+    }
+  }
 }
