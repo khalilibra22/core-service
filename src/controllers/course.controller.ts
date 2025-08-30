@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CoursService } from "../services/course.service";
+import { CourseService } from "../services/course.service";
 import { plainToInstance } from "class-transformer";
 import { CourseSettingsModel } from "../models/courseSettings.model";
 import { CourseModel } from "../models/course.model";
@@ -10,9 +10,9 @@ import { LessonDto } from "../dtos/lesson.dto";
 import { RecordedSessionDto } from "../dtos/recordedSession.dto";
 
 export class CourseController {
-  private courseService: CoursService;
+  private courseService: CourseService;
   constructor() {
-    this.courseService = new CoursService();
+    this.courseService = new CourseService();
   }
 
   async createDraftCourse(req: Request, res: Response): Promise<void> {

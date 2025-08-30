@@ -4,6 +4,7 @@ export const reviewValdationSchema = Joi.object({
   rating: Joi.number().integer().min(1).max(5).required(),
   title: Joi.string().optional(),
   comment: Joi.string().min(10).required(),
+  teacherId: Joi.string().uuid().optional(),
   ownerId: Joi.string().uuid().optional(),
 });
 

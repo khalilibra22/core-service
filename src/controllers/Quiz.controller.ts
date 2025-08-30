@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CoursService } from "../services/course.service";
+import { CourseService } from "../services/course.service";
 import { QuizService } from "../services/quiz.service";
 import { plainToInstance } from "class-transformer";
 import { QuizDto } from "../dtos/quiz.dto";
@@ -7,10 +7,10 @@ import { QuestionDto } from "../dtos/question.dto";
 
 export class QuizController {
   private quizService: QuizService;
-  private courseService: CoursService;
+  private courseService: CourseService;
   constructor() {
     this.quizService = new QuizService();
-    this.courseService = new CoursService();
+    this.courseService = new CourseService();
   }
 
   async createQuiz(req: Request, res: Response): Promise<void> {

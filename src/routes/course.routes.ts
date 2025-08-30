@@ -88,7 +88,7 @@ router.post(
   "/:id/reviews",
   AuthMiddleware.verifyToken,
   ValidationMiddleware.validate(reviewValdationSchema),
-  async (req, res) => await feedbackController.createReview(req, res)
+  async (req, res) => await feedbackController.createCourseReview(req, res)
 );
 
 //get course reviews

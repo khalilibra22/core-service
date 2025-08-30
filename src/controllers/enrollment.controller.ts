@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CoursService } from "../services/course.service";
+import { CourseService } from "../services/course.service";
 import { EnrollmentService } from "../services/enrollment.service";
 import { EnrollmentDto } from "../dtos/enrollment.dto";
 import { plainToInstance } from "class-transformer";
@@ -10,12 +10,12 @@ import { all } from "axios";
 
 export class EnrollmentController {
   private enrollmentService: EnrollmentService;
-  private courseService: CoursService;
+  private courseService: CourseService;
   private externalService: ExternalService;
 
   constructor() {
     this.enrollmentService = new EnrollmentService();
-    this.courseService = new CoursService();
+    this.courseService = new CourseService();
     this.externalService = new ExternalService();
   }
 

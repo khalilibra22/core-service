@@ -9,6 +9,10 @@ export class ReviewDto {
   studentFullname?: string;
 
   @Expose()
+  @Transform(({ obj }) => (obj.teacherId ? "to be filled" : undefined))
+  teacherFullname?: string;
+
+  @Expose()
   rating?: number;
 
   @Expose()

@@ -5,7 +5,7 @@ import { CourseSettingsModel } from "../models/courseSettings.model";
 import { LessonModel } from "../models/lesson.model";
 import { SessionModel } from "../models/session.model";
 
-export class CoursService {
+export class CourseService {
   courseRepo: any;
   courseSettingsRepo: any;
   sessionRepo: any;

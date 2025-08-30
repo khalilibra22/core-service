@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CoursService } from "../services/course.service";
+import { CourseService } from "../services/course.service";
 import { FeedbackService } from "../services/feedback.service";
 import { plainToInstance } from "class-transformer";
 import { ReviewDto } from "../dtos/review.dto";
@@ -7,13 +7,13 @@ import { ComplaintDto } from "../dtos/complaint.dto";
 
 export class FeedbackController {
   private feedbackService: FeedbackService;
-  private courseService: CoursService;
+  private courseService: CourseService;
   constructor() {
     this.feedbackService = new FeedbackService();
-    this.courseService = new CoursService();
+    this.courseService = new CourseService();
   }
 
-  async createReview(req: Request, res: Response): Promise<void> {
+  async createCourseReview(req: Request, res: Response): Promise<void> {
     try {
       const course = await this.courseService.getCourseById(req.params.id);
       if (!course) {
@@ -236,6 +236,29 @@ export class FeedbackController {
       });
       res.status(200).json(reviewDtos);
     } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  // create one on one review
+  async createOneOnOneReview(req: Request, res: Response): Promise<void> {
+    try {
+      const { ownerId } = req.body;
+      if (!req.body.teacherId) {
+        res.status(400).json({ error: "Teacher ID is required" });
+        return;
+      }
+      const reviewBody = {
+        ...req.body,
+        studentId: ownerId,
+      };
+      const review = await this.feedbackService.createReview(reviewBody);
+      const reviewDto = plainToInstance(ReviewDto, review, {
+        excludeExtraneousValues: true,
+      });
+      res.status(201).json(reviewDto);
+    } catch (error) {
+      console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
