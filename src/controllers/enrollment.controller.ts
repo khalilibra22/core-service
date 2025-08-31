@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CoursService } from "../services/course.service";
+import { CourseService } from "../services/course.service";
 import { EnrollmentService } from "../services/enrollment.service";
 import { EnrollmentDto } from "../dtos/enrollment.dto";
 import { plainToInstance } from "class-transformer";
@@ -7,15 +7,16 @@ import { OneOnOneEnollmentDto } from "../dtos/oneOnOneEnrollment.dto";
 import { generateSessionsFromAvailabilities } from "../utils";
 import { ExternalService } from "../services/external.service";
 import { all } from "axios";
+import { SessionDto } from "../dtos/session.dto";
 
 export class EnrollmentController {
   private enrollmentService: EnrollmentService;
-  private courseService: CoursService;
+  private courseService: CourseService;
   private externalService: ExternalService;
 
   constructor() {
     this.enrollmentService = new EnrollmentService();
-    this.courseService = new CoursService();
+    this.courseService = new CourseService();
     this.externalService = new ExternalService();
   }
 
@@ -229,8 +230,13 @@ export class EnrollmentController {
         res.status(409).json({ error: "Enrollment is already canceled" });
         return;
       }
-      enrollment.status = "canceled";
-      await this.enrollmentService.updateOneOnOneEnrollment(enrollment);
+      const enrollmentBody = {
+        ...enrollment,
+        status: "canceled",
+        canceledBy: req.body.ownerId,
+        reason: req.body.reason,
+      };
+      await this.enrollmentService.updateOneOnOneEnrollment(enrollmentBody);
       /*
       TODO: add logic to free up the teacher's availability slots
       by calling the external service to update the availability status

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CoursService } from "../services/course.service";
+import { CourseService } from "../services/course.service";
 import { plainToInstance } from "class-transformer";
 import { CourseSettingsModel } from "../models/courseSettings.model";
 import { CourseModel } from "../models/course.model";
@@ -8,11 +8,12 @@ import { getCourseDto, getSessionDto } from "../utils";
 import { CertificateDto } from "../dtos/certificate.dto";
 import { LessonDto } from "../dtos/lesson.dto";
 import { RecordedSessionDto } from "../dtos/recordedSession.dto";
+import { SessionDto } from "../dtos/session.dto";
 
 export class CourseController {
-  private courseService: CoursService;
+  private courseService: CourseService;
   constructor() {
-    this.courseService = new CoursService();
+    this.courseService = new CourseService();
   }
 
   async createDraftCourse(req: Request, res: Response): Promise<void> {
@@ -540,6 +541,25 @@ export class CourseController {
       res.status(200).json(courseDtos);
     } catch (error) {
       console.log(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  async getOneOnOneSessionsByTeacherId(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    try {
+      const teacherId = req.params.teacherId;
+      const sessions = await this.courseService.getTeacherOneOnOneSessions(
+        teacherId
+      );
+      const sessionDtos = plainToInstance(SessionDto, sessions, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(sessionDtos);
+    } catch (error) {
+      //console.error("Error in getOneOnOneEnrollementByTeacherId:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }

@@ -12,6 +12,10 @@ export class EnrollmentDto {
   teacherId?: string;
 
   @Expose()
+  @Transform(({ obj }) => obj.course.id)
+  courseId?: string;
+
+  @Expose()
   @Transform(() => "to be filled")
   studentFullname?: string;
 

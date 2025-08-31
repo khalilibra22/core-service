@@ -2,7 +2,6 @@ import express from "express";
 import { CourseController } from "../controllers/course.controller";
 import { FeedbackController } from "../controllers/feedback.controller";
 import { EnrollmentController } from "../controllers/enrollment.controller";
-import { SessionTimeRequestController } from "../controllers/sessionTimeRequest.controller";
 import { ValidationMiddleware } from "../utils/validation.middleware";
 import {
   certificateValidationSchema,
@@ -10,12 +9,8 @@ import {
   courseValidationSchema,
   createCourseValidationSchema,
   sessionValidationSchema,
-  timeChangeRequestValidationSchema,
 } from "../validations/course.validation";
-import {
-  complaintValdationSchema,
-  reviewValdationSchema,
-} from "../validations/feedback.validation";
+import { reviewValdationSchema } from "../validations/feedback.validation";
 import { enrollmentValidationsSchema } from "../validations/enrollment.validation";
 import { AuthMiddleware } from "../utils/auth.middleware";
 
@@ -24,7 +19,7 @@ const router = express.Router();
 const courseController = new CourseController();
 const feedbackController = new FeedbackController();
 const enrollmentController = new EnrollmentController();
-const sessionTimeRequestController = new SessionTimeRequestController();
+
 router.post(
   "/",
   AuthMiddleware.verifyToken,
@@ -88,7 +83,7 @@ router.post(
   "/:id/reviews",
   AuthMiddleware.verifyToken,
   ValidationMiddleware.validate(reviewValdationSchema),
-  async (req, res) => await feedbackController.createReview(req, res)
+  async (req, res) => await feedbackController.createCourseReview(req, res)
 );
 
 //get course reviews
@@ -96,14 +91,6 @@ router.get(
   "/:id/reviews",
   AuthMiddleware.verifyToken,
   async (req, res) => await feedbackController.getReviewsByCourseId(req, res)
-);
-
-//create a complaint
-router.post(
-  "/:id/sessions/:sessionId/complaints/",
-  AuthMiddleware.verifyToken,
-  ValidationMiddleware.validate(complaintValdationSchema),
-  async (req, res) => await feedbackController.createComplaint(req, res)
 );
 
 //create a certificate
@@ -143,14 +130,6 @@ router.patch(
   AuthMiddleware.verifyToken,
   ValidationMiddleware.validate(courseCancellationValidationSchema),
   async (req, res) => await courseController.cancelCourse(req, res)
-);
-
-router.post(
-  "/:id/sessions/:sessionId/session-time-requests/",
-  AuthMiddleware.verifyToken,
-  ValidationMiddleware.validate(timeChangeRequestValidationSchema),
-  async (req, res) =>
-    await sessionTimeRequestController.createSessionTimeRequest(req, res)
 );
 
 router.get(

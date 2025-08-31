@@ -1,19 +1,20 @@
 import { Request, Response } from "express";
-import { CoursService } from "../services/course.service";
+import { CourseService } from "../services/course.service";
 import { FeedbackService } from "../services/feedback.service";
 import { plainToInstance } from "class-transformer";
 import { ReviewDto } from "../dtos/review.dto";
 import { ComplaintDto } from "../dtos/complaint.dto";
+import { constrainedMemory } from "process";
 
 export class FeedbackController {
   private feedbackService: FeedbackService;
-  private courseService: CoursService;
+  private courseService: CourseService;
   constructor() {
     this.feedbackService = new FeedbackService();
-    this.courseService = new CoursService();
+    this.courseService = new CourseService();
   }
 
-  async createReview(req: Request, res: Response): Promise<void> {
+  async createCourseReview(req: Request, res: Response): Promise<void> {
     try {
       const course = await this.courseService.getCourseById(req.params.id);
       if (!course) {
@@ -39,14 +40,8 @@ export class FeedbackController {
 
   async createComplaint(req: Request, res: Response): Promise<void> {
     try {
-      const course = await this.courseService.getCourseById(req.params.id);
-      if (!course) {
-        res.status(404).json({ error: "Course not found" });
-        return;
-      }
-      const session = await this.courseService.getSessionById(
-        req.params.sessionId
-      );
+      const sessionId = req.params.id;
+      const session = await this.courseService.getSessionById(sessionId);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -223,7 +218,7 @@ export class FeedbackController {
   // get reviews by teacher id
   async getReviewsByTeacherId(req: Request, res: Response): Promise<void> {
     try {
-      const teacherId = req.params.id;
+      const teacherId = req.params.teacherId;
       if (!teacherId) {
         res.status(400).json({ error: "Teacher ID is required" });
         return;
@@ -236,6 +231,83 @@ export class FeedbackController {
       });
       res.status(200).json(reviewDtos);
     } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  // create one on one review
+  async createOneOnOneReview(req: Request, res: Response): Promise<void> {
+    try {
+      const { ownerId } = req.body;
+      if (!req.body.teacherId) {
+        res.status(400).json({ error: "Teacher ID is required" });
+        return;
+      }
+      const reviewBody = {
+        ...req.body,
+        studentId: ownerId,
+      };
+      const review = await this.feedbackService.createReview(reviewBody);
+      const reviewDto = plainToInstance(ReviewDto, review, {
+        excludeExtraneousValues: true,
+      });
+      res.status(201).json(reviewDto);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  // get reviews by one-on-one teacher id
+  async getReviewsByOneOnOneTeacherId(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    try {
+      const teacherId = req.params.teacherId;
+      const reviews = await this.feedbackService.getReviewsByOneOnOneTeacherId(
+        teacherId
+      );
+      const reviewDtos = plainToInstance(ReviewDto, reviews, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(reviewDtos);
+    } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  // get all reviews by by teacher id
+  async getAllReviewsByTeacherId(req: Request, res: Response): Promise<void> {
+    try {
+      const teacherId = req.params.teacherId;
+      const reviews = await this.feedbackService.getAllReviewsByTeacherId(
+        teacherId
+      );
+      const reviewDtos = plainToInstance(ReviewDto, reviews, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(reviewDtos);
+    } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  async getAllComplaintsByTeacherId(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    try {
+      const teacherId = req.params.teacherId;
+      const complaints = await this.feedbackService.getComplaintsTeacherId(
+        teacherId
+      );
+      const complaintDtos = plainToInstance(ComplaintDto, complaints, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(complaintDtos);
+    } catch (error) {
+      console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }

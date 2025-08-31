@@ -1,23 +1,21 @@
 import { Request, Response } from "express";
 import { SessionTimeRequestService } from "../services/sessionTimeRequest.service";
-import { CoursService } from "../services/course.service";
+import { CourseService } from "../services/course.service";
 import { plainToInstance } from "class-transformer";
 import { SessionTimeChangeRequestDto } from "../dtos/sessionTimeChangeRequest.dto";
 
 export class SessionTimeRequestController {
   private sessionTimeRequestService: SessionTimeRequestService;
-  private courseService: CoursService;
+  private courseService: CourseService;
 
   constructor() {
     this.sessionTimeRequestService = new SessionTimeRequestService();
-    this.courseService = new CoursService();
+    this.courseService = new CourseService();
   }
 
   async createSessionTimeRequest(req: Request, res: Response): Promise<void> {
     try {
-      const session = await this.courseService.getSessionById(
-        req.params.sessionId
-      );
+      const session = await this.courseService.getSessionById(req.params.id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;

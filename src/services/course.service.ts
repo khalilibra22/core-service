@@ -5,7 +5,7 @@ import { CourseSettingsModel } from "../models/courseSettings.model";
 import { LessonModel } from "../models/lesson.model";
 import { SessionModel } from "../models/session.model";
 
-export class CoursService {
+export class CourseService {
   courseRepo: any;
   courseSettingsRepo: any;
   sessionRepo: any;
@@ -325,6 +325,22 @@ export class CoursService {
     } catch (error) {
       console.log(error);
       throw new Error("Error fetching all courses of type live");
+    }
+  }
+
+  async getTeacherOneOnOneSessions(
+    teacherId: string
+  ): Promise<SessionModel | null> {
+    try {
+      return await this.sessionRepo.find({
+        where: {
+          enrollment: {
+            teacherId: teacherId,
+          },
+        },
+      });
+    } catch (error) {
+      throw new Error("Error fetching one on one sessions by teacher ID");
     }
   }
 }

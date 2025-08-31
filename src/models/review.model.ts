@@ -17,6 +17,9 @@ export class ReviewModel {
   @Column({ name: "student_id" })
   studentId?: string;
 
+  @Column({ name: "teacher_id", nullable: true })
+  teacherId?: string; // Optional field for one on one reviews
+
   @Column()
   rating?: number;
 

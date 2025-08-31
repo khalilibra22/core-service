@@ -58,13 +58,9 @@ export class EnrollmentService {
     try {
       return await this.sessionEnrollmentRepo.find({
         where: {
-          session: {
-            course: {
-              ownerId: teacherId,
-            },
-          },
+          teacherId: teacherId,
         },
-        relations: ["session", "session.course"],
+        relations: ["sessions"],
       });
     } catch (error) {
       throw new Error("Error fetching session enrollments");

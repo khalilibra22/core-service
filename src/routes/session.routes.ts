@@ -4,12 +4,20 @@ import { AuthMiddleware } from "../utils/auth.middleware";
 import { CourseController } from "../controllers/course.controller";
 import { QuizController } from "../controllers/Quiz.controller";
 import { quizValidation } from "../validations/quiz.validation";
-import { lessonValidationSchema } from "../validations/course.validation";
+import {
+  lessonValidationSchema,
+  timeChangeRequestValidationSchema,
+} from "../validations/course.validation";
+import { FeedbackController } from "../controllers/feedback.controller";
+import { complaintValdationSchema } from "../validations/feedback.validation";
+import { SessionTimeRequestController } from "../controllers/sessionTimeRequest.controller";
 
 const router = express.Router();
 
 const courseController = new CourseController();
 const quizController = new QuizController();
+const feedbackController = new FeedbackController();
+const sessionTimeRequestController = new SessionTimeRequestController();
 
 router.post(
   "/:id/lessons",
@@ -73,6 +81,29 @@ router.get(
   AuthMiddleware.verifyToken,
   async (req, res) =>
     await courseController.getPrerecordedSessionDetails(req, res)
+);
+
+//create a complaint
+router.post(
+  "/:id/complaints",
+  AuthMiddleware.verifyToken,
+  ValidationMiddleware.validate(complaintValdationSchema),
+  async (req, res) => await feedbackController.createComplaint(req, res)
+);
+
+router.post(
+  "/:id/session-time-requests",
+  AuthMiddleware.verifyToken,
+  ValidationMiddleware.validate(timeChangeRequestValidationSchema),
+  async (req, res) =>
+    await sessionTimeRequestController.createSessionTimeRequest(req, res)
+);
+
+router.get(
+  "/teachers/:teacherId",
+  AuthMiddleware.verifyToken,
+  async (req, res) =>
+    await courseController.getOneOnOneSessionsByTeacherId(req, res)
 );
 
 export { router as sessionRouter };
