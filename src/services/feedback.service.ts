@@ -180,7 +180,7 @@ export class FeedbackService {
     try {
       return await this.reviewRepo.find({
         where: [
-          { course: { ownerId: teacherId } }, // prerecorded
+          { course: { ownerId: teacherId } }, // courses
           { teacherId }, // one-on-one
         ],
       });
@@ -191,6 +191,22 @@ export class FeedbackService {
           error instanceof Error ? error.message : error
         }`
       );
+    }
+  }
+
+  async getComplaintsTeacherId(teacherId: string): Promise<ComplaintModel[]> {
+    try {
+      return await this.complaintRepo
+        .createQueryBuilder("complaint")
+        .leftJoinAndSelect("complaint.session", "session")
+        .leftJoinAndSelect("session.course", "course")
+        .leftJoinAndSelect("session.enrollment", "enrollment")
+        .where("course.ownerId = :teacherId", { teacherId })
+        .orWhere("enrollment.teacherId = :teacherId", { teacherId })
+        .getMany();
+    } catch (error) {
+      console.log(error);
+      throw new Error("Error fetching complaints by teacher ID");
     }
   }
 }

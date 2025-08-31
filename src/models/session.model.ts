@@ -59,12 +59,6 @@ export class SessionModel {
   @ManyToOne(() => CourseModel, (course) => course.sessions)
   course?: CourseModel;
 
-  @OneToMany(
-    () => SessionEnrollmentModel,
-    (sessionEnrollment) => sessionEnrollment.sessions
-  )
-  enrollments?: SessionEnrollmentModel[];
-
   @ManyToOne(
     () => SessionEnrollmentModel,
     (sessionEnrollment) => sessionEnrollment.sessions

@@ -2,7 +2,6 @@ import express from "express";
 import { CourseController } from "../controllers/course.controller";
 import { FeedbackController } from "../controllers/feedback.controller";
 import { EnrollmentController } from "../controllers/enrollment.controller";
-import { SessionTimeRequestController } from "../controllers/sessionTimeRequest.controller";
 import { ValidationMiddleware } from "../utils/validation.middleware";
 import {
   certificateValidationSchema,
@@ -10,7 +9,6 @@ import {
   courseValidationSchema,
   createCourseValidationSchema,
   sessionValidationSchema,
-  timeChangeRequestValidationSchema,
 } from "../validations/course.validation";
 import { reviewValdationSchema } from "../validations/feedback.validation";
 import { enrollmentValidationsSchema } from "../validations/enrollment.validation";
@@ -21,7 +19,6 @@ const router = express.Router();
 const courseController = new CourseController();
 const feedbackController = new FeedbackController();
 const enrollmentController = new EnrollmentController();
-const sessionTimeRequestController = new SessionTimeRequestController();
 
 router.post(
   "/",
@@ -133,14 +130,6 @@ router.patch(
   AuthMiddleware.verifyToken,
   ValidationMiddleware.validate(courseCancellationValidationSchema),
   async (req, res) => await courseController.cancelCourse(req, res)
-);
-
-router.post(
-  "/:id/sessions/:sessionId/session-time-requests/",
-  AuthMiddleware.verifyToken,
-  ValidationMiddleware.validate(timeChangeRequestValidationSchema),
-  async (req, res) =>
-    await sessionTimeRequestController.createSessionTimeRequest(req, res)
 );
 
 router.get(

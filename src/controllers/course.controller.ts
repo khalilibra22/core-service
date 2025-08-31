@@ -8,6 +8,7 @@ import { getCourseDto, getSessionDto } from "../utils";
 import { CertificateDto } from "../dtos/certificate.dto";
 import { LessonDto } from "../dtos/lesson.dto";
 import { RecordedSessionDto } from "../dtos/recordedSession.dto";
+import { SessionDto } from "../dtos/session.dto";
 
 export class CourseController {
   private courseService: CourseService;
@@ -540,6 +541,25 @@ export class CourseController {
       res.status(200).json(courseDtos);
     } catch (error) {
       console.log(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  async getOneOnOneSessionsByTeacherId(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    try {
+      const teacherId = req.params.teacherId;
+      const sessions = await this.courseService.getTeacherOneOnOneSessions(
+        teacherId
+      );
+      const sessionDtos = plainToInstance(SessionDto, sessions, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(sessionDtos);
+    } catch (error) {
+      //console.error("Error in getOneOnOneEnrollementByTeacherId:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }

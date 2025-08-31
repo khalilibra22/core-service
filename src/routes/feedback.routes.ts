@@ -74,7 +74,7 @@ router.get(
 
 // create review for one-on-one
 router.post(
-  "one-on-one/reviews",
+  "/one-on-one/reviews",
   AuthMiddleware.verifyToken,
   ValidationMiddleware.validate(reviewValdationSchema),
   async (req, res) => await feedbackController.createOneOnOneReview(req, res)
@@ -92,6 +92,13 @@ router.get(
   AuthMiddleware.verifyToken,
   async (req, res) =>
     await feedbackController.getAllReviewsByTeacherId(req, res)
+);
+
+router.get(
+  "/teachers/:teacherId/complaints",
+  AuthMiddleware.verifyToken,
+  async (req, res) =>
+    await feedbackController.getAllComplaintsByTeacherId(req, res)
 );
 
 export { router as feedbackRouter };

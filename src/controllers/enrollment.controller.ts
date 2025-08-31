@@ -7,6 +7,7 @@ import { OneOnOneEnollmentDto } from "../dtos/oneOnOneEnrollment.dto";
 import { generateSessionsFromAvailabilities } from "../utils";
 import { ExternalService } from "../services/external.service";
 import { all } from "axios";
+import { SessionDto } from "../dtos/session.dto";
 
 export class EnrollmentController {
   private enrollmentService: EnrollmentService;

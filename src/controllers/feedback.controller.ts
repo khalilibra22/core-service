@@ -4,6 +4,7 @@ import { FeedbackService } from "../services/feedback.service";
 import { plainToInstance } from "class-transformer";
 import { ReviewDto } from "../dtos/review.dto";
 import { ComplaintDto } from "../dtos/complaint.dto";
+import { constrainedMemory } from "process";
 
 export class FeedbackController {
   private feedbackService: FeedbackService;
@@ -280,10 +281,6 @@ export class FeedbackController {
   async getAllReviewsByTeacherId(req: Request, res: Response): Promise<void> {
     try {
       const teacherId = req.params.teacherId;
-      if (!teacherId) {
-        res.status(400).json({ error: "Teacher ID is required" });
-        return;
-      }
       const reviews = await this.feedbackService.getAllReviewsByTeacherId(
         teacherId
       );
@@ -292,6 +289,25 @@ export class FeedbackController {
       });
       res.status(200).json(reviewDtos);
     } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  async getAllComplaintsByTeacherId(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    try {
+      const teacherId = req.params.teacherId;
+      const complaints = await this.feedbackService.getComplaintsTeacherId(
+        teacherId
+      );
+      const complaintDtos = plainToInstance(ComplaintDto, complaints, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(complaintDtos);
+    } catch (error) {
+      console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }

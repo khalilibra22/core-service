@@ -15,9 +15,7 @@ export class SessionTimeRequestController {
 
   async createSessionTimeRequest(req: Request, res: Response): Promise<void> {
     try {
-      const session = await this.courseService.getSessionById(
-        req.params.sessionId
-      );
+      const session = await this.courseService.getSessionById(req.params.id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
