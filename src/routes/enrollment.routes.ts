@@ -5,6 +5,10 @@ import {
   cancelOneOnOneEnrollmentShcema,
   enrollmentStatusSchema,
   oneOnOneEnrollmentSchema,
+  refundInitialResponseSchema,
+  refundValdationSchema,
+  resolveRefundSchema,
+  refundStudentDecisionSchema,
 } from "../validations/enrollment.validation";
 import { AuthMiddleware } from "../utils/auth.middleware";
 
@@ -50,4 +54,41 @@ router.post(
   async (req, res) =>
     await enrollmentController.cancelOneOnOneEnrollment(req, res)
 );
+
+router.get(
+  "/one-on-one/:id/sessions",
+  AuthMiddleware.verifyToken,
+  async (req, res) =>
+    await enrollmentController.getOneOnOneEnrollmentSessions(req, res)
+);
+
+router.post(
+  "/:id/refunds",
+  AuthMiddleware.verifyToken,
+  ValidationMiddleware.validate(refundValdationSchema),
+  async (req, res) => await enrollmentController.createRefundRequest(req, res)
+);
+
+router.post(
+  "/:id/refunds/:refundId/initial-response",
+  AuthMiddleware.verifyToken,
+  ValidationMiddleware.validate(refundInitialResponseSchema),
+  async (req, res) =>
+    await enrollmentController.addRefundInitialResponse(req, res)
+);
+
+router.post(
+  "/:id/refunds/:refundId/student-decision",
+  AuthMiddleware.verifyToken,
+  ValidationMiddleware.validate(refundStudentDecisionSchema),
+  async (req, res) => await enrollmentController.refundStudentDecision(req, res)
+);
+
+router.post(
+  "/:id/refunds/:refundId/resolve",
+  AuthMiddleware.verifyToken,
+  ValidationMiddleware.validate(resolveRefundSchema),
+  async (req, res) => await enrollmentController.refundAdminResolve(req, res)
+);
+
 export { router as enrollmentRouter };

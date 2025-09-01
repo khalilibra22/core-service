@@ -14,6 +14,7 @@ import { AnswerModel } from "../models/answer.model";
 import { QuestionModel } from "../models/question.model";
 import { QuizAttemptModel } from "../models/quizAttempt.model";
 import { LessonModel } from "../models/lesson.model";
+import { RefundModel } from "../models/refund.model";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -39,6 +40,7 @@ export const AppDataSource = new DataSource({
     QuestionModel,
     AnswerModel,
     LessonModel,
+    RefundModel,
   ],
   synchronize: true,
 });
