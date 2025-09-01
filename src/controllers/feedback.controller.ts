@@ -66,7 +66,10 @@ export class FeedbackController {
     }
   }
 
-  async changeComplaintStatus(req: Request, res: Response): Promise<void> {
+  async addComplaintInitialResponse(
+    req: Request,
+    res: Response
+  ): Promise<void> {
     try {
       const complaint = await this.feedbackService.getComplaintById(
         req.params.id
@@ -75,11 +78,12 @@ export class FeedbackController {
         res.status(404).json({ error: "Complaint not found" });
         return;
       }
-      if (complaint.status === "resolved") {
-        res.status(409).json({ error: "Complaint already resolved" });
+      if (complaint.status !== "pending") {
+        res.status(409).json({ error: "Complaint already responded" });
         return;
       }
-      complaint.status = req.body.status;
+      complaint.initialResponse = req.body.initialResponse;
+      complaint.status = "responded";
       const updatedComplaint = await this.feedbackService.updateComplaint(
         complaint
       );
@@ -93,7 +97,7 @@ export class FeedbackController {
     }
   }
 
-  async resolveComplaint(req: Request, res: Response): Promise<void> {
+  async complaintAdminResolve(req: Request, res: Response): Promise<void> {
     try {
       const complaintId = req.params.id;
       const complaint = await this.feedbackService.getComplaintById(
@@ -101,6 +105,12 @@ export class FeedbackController {
       );
       if (!complaint) {
         res.status(404).json({ error: "Complaint not found" });
+        return;
+      }
+      if (complaint.status !== "escalated") {
+        res
+          .status(409)
+          .json({ error: "Complaint is not escalated or already resolved" });
         return;
       }
       req.body.resolvedBy = req.body.ownerId; // Assuming the resolver is the owner
@@ -113,6 +123,38 @@ export class FeedbackController {
 
       const updatedComplaint = await this.feedbackService.updateComplaint(
         complaintBody
+      );
+      const complaintDto = plainToInstance(ComplaintDto, updatedComplaint, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json(complaintDto);
+    } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  async complaintStudentDecision(req: Request, res: Response): Promise<void> {
+    try {
+      const complaintId = req.params.id;
+      const complaint = await this.feedbackService.getComplaintById(
+        complaintId
+      );
+      if (!complaint) {
+        res.status(404).json({ error: "Complaint not found" });
+        return;
+      }
+
+      if (complaint.status !== "responded") {
+        res.status(409).json({ error: "Decision already sent" });
+        return;
+      }
+      complaint.studentDecision = req.body.studentDecision;
+      req.body.studentDecision === "accepted"
+        ? (complaint.status = "resolved")
+        : (complaint.status = "escalated");
+
+      const updatedComplaint = await this.feedbackService.updateComplaint(
+        complaint
       );
       const complaintDto = plainToInstance(ComplaintDto, updatedComplaint, {
         excludeExtraneousValues: true,

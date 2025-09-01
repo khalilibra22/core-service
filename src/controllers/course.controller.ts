@@ -559,7 +559,6 @@ export class CourseController {
       });
       res.status(200).json(sessionDtos);
     } catch (error) {
-      //console.error("Error in getOneOnOneEnrollementByTeacherId:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }

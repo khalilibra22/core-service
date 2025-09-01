@@ -24,10 +24,11 @@ export class SessionDto {
   topicId?: number;
 
   @Expose()
-  isPaid?: boolean;
+  @Transform(() => "to be filled")
+  topicName?: string;
 
   @Expose()
-  isReserved?: boolean;
+  isPaid?: boolean;
 
   @Expose()
   status?: string;
