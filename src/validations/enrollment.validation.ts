@@ -44,3 +44,25 @@ export const cancelOneOnOneEnrollmentShcema = Joi.object({
   ownerId: Joi.string().uuid().optional(),
   reason: Joi.string().min(5).required(),
 });
+
+export const refundValdationSchema = Joi.object({
+  ownerId: Joi.string().uuid().optional(),
+  reason: Joi.string().required(),
+});
+
+export const refundInitialResponseSchema = Joi.object({
+  ownerId: Joi.string().uuid().optional(),
+  amount: Joi.number().min(0).required(),
+  initialResponse: Joi.string().min(5).required(),
+});
+
+export const resolveRefundSchema = Joi.object({
+  amount: Joi.number().min(0).required(),
+  adminResponse: Joi.string().required(),
+  ownerId: Joi.string().uuid().optional(),
+});
+
+export const refundStudentDecisionSchema = Joi.object({
+  studentDecision: Joi.string().valid("accepted", "escalated").required(),
+  ownerId: Joi.string().uuid().optional(),
+});

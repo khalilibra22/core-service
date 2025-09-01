@@ -2,9 +2,10 @@ import express from "express";
 import { FeedbackController } from "../controllers/feedback.controller";
 import { ValidationMiddleware } from "../utils/validation.middleware";
 import {
-  complaintStatusSchema,
+  complaintInitialResponseSchema,
   resolveComplaintSchema,
   reviewValdationSchema,
+  studentDecisionComplaintSchema,
 } from "../validations/feedback.validation";
 import { AuthMiddleware } from "../utils/auth.middleware";
 
@@ -12,20 +13,28 @@ const router = express.Router();
 
 const feedbackController = new FeedbackController();
 
-// update complaint status
-router.patch(
-  "/complaints/:id/status",
+router.post(
+  "/complaints/:id/initial-response",
   AuthMiddleware.verifyToken,
-  ValidationMiddleware.validate(complaintStatusSchema),
-  async (req, res) => await feedbackController.changeComplaintStatus(req, res)
+  ValidationMiddleware.validate(complaintInitialResponseSchema),
+  async (req, res) =>
+    await feedbackController.addComplaintInitialResponse(req, res)
 );
 
 // resolve complaint
-router.patch(
+router.post(
   "/complaints/:id/resolve",
   AuthMiddleware.verifyToken,
   ValidationMiddleware.validate(resolveComplaintSchema),
-  async (req, res) => await feedbackController.resolveComplaint(req, res)
+  async (req, res) => await feedbackController.complaintAdminResolve(req, res)
+);
+
+router.post(
+  "/complaints/:id/student-decision",
+  AuthMiddleware.verifyToken,
+  ValidationMiddleware.validate(studentDecisionComplaintSchema),
+  async (req, res) =>
+    await feedbackController.complaintStudentDecision(req, res)
 );
 
 // get all complaints

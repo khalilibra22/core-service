@@ -23,17 +23,27 @@ export class ComplaintModel {
   @Column({ name: "reason" })
   reason?: string;
 
-  @Column({ name: "response", nullable: true })
-  response?: string; // Response from the admin or support team
+  // --- Response from Teacher or Academy (first responder) ---
+  @Column({ name: "initial_response", nullable: true })
+  initialResponse?: string;
 
+  // --- Whether the student accepted or escalated the first response ---
+  @Column({ name: "student_decision", nullable: true })
+  studentDecision?: "accepted" | "escalated";
+
+  // --- Admin’s response if escalated ---
+  @Column({ name: "admin_response", nullable: true })
+  adminResponse?: string;
+
+  // --- Complaint status workflow ---
   @Column({ default: "pending" })
-  status?: string; // Status of the complaint (e.g., pending, resolved, escalated, etc.)
-
-  @ManyToOne(() => SessionModel, (session) => session.complaints)
-  session?: SessionModel;
+  status?: "pending" | "responded" | "resolved" | "escalated";
 
   @Column({ name: "resolved_by", nullable: true })
   resolvedBy?: string; // ID of user who resolved the complaint (e.g., admin or support staff)
+
+  @ManyToOne(() => SessionModel, (session) => session.complaints)
+  session?: SessionModel;
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;

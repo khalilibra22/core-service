@@ -11,14 +11,20 @@ export const reviewValdationSchema = Joi.object({
 export const complaintValdationSchema = Joi.object({
   ownerId: Joi.string().uuid().optional(),
   reason: Joi.string().required(),
+  type: Joi.string().required(),
 });
 
-export const complaintStatusSchema = Joi.object({
+export const complaintInitialResponseSchema = Joi.object({
   ownerId: Joi.string().uuid().optional(),
-  status: Joi.string().valid("under review", "rejected").required(),
+  initialResponse: Joi.string().min(5).required(),
 });
 
 export const resolveComplaintSchema = Joi.object({
-  response: Joi.string().required(),
+  adminResponse: Joi.string().required(),
+  ownerId: Joi.string().uuid().optional(),
+});
+
+export const studentDecisionComplaintSchema = Joi.object({
+  studentDecision: Joi.string().valid("accepted", "escalated").required(),
   ownerId: Joi.string().uuid().optional(),
 });

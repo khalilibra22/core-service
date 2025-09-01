@@ -4,8 +4,11 @@ export class ComplaintDto {
   @Expose()
   id?: string;
 
-  // @Expose()
-  // studentId?: string;
+  @Expose()
+  studentId?: string;
+
+  @Expose()
+  status?: string;
 
   @Expose()
   @Transform(() => "to be filled")
@@ -18,12 +21,15 @@ export class ComplaintDto {
   reason?: string;
 
   @Expose()
-  @Transform(() => "to be filled")
-  respondedBy?: string;
+  initialResponse?: string;
 
   @Expose()
-  response?: string;
+  studentDecision?: string;
 
   @Expose()
-  status?: string;
+  adminResponse?: string;
+
+  // @Expose()
+  // @Transform(() => "to be filled")
+  // respondedBy?: string;
 }

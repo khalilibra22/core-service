@@ -328,14 +328,28 @@ export class CourseService {
     }
   }
 
-  async getTeacherOneOnOneSessions(
-    teacherId: string
-  ): Promise<SessionModel | null> {
+  async getTeacherOneOnOneSessions(teacherId: string): Promise<SessionModel[]> {
     try {
       return await this.sessionRepo.find({
         where: {
           enrollment: {
             teacherId: teacherId,
+          },
+        },
+      });
+    } catch (error) {
+      throw new Error("Error fetching one on one sessions by teacher ID");
+    }
+  }
+
+  async getOneOnOneSessionsByEnrollmentId(
+    enrollmentId: string
+  ): Promise<SessionModel[]> {
+    try {
+      return await this.sessionRepo.find({
+        where: {
+          enrollment: {
+            id: enrollmentId,
           },
         },
       });
