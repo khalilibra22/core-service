@@ -8,16 +8,19 @@ import { generateSessionsFromAvailabilities } from "../utils";
 import { ExternalService } from "../services/external.service";
 import { SessionDto } from "../dtos/session.dto";
 import { RefundDto } from "../dtos/refund.dto";
+import { FeedbackService } from "../services/feedback.service";
 
 export class EnrollmentController {
   private enrollmentService: EnrollmentService;
   private courseService: CourseService;
   private externalService: ExternalService;
+  private feedbackService: FeedbackService;
 
   constructor() {
     this.enrollmentService = new EnrollmentService();
     this.courseService = new CourseService();
     this.externalService = new ExternalService();
+    this.feedbackService = new FeedbackService();
   }
 
   async createEnrollment(req: Request, res: Response): Promise<void> {
@@ -305,8 +308,9 @@ export class EnrollmentController {
         ...req.body,
         oneOnOneEnrollment: oneOnOneEnrollment,
         courseEnrollment: courseEnrollment,
+        type: "refund",
       };
-      const refund = await this.enrollmentService.createRefund(refundBody);
+      const refund = await this.feedbackService.createComplaint(refundBody);
       const refundDto = plainToInstance(RefundDto, refund, {
         excludeExtraneousValues: true,
       });
@@ -320,7 +324,7 @@ export class EnrollmentController {
   async addRefundInitialResponse(req: Request, res: Response): Promise<void> {
     try {
       const refundId = req.params.refundId;
-      const refund = await this.enrollmentService.getRefundById(refundId);
+      const refund = await this.feedbackService.getComplaintById(refundId);
       if (!refund) {
         res.status(404).json({ error: "Refund not found" });
         return;
@@ -337,7 +341,7 @@ export class EnrollmentController {
         status: "responded",
       };
 
-      const updatedRefund = await this.enrollmentService.updateRefund(
+      const updatedRefund = await this.feedbackService.updateComplaint(
         refundBody
       );
       const refundDto = plainToInstance(RefundDto, updatedRefund, {
@@ -353,7 +357,7 @@ export class EnrollmentController {
   async refundStudentDecision(req: Request, res: Response): Promise<void> {
     try {
       const refundId = req.params.refundId;
-      const refund = await this.enrollmentService.getRefundById(refundId);
+      const refund = await this.feedbackService.getComplaintById(refundId);
       if (!refund) {
         res.status(404).json({ error: "Refund not found" });
         return;
@@ -368,7 +372,7 @@ export class EnrollmentController {
         ? (refund.status = "resolved")
         : (refund.status = "escalated");
 
-      const updatedRefund = await this.enrollmentService.updateRefund(refund);
+      const updatedRefund = await this.feedbackService.updateComplaint(refund);
       // TODO : in app refund in the case of accepted refund request
       const refundDto = plainToInstance(RefundDto, updatedRefund, {
         excludeExtraneousValues: true,
@@ -382,7 +386,7 @@ export class EnrollmentController {
   async refundAdminResolve(req: Request, res: Response): Promise<void> {
     try {
       const refundId = req.params.refundId;
-      const refund = await this.enrollmentService.getRefundById(refundId);
+      const refund = await this.feedbackService.getComplaintById(refundId);
       if (!refund) {
         res.status(404).json({ error: "Refund not found" });
         return;
@@ -393,14 +397,14 @@ export class EnrollmentController {
           .json({ error: "Refund is not escalated or already resolved" });
         return;
       }
-      req.body.processedBy = req.body.ownerId; // Assuming the resolver is the owner
+      req.body.resolvedBy = req.body.ownerId; // Assuming the resolver is the owner
       delete req.body.ownerId;
       const refundBody = {
         ...refund,
         ...req.body,
         status: "resolved",
       };
-      const updatedRefund = await this.enrollmentService.updateRefund(
+      const updatedRefund = await this.feedbackService.updateComplaint(
         refundBody
       );
       // TODO : in app refund

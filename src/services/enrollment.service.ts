@@ -2,12 +2,10 @@ import { In } from "typeorm";
 import { AppDataSource } from "../config/database";
 import { CourseEnrollmentModel } from "../models/courseEnrollment.model";
 import { SessionEnrollmentModel } from "../models/sessionEnrollment.model";
-import { RefundModel } from "../models/refund.model";
 
 export class EnrollmentService {
   courseEnrollmentRepo: any;
   sessionEnrollmentRepo: any;
-  refundRepo: any;
 
   constructor() {
     this.courseEnrollmentRepo = AppDataSource.getRepository(
@@ -16,7 +14,6 @@ export class EnrollmentService {
     this.sessionEnrollmentRepo = AppDataSource.getRepository(
       SessionEnrollmentModel
     );
-    this.refundRepo = AppDataSource.getRepository(RefundModel);
   }
 
   async createCourseEnrollment(
@@ -142,32 +139,6 @@ export class EnrollmentService {
       return await this.sessionEnrollmentRepo.save(enrollment);
     } catch (error) {
       throw new Error("Error updating one-on-one enrollment");
-    }
-  }
-
-  async createRefund(refund: RefundModel): Promise<RefundModel> {
-    try {
-      return await this.refundRepo.save(refund);
-    } catch (error) {
-      throw new Error("Error creating refund");
-    }
-  }
-
-  async updateRefund(refund: RefundModel): Promise<RefundModel> {
-    try {
-      return await this.refundRepo.save(refund);
-    } catch (error) {
-      throw new Error("Error updating refund");
-    }
-  }
-
-  async getRefundById(refundId: string): Promise<RefundModel | null> {
-    try {
-      return await this.refundRepo.findOneBy({
-        id: refundId,
-      });
-    } catch (error) {
-      throw new Error("Error fetching refund by ID");
     }
   }
 }

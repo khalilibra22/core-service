@@ -8,7 +8,7 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { SessionModel } from "./session.model";
-import { RefundModel } from "./refund.model";
+import { ComplaintModel } from "./complaint.model";
 
 @Entity("session_enrollments")
 export class SessionEnrollmentModel {
@@ -32,8 +32,11 @@ export class SessionEnrollmentModel {
   })
   sessions?: SessionModel[];
 
-  @OneToMany(() => RefundModel, (refund) => refund.oneOneOneEnrollment)
-  refunds?: RefundModel[];
+  // @OneToMany(() => RefundModel, (refund) => refund.oneOneOneEnrollment)
+  // refunds?: RefundModel[];
+
+  @OneToMany(() => ComplaintModel, (refund) => refund.courseEnrollment)
+  refunds?: ComplaintModel[];
 
   @Column({ default: "pending" })
   status?: string; // "pending", "confirmed", "canceled", "completed"

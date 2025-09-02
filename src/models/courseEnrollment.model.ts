@@ -9,7 +9,7 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { CourseModel } from "./course.model";
-import { RefundModel } from "./refund.model";
+import { ComplaintModel } from "./complaint.model";
 
 @Entity("course_enrollments")
 export class CourseEnrollmentModel {
@@ -25,8 +25,11 @@ export class CourseEnrollmentModel {
   @ManyToOne(() => CourseModel, (course) => course.enrollments)
   course?: CourseModel;
 
-  @OneToMany(() => RefundModel, (refund) => refund.courseEnrollment)
-  refunds?: RefundModel[];
+  // @OneToMany(() => RefundModel, (refund) => refund.courseEnrollment)
+  // refunds?: RefundModel[];
+
+  @OneToMany(() => ComplaintModel, (refund) => refund.courseEnrollment)
+  refunds?: ComplaintModel[];
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;
