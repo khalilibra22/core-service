@@ -10,25 +10,37 @@ import {
 } from "typeorm";
 import { CourseModel } from "./course.model";
 import { ComplaintModel } from "./complaint.model";
+import { SessionModel } from "./session.model";
 
-@Entity("course_enrollments")
-export class CourseEnrollmentModel {
+@Entity("enrollments")
+export class EnrollmentModel {
   @PrimaryGeneratedColumn("uuid")
   id?: string;
 
   @Column({ name: "student_id" })
   studentId?: string;
 
+  @Column({ default: "course" })
+  type?: "course" | "one-on-one";
+
   @Column({ default: "pending" })
   status?: string; // "pending" | "approved" | "rejected"
+
+  @Column({ name: "cancellation_reason", nullable: true })
+  cancellationReason?: string;
+
+  @Column({ name: "canceld_by", nullable: true })
+  canceledBy?: string;
+
+  @OneToMany(() => SessionModel, (session) => session.enrollment, {
+    cascade: true,
+  })
+  sessions?: SessionModel[];
 
   @ManyToOne(() => CourseModel, (course) => course.enrollments)
   course?: CourseModel;
 
-  // @OneToMany(() => RefundModel, (refund) => refund.courseEnrollment)
-  // refunds?: RefundModel[];
-
-  @OneToMany(() => ComplaintModel, (refund) => refund.courseEnrollment)
+  @OneToMany(() => ComplaintModel, (refund) => refund.enrollment)
   refunds?: ComplaintModel[];
 
   @CreateDateColumn({ type: "timestamp" })

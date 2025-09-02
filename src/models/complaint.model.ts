@@ -8,8 +8,7 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { SessionModel } from "./session.model";
-import { SessionEnrollmentModel } from "./sessionEnrollment.model";
-import { CourseEnrollmentModel } from "./courseEnrollment.model";
+import { EnrollmentModel } from "./enrollment.model";
 
 @Entity("complaints")
 export class ComplaintModel {
@@ -50,11 +49,8 @@ export class ComplaintModel {
   @ManyToOne(() => SessionModel, (session) => session.complaints)
   session?: SessionModel;
 
-  @ManyToOne(() => SessionEnrollmentModel, (enrollment) => enrollment.refunds)
-  oneOneOneEnrollment?: SessionEnrollmentModel;
-
-  @ManyToOne(() => CourseEnrollmentModel, (enrollment) => enrollment.refunds)
-  courseEnrollment?: CourseEnrollmentModel;
+  @ManyToOne(() => EnrollmentModel, (enrollment) => enrollment.refunds)
+  enrollment?: EnrollmentModel;
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;
