@@ -40,7 +40,7 @@ export const oneOnOneEnrollmentSchema = Joi.object({
     "availabilityIds.greaterThanSessions": `"availabilityIds" count ({{#availability}}) must not be greater than sessionsNumber ({{#sessions}})`,
   });
 
-export const cancelOneOnOneEnrollmentShcema = Joi.object({
+export const cancelEnrollmentShcema = Joi.object({
   ownerId: Joi.string().uuid().optional(),
   reason: Joi.string().min(5).required(),
 });

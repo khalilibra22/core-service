@@ -1,12 +1,10 @@
 import { DataSource } from "typeorm";
 import { CourseModel } from "../models/course.model";
-import { CourseEnrollmentModel } from "../models/courseEnrollment.model";
 import { ComplaintModel } from "../models/complaint.model";
 import { CertificateModel } from "../models/certificate.model";
 import { CourseSettingsModel } from "../models/courseSettings.model";
 import { ReviewModel } from "../models/review.model";
 import { SessionModel } from "../models/session.model";
-import { SessionEnrollmentModel } from "../models/sessionEnrollment.model";
 import { SessionTimeChangeRequestModel } from "../models/sessionTimeChangeRequest.model";
 import { SettingsModel } from "../models/settings.model";
 import { QuizModel } from "../models/quiz.model";
@@ -14,7 +12,7 @@ import { AnswerModel } from "../models/answer.model";
 import { QuestionModel } from "../models/question.model";
 import { QuizAttemptModel } from "../models/quizAttempt.model";
 import { LessonModel } from "../models/lesson.model";
-import { RefundModel } from "../models/refund.model";
+import { EnrollmentModel } from "../models/enrollment.model";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -26,13 +24,11 @@ export const AppDataSource = new DataSource({
   ssl: { rejectUnauthorized: false },
   entities: [
     CourseModel,
-    CourseEnrollmentModel,
     ComplaintModel,
     CertificateModel,
     CourseSettingsModel,
     ReviewModel,
     SessionModel,
-    SessionEnrollmentModel,
     SessionTimeChangeRequestModel,
     SettingsModel,
     QuizModel,
@@ -40,7 +36,7 @@ export const AppDataSource = new DataSource({
     QuestionModel,
     AnswerModel,
     LessonModel,
-    RefundModel,
+    EnrollmentModel,
   ],
   synchronize: true,
 });

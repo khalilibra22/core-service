@@ -8,6 +8,7 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { SessionModel } from "./session.model";
+import { EnrollmentModel } from "./enrollment.model";
 
 @Entity("complaints")
 export class ComplaintModel {
@@ -22,6 +23,9 @@ export class ComplaintModel {
 
   @Column({ name: "reason" })
   reason?: string;
+
+  @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
+  amount?: number; // Refund amount
 
   // --- Response from Teacher or Academy (first responder) ---
   @Column({ name: "initial_response", nullable: true })
@@ -44,6 +48,9 @@ export class ComplaintModel {
 
   @ManyToOne(() => SessionModel, (session) => session.complaints)
   session?: SessionModel;
+
+  @ManyToOne(() => EnrollmentModel, (enrollment) => enrollment.refunds)
+  enrollment?: EnrollmentModel;
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;

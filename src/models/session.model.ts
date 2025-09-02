@@ -10,10 +10,10 @@ import {
 } from "typeorm";
 import { CourseModel } from "./course.model";
 import { SessionTimeChangeRequestModel } from "./sessionTimeChangeRequest.model";
-import { SessionEnrollmentModel } from "./sessionEnrollment.model";
 import { ComplaintModel } from "./complaint.model";
 import { LessonModel } from "./lesson.model";
 import { QuizModel } from "./quiz.model";
+import { EnrollmentModel } from "./enrollment.model";
 
 @Entity("sessions")
 export class SessionModel {
@@ -59,11 +59,8 @@ export class SessionModel {
   @ManyToOne(() => CourseModel, (course) => course.sessions)
   course?: CourseModel;
 
-  @ManyToOne(
-    () => SessionEnrollmentModel,
-    (sessionEnrollment) => sessionEnrollment.sessions
-  )
-  enrollment?: SessionEnrollmentModel;
+  @ManyToOne(() => EnrollmentModel, (enrollment) => enrollment.sessions)
+  enrollment?: EnrollmentModel;
 
   @OneToMany(() => SessionTimeChangeRequestModel, (request) => request.session)
   sessionTimeChangeRequests?: SessionTimeChangeRequestModel[];

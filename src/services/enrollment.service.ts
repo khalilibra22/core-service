@@ -1,51 +1,40 @@
 import { In } from "typeorm";
 import { AppDataSource } from "../config/database";
-import { CourseEnrollmentModel } from "../models/courseEnrollment.model";
-import { SessionEnrollmentModel } from "../models/sessionEnrollment.model";
-import { RefundModel } from "../models/refund.model";
+import { EnrollmentModel } from "../models/enrollment.model";
 
 export class EnrollmentService {
-  courseEnrollmentRepo: any;
-  sessionEnrollmentRepo: any;
-  refundRepo: any;
+  enrollmentRepo: any;
 
   constructor() {
-    this.courseEnrollmentRepo = AppDataSource.getRepository(
-      CourseEnrollmentModel
-    );
-    this.sessionEnrollmentRepo = AppDataSource.getRepository(
-      SessionEnrollmentModel
-    );
-    this.refundRepo = AppDataSource.getRepository(RefundModel);
+    this.enrollmentRepo = AppDataSource.getRepository(EnrollmentModel);
   }
 
-  async createCourseEnrollment(
-    enrollment: CourseEnrollmentModel
-  ): Promise<CourseEnrollmentModel> {
+  async createEnrollment(
+    enrollment: EnrollmentModel
+  ): Promise<EnrollmentModel> {
     try {
-      return await this.courseEnrollmentRepo.save(enrollment);
+      return await this.enrollmentRepo.save(enrollment);
     } catch (error) {
+      console.log(error);
       throw new Error("Error creating course enrollment");
     }
   }
 
-  async createSessionEnrollment(
-    enrollment: SessionEnrollmentModel
-  ): Promise<SessionEnrollmentModel> {
-    try {
-      return await this.sessionEnrollmentRepo.save(enrollment);
-    } catch (error) {
-      console.log("Error in createSessionEnrollment:", error);
-      throw new Error("Error creating session enrollment");
-    }
-  }
+  // async createSessionEnrollment(
+  //   enrollment: SessionEnrollmentModel
+  // ): Promise<SessionEnrollmentModel> {
+  //   try {
+  //     return await this.enrollmentRepo.save(enrollment);
+  //   } catch (error) {
+  //     console.log("Error in createSessionEnrollment:", error);
+  //     throw new Error("Error creating session enrollment");
+  //   }
+  // }
 
-  async getCourseEnrollments(
-    courseId: string
-  ): Promise<CourseEnrollmentModel[]> {
+  async getCourseEnrollments(courseId: string): Promise<EnrollmentModel[]> {
     try {
-      return await this.courseEnrollmentRepo.find({
-        where: { course: { id: courseId } },
+      return await this.enrollmentRepo.find({
+        where: { course: { id: courseId }, type: "course" },
       });
     } catch (error) {
       throw new Error("Error fetching course enrollments");
@@ -54,11 +43,12 @@ export class EnrollmentService {
 
   async getOneOnOneEnrollementByTeacherId(
     teacherId: string
-  ): Promise<SessionEnrollmentModel[]> {
+  ): Promise<EnrollmentModel[]> {
     try {
-      return await this.sessionEnrollmentRepo.find({
+      return await this.enrollmentRepo.find({
         where: {
           teacherId: teacherId,
+          type: "one-on-one",
         },
         relations: ["sessions"],
       });
@@ -67,21 +57,21 @@ export class EnrollmentService {
     }
   }
 
-  async updateCourseEnrollment(
-    enrollment: CourseEnrollmentModel
-  ): Promise<CourseEnrollmentModel> {
+  async updateEnrollment(
+    enrollment: EnrollmentModel
+  ): Promise<EnrollmentModel> {
     try {
-      return await this.courseEnrollmentRepo.save(enrollment);
+      return await this.enrollmentRepo.save(enrollment);
     } catch (error) {
       throw new Error("Error creating course enrollment");
     }
   }
 
-  async getCourseEnrollmentById(
+  async getEnrollmentById(
     enrollmentId: string
-  ): Promise<CourseEnrollmentModel | null> {
+  ): Promise<EnrollmentModel | null> {
     try {
-      return await this.courseEnrollmentRepo.findOneBy({
+      return await this.enrollmentRepo.findOneBy({
         id: enrollmentId,
       });
     } catch (error) {
@@ -92,11 +82,12 @@ export class EnrollmentService {
   //get student ernollments by student id
   async getStudentCoursesEnrollments(
     studentId: string
-  ): Promise<CourseEnrollmentModel[]> {
+  ): Promise<EnrollmentModel[]> {
     try {
-      return await this.courseEnrollmentRepo.find({
+      return await this.enrollmentRepo.find({
         where: {
           studentId: studentId,
+          type: "course",
           course: { type: In(["live", "group"]) },
         },
         relations: ["course", "course.couresSettings", "course.sessions"], //group by createdAt , newest first
@@ -109,65 +100,15 @@ export class EnrollmentService {
 
   async getStudentOneOnOneEnrollments(
     studentId: string
-  ): Promise<SessionEnrollmentModel[]> {
+  ): Promise<EnrollmentModel[]> {
     try {
-      return await this.sessionEnrollmentRepo.find({
-        where: { studentId: studentId },
+      return await this.enrollmentRepo.find({
+        where: { studentId: studentId, type: "one-on-one" },
         relations: ["sessions"],
         order: { createdAt: "DESC" },
       });
     } catch (error) {
       throw new Error("Error fetching student one-on-one enrollments");
-    }
-  }
-
-  // get one on one enrollments by id
-  async getOneOnOneEnrollmentById(
-    enrollmentId: string
-  ): Promise<SessionEnrollmentModel | null> {
-    try {
-      return await this.sessionEnrollmentRepo.findOne({
-        where: { id: enrollmentId },
-      });
-    } catch (error) {
-      throw new Error("Error fetching one-on-one enrollment by ID");
-    }
-  }
-
-  // update one on one enrollment
-  async updateOneOnOneEnrollment(
-    enrollment: SessionEnrollmentModel
-  ): Promise<SessionEnrollmentModel> {
-    try {
-      return await this.sessionEnrollmentRepo.save(enrollment);
-    } catch (error) {
-      throw new Error("Error updating one-on-one enrollment");
-    }
-  }
-
-  async createRefund(refund: RefundModel): Promise<RefundModel> {
-    try {
-      return await this.refundRepo.save(refund);
-    } catch (error) {
-      throw new Error("Error creating refund");
-    }
-  }
-
-  async updateRefund(refund: RefundModel): Promise<RefundModel> {
-    try {
-      return await this.refundRepo.save(refund);
-    } catch (error) {
-      throw new Error("Error updating refund");
-    }
-  }
-
-  async getRefundById(refundId: string): Promise<RefundModel | null> {
-    try {
-      return await this.refundRepo.findOneBy({
-        id: refundId,
-      });
-    } catch (error) {
-      throw new Error("Error fetching refund by ID");
     }
   }
 }

@@ -3,26 +3,31 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
+import { CourseModel } from "./course.model";
+import { ComplaintModel } from "./complaint.model";
 import { SessionModel } from "./session.model";
-import { RefundModel } from "./refund.model";
 
-@Entity("session_enrollments")
-export class SessionEnrollmentModel {
+@Entity("enrollments")
+export class EnrollmentModel {
   @PrimaryGeneratedColumn("uuid")
   id?: string;
 
   @Column({ name: "student_id" })
   studentId?: string;
 
-  @Column({ name: "teacher_id", nullable: true })
-  teacherId?: string;
+  @Column({ default: "course" })
+  type?: "course" | "one-on-one";
 
-  @Column({ nullable: true })
-  reason?: string;
+  @Column({ default: "pending" })
+  status?: string; // "pending" | "approved" | "rejected"
+
+  @Column({ name: "cancellation_reason", nullable: true })
+  cancellationReason?: string;
 
   @Column({ name: "canceld_by", nullable: true })
   canceledBy?: string;
@@ -32,11 +37,11 @@ export class SessionEnrollmentModel {
   })
   sessions?: SessionModel[];
 
-  @OneToMany(() => RefundModel, (refund) => refund.oneOneOneEnrollment)
-  refunds?: RefundModel[];
+  @ManyToOne(() => CourseModel, (course) => course.enrollments)
+  course?: CourseModel;
 
-  @Column({ default: "pending" })
-  status?: string; // "pending", "confirmed", "canceled", "completed"
+  @OneToMany(() => ComplaintModel, (refund) => refund.enrollment)
+  refunds?: ComplaintModel[];
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;
