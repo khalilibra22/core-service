@@ -20,6 +20,9 @@ export class EnrollmentModel {
   @Column({ name: "student_id" })
   studentId?: string;
 
+  @Column({ name: "teacher_id", nullable: true })
+  teacherId?: string;
+
   @Column({ default: "course" })
   type?: "course" | "one-on-one";
 
