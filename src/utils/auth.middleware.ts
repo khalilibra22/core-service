@@ -1,5 +1,8 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
+import { Action, Resource } from "./permissionTypes";
+import { UserRole } from "../enums/userRoles.enum";
+import { permissions } from "../config/permissions";
 
 class AuthMiddleware {
   static async decodeToken(token: string): Promise<any> {
@@ -27,11 +30,43 @@ class AuthMiddleware {
 
       const decoded = await AuthMiddleware.decodeToken(token);
       req.body.ownerId = decoded.id; // Assuming the token contains an 'id' field
+      req.body.user = decoded;
       next();
     } catch (error) {
       res.status(401).json({ message: "Invalid or expired token" });
       return;
     }
+  }
+
+  static authorize(resource: Resource, action: Action) {
+    return (req: Request, res: Response, next: NextFunction): void => {
+      try {
+        const user = req.body.user;
+        delete req.body.user;
+
+        if (req.params.id && req.params.id !== user.id) {
+          res.status(401).json({ message: "Unauthorized" });
+          return;
+        }
+        // set by your token middleware
+        // if (!user) {
+        //   res.status(401).json({ message: "Unauthorized" });
+        //   return;
+        // }
+
+        const roleId = (user.roles ??
+          UserRole.GUEST) as keyof typeof permissions;
+        const rolePermissions = permissions[roleId];
+        if (rolePermissions && rolePermissions[resource]?.includes(action)) {
+          next();
+          return;
+        }
+        res.status(403).json({ message: "Forbidden" });
+      } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Server error" });
+      }
+    };
   }
 }
 export { AuthMiddleware };

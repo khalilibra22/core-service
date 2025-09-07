@@ -23,6 +23,7 @@ const enrollmentController = new EnrollmentController();
 router.post(
   "/",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "create"),
   ValidationMiddleware.validate(createCourseValidationSchema),
   async (req, res) => await courseController.createDraftCourse(req, res)
 );
@@ -31,6 +32,7 @@ router.post(
 router.put(
   "/:id",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "update"),
   ValidationMiddleware.validate(courseValidationSchema),
   async (req, res) => await courseController.updateCourse(req, res)
 );
@@ -38,6 +40,7 @@ router.put(
 router.put(
   "/:id/draft",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "update"),
   ValidationMiddleware.validate(courseValidationSchema),
   async (req, res) => await courseController.updateDraftCourse(req, res)
 );
@@ -46,6 +49,7 @@ router.put(
 router.delete(
   "/:id",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "delete"),
   async (req, res) => await courseController.deleteCourse(req, res)
 );
 
@@ -53,12 +57,14 @@ router.delete(
 router.get(
   "/:id/details",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "read"),
   async (req, res) => await courseController.getCourseById(req, res)
 );
 
 router.post(
   "/:id/sessions",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "create"),
   ValidationMiddleware.validate(sessionValidationSchema),
   async (req, res) => await courseController.createCourseSession(req, res)
 );
@@ -67,6 +73,7 @@ router.post(
 router.put(
   "/:id/sessions/:sessionId",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "update"),
   ValidationMiddleware.validate(sessionValidationSchema),
   async (req, res) => await courseController.updateCourseSession(req, res)
 );
@@ -75,6 +82,7 @@ router.put(
 router.delete(
   "/:id/sessions/:sessionId",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "delete"),
   async (req, res) => await courseController.deleteCourseSession(req, res)
 );
 
@@ -82,6 +90,7 @@ router.delete(
 router.post(
   "/:id/reviews",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("reviews", "create"),
   ValidationMiddleware.validate(reviewValdationSchema),
   async (req, res) => await feedbackController.createCourseReview(req, res)
 );
@@ -90,6 +99,7 @@ router.post(
 router.get(
   "/:id/reviews",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("reviews", "list"),
   async (req, res) => await feedbackController.getReviewsByCourseId(req, res)
 );
 
@@ -97,6 +107,7 @@ router.get(
 router.post(
   "/:id/certificates",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "update"),
   ValidationMiddleware.validate(certificateValidationSchema),
   async (req, res) => await courseController.createCertificate(req, res)
 );
@@ -105,6 +116,7 @@ router.post(
 router.post(
   "/:id/enrollments",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("enrollments", "create"),
   ValidationMiddleware.validate(enrollmentValidationsSchema),
   async (req, res) => await enrollmentController.createEnrollment(req, res)
 );
@@ -113,6 +125,7 @@ router.post(
 router.get(
   "/:id/sessions",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "list"),
   async (req, res) => await courseController.getCourseSessions(req, res)
 );
 
@@ -120,6 +133,7 @@ router.get(
 router.get(
   "/:id/prerecorded-sections",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "list"),
   async (req, res) =>
     await courseController.getPrerecordedCourseSections(req, res)
 );
@@ -128,6 +142,7 @@ router.get(
 router.patch(
   "/:id/cancel",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "cancel"),
   ValidationMiddleware.validate(courseCancellationValidationSchema),
   async (req, res) => await courseController.cancelCourse(req, res)
 );
@@ -135,24 +150,32 @@ router.patch(
 router.get(
   "/:id/enrollments",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("enrollments", "view"),
   async (req, res) => await enrollmentController.getCourseEnrollments(req, res)
 );
 
-router.get("/teachers/:id", AuthMiddleware.verifyToken, async (req, res) => {
-  const id = req.params.id;
-  await courseController.getCoursesByTeacherId(req, res);
-});
+router.get(
+  "/teachers/:id",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "view"),
+  async (req, res) => {
+    const id = req.params.id;
+    await courseController.getCoursesByTeacherId(req, res);
+  }
+);
 
 // get all live courses
 router.get(
   "/live",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "overview"),
   async (req, res) => await courseController.getAllLiveCourses(req, res)
 );
 
 router.get(
   "/group",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "overview"),
   async (req, res) => await courseController.getAllGroupCourses(req, res)
 );
 
@@ -160,6 +183,7 @@ router.get(
 router.get(
   "/prerecorded",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "overview"),
   async (req, res) => await courseController.getAllPrerecordedCourses(req, res)
 );
 
