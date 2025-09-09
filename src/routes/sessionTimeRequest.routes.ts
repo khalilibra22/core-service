@@ -11,6 +11,7 @@ const sessionTimeRequestController = new SessionTimeRequestController();
 router.patch(
   "/:id/status",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "request_time_change"),
   ValidationMiddleware.validate(timeChangeRequestStatusSchema),
   async (req, res) =>
     await sessionTimeRequestController.changeSessionTimeRequestStatus(req, res)

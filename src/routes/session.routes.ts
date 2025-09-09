@@ -22,6 +22,7 @@ const sessionTimeRequestController = new SessionTimeRequestController();
 router.post(
   "/:id/lessons",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "manage_sessions"),
   ValidationMiddleware.validate(lessonValidationSchema),
   async (req, res) => await courseController.createLesson(req, res)
 );
@@ -29,6 +30,7 @@ router.post(
 router.put(
   "/:id/lessons/:lessonId",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "manage_sessions"),
   ValidationMiddleware.validate(lessonValidationSchema),
   async (req, res) => await courseController.updateLesson(req, res)
 );
@@ -36,12 +38,14 @@ router.put(
 router.delete(
   "/:id/lessons/:lessonId",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "manage_sessions"),
   async (req, res) => await courseController.deleteLesson(req, res)
 );
 
 router.get(
   "/:id/lessons",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "view"),
   async (req, res) => await courseController.getLessonsBySessionId(req, res)
 );
 
@@ -49,6 +53,7 @@ router.get(
 router.post(
   "/:id/quizzes",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "manage_sessions"),
   ValidationMiddleware.validate(quizValidation),
   async (req, res) => await quizController.createQuiz(req, res)
 );
@@ -57,6 +62,7 @@ router.post(
 router.put(
   "/:id/quizzes/:quizId",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "manage_sessions"),
   ValidationMiddleware.validate(quizValidation),
   async (req, res) => await quizController.updateQuiz(req, res)
 );
@@ -65,6 +71,7 @@ router.put(
 router.delete(
   "/:id/quizzes/:quizId",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "manage_sessions"),
   async (req, res) => await quizController.deleteQuiz(req, res)
 );
 
@@ -72,6 +79,7 @@ router.delete(
 router.get(
   "/:id/quizzes",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "view"),
   async (req, res) => await quizController.getSessionQuizzes(req, res)
 );
 
@@ -79,6 +87,7 @@ router.get(
 router.get(
   "/:id/prerecorded",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "view"),
   async (req, res) =>
     await courseController.getPrerecordedSessionDetails(req, res)
 );
@@ -87,6 +96,7 @@ router.get(
 router.post(
   "/:id/complaints",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("complaints", "complain"),
   ValidationMiddleware.validate(complaintValdationSchema),
   async (req, res) => await feedbackController.createComplaint(req, res)
 );
@@ -94,6 +104,7 @@ router.post(
 router.post(
   "/:id/session-time-requests",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "request_time_change"),
   ValidationMiddleware.validate(timeChangeRequestValidationSchema),
   async (req, res) =>
     await sessionTimeRequestController.createSessionTimeRequest(req, res)
@@ -102,6 +113,7 @@ router.post(
 router.get(
   "/teachers/:teacherId",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "manage_sessions"),
   async (req, res) =>
     await courseController.getOneOnOneSessionsByTeacherId(req, res)
 );

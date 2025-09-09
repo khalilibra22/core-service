@@ -41,6 +41,10 @@ export class CourseController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
+      if (course.ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       if (course.type !== req.body.type) {
         res.status(400).json({ error: "Course type cannot be changed" });
         return;
@@ -77,6 +81,10 @@ export class CourseController {
       const course = await this.courseService.getCourseById(req.params.id);
       if (!course) {
         res.status(404).json({ error: "Course not found" });
+        return;
+      }
+      if (course.ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
       if (course.status !== "draft") {
@@ -119,6 +127,10 @@ export class CourseController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
+      if (course.ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       if (course.type !== req.body.type) {
         res.status(400).json({ error: "Invalid session type" });
         return;
@@ -147,7 +159,10 @@ export class CourseController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
-
+      if (course.ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       const session = await this.courseService.getSessionById(sessionId);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
@@ -180,7 +195,10 @@ export class CourseController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
-
+      if (course.ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       const session = await this.courseService.getSessionById(sessionId);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
@@ -201,6 +219,10 @@ export class CourseController {
       const course = await this.courseService.getCourseById(req.params.id);
       if (!course) {
         res.status(404).json({ error: "Course not found" });
+        return;
+      }
+      if (course.ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
       delete req.body.ownerId;
@@ -246,6 +268,10 @@ export class CourseController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
+      if (course.ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       // TODO: check if user is allowed to cancel the course
       // TODO: check if course is already canceled
       // TODO: check if its canceled by the instructor or student
@@ -288,6 +314,10 @@ export class CourseController {
       const id = req.params.id;
       const courseType = req.query.type as string;
       const courseTypeList = ["group", "live", "prerecorded"];
+      if (id !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       if (!courseTypeList.includes(courseType)) {
         res.status(400).json({ error: "Invalid course type" });
         return;
@@ -355,6 +385,10 @@ export class CourseController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
+      if (course.ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       await this.courseService.deleteCourse(id);
       res.status(204).send();
     } catch (error) {
@@ -369,6 +403,13 @@ export class CourseController {
       const session = await this.courseService.getSessionById(sessionId);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
+        return;
+      }
+      if (
+        !session.course?.ownerId ||
+        session.course?.ownerId !== req.body.ownerId
+      ) {
+        res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
 
@@ -399,7 +440,13 @@ export class CourseController {
         res.status(404).json({ error: "Session not found" });
         return;
       }
-
+      if (
+        !session.course?.ownerId ||
+        session.course?.ownerId !== req.body.ownerId
+      ) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       const lesson = await this.courseService.getLessonById(lessonId);
       if (!lesson) {
         res.status(404).json({ error: "Lesson not found" });
@@ -429,7 +476,13 @@ export class CourseController {
         res.status(404).json({ error: "Session not found" });
         return;
       }
-
+      if (
+        !session.course?.ownerId ||
+        session.course?.ownerId !== req.body.ownerId
+      ) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       const lesson = await this.courseService.getLessonById(lessonId);
       if (!lesson) {
         res.status(404).json({ error: "Lesson not found" });
@@ -551,6 +604,10 @@ export class CourseController {
   ): Promise<void> {
     try {
       const teacherId = req.params.teacherId;
+      if (teacherId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       const sessions = await this.courseService.getTeacherOneOnOneSessions(
         teacherId
       );

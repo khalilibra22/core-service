@@ -1,42 +1,52 @@
-// permissions.ts
+type TeacherAndAcademyAction =
+  | "grade_students"
+  | "make_payments"
+  | "upload_materials"
+  | "cancel_enrollment"
+  | "manage_enrollments"
+  | "manage_courses"
+  | "cancel_course"
+  | "manage_sessions"
+  | "respond_reviews"
+  | "respond_complaints"
+  | "approve_course"
+  | "assign_teacher"
+  | "invite_teacher"
+  | "overview_courses"
+  | "export_course_data"
+  | "request_time_change"
+  | "import_course_data";
 
-// TODO:  create teacher actions, academy actions , student actions and admin actions
+// Student actions
+type StudentAction =
+  | "enroll_course"
+  | "view_course"
+  | "submit_review"
+  | "complain"
+  | "download_materials"
+  | "drop_course"
+  | "student_complaint_veiw"
+  | "manage_reviews"
+  | "view_grades";
+
+// Admin actions
+type AdminAction =
+  | "manage_all_courses"
+  | "manage_all_sessions"
+  | "ban_course"
+  | "unban_course"
+  | "adjust_course_settings"
+  | "manage_all_complaints"
+  | "manage_all_enrollments"
+  | "manage_all_reviews"
+  | "mqanage_all_payments"
+  | "overview_platform";
+
 export type Action =
-  // Base CRUD
-  | "create"
-  | "read"
-  | "update"
-  | "delete"
-
-  // Extended generic actions
-  | "list" // read multiple items
-  | "approve" // approve/reject requests
-  | "assign" // assign resources
-  | "upload" // upload files/videos
-  | "download" // download files
-  | "publish" // make resource public
-  | "unpublish" // hide resource
-  | "ban" // disable user/resource
-  | "unban" // re-enable user/resource
-  | "manage" // broad admin action
-  | "invite" // invite other users
-  | "export" // export data
-  | "import" // import data
-
-  // Coupon-specific actions
-  | "use" // redeem/apply coupon
-  | "activate" // enable coupon
-  | "deactivate" // disable coupon
-  | "subscribe"
-  | "cancel"
-  | "pick"
-  | "toggle"
-  | "adjust"
-  | "drop"
   | "view"
-  | "resolve"
-  | "respond"
-  | "overview";
+  | TeacherAndAcademyAction
+  | StudentAction
+  | AdminAction;
 
 export type Resource =
   | "enrollments"
