@@ -20,13 +20,13 @@ export class QuizController {
         res.status(404).json({ error: "Session not found" });
         return;
       }
-      if (
-        !session.course?.ownerId ||
-        session.course?.ownerId !== req.body.ownerId
-      ) {
-        res.status(403).json({ error: "You are not the owner of this course" });
-        return;
-      }
+      // if (
+      //   !session.course?.ownerId ||
+      //   session.course?.ownerId !== req.body.ownerId
+      // ) {
+      //   res.status(403).json({ error: "You are not the owner of this course" });
+      //   return;
+      // }
       delete req.body.ownerId;
       const quizBody = {
         ...req.body,
@@ -111,6 +111,12 @@ export class QuizController {
         res.status(404).json({ error: "Quiz not found" });
         return;
       }
+      // Check if the requester is the owner of the course
+      const ownerId = await this.quizService.getQuizOwner(id);
+      if (!ownerId || ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       delete req.body.ownerId;
       const questionBody = {
         ...req.body,
@@ -136,6 +142,11 @@ export class QuizController {
         res.status(404).json({ error: "Quiz not found" });
         return;
       }
+      const ownerId = await this.quizService.getQuizOwner(id);
+      if (!ownerId || ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       const question = await this.quizService.getQuestionById(questionId);
       if (!question) {
         res.status(404).json({ error: "Question not found" });
@@ -157,6 +168,11 @@ export class QuizController {
       const quiz = await this.quizService.getQuizById(id);
       if (!quiz) {
         res.status(404).json({ error: "Quiz not found" });
+        return;
+      }
+      const ownerId = await this.quizService.getQuizOwner(id);
+      if (!ownerId || ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
       const question = await this.quizService.getQuestionById(questionId);
@@ -181,7 +197,6 @@ export class QuizController {
         return;
       }
       const quizzes = await this.quizService.getSessionQuizzes(id);
-
       const quizDtos = plainToInstance(QuizDto, quizzes, {
         excludeExtraneousValues: true,
       });

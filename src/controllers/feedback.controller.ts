@@ -77,6 +77,13 @@ export class FeedbackController {
         res.status(404).json({ error: "Complaint not found" });
         return;
       }
+      const teacherId = await this.feedbackService.getTeacherIdByComplaintId(
+        req.params.id
+      );
+      if (!teacherId || teacherId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       if (complaint.status !== "pending") {
         res.status(409).json({ error: "Complaint already responded" });
         return;
@@ -142,7 +149,12 @@ export class FeedbackController {
         res.status(404).json({ error: "Complaint not found" });
         return;
       }
-
+      if (complaint.studentId !== req.body.ownerId) {
+        res
+          .status(403)
+          .json({ error: "You are not the owner of this complaint" });
+        return;
+      }
       if (complaint.status !== "responded") {
         res.status(409).json({ error: "Decision already sent" });
         return;

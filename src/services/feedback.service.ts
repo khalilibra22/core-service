@@ -209,4 +209,16 @@ export class FeedbackService {
       throw new Error("Error fetching complaints by teacher ID");
     }
   }
+
+  async getTeacherIdByComplaintId(complaintId: string): Promise<string | null> {
+    try {
+      const complaint = await this.complaintRepo.findOne({
+        where: { id: complaintId },
+        relations: ["session", "session.course"],
+      });
+      return complaint?.session?.course?.ownerId ?? null;
+    } catch (error) {
+      throw new Error("Error fetching teacher ID by complaint ID");
+    }
+  }
 }

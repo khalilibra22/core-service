@@ -232,6 +232,15 @@ export class EnrollmentController {
         res.status(404).json({ error: "Enrollment not found" });
         return;
       }
+      if (
+        req.body.ownerId !== enrollment.studentId &&
+        req.body.ownerId !== enrollment.teacherId
+      ) {
+        res
+          .status(403)
+          .json({ error: "You are not authorized to cancel this enrollment" });
+        return;
+      }
       if (enrollment.status === "canceled") {
         res.status(409).json({ error: "Enrollment is already canceled" });
         return;
@@ -280,6 +289,15 @@ export class EnrollmentController {
         res.status(404).json({ error: "Enrollment not found" });
         return;
       }
+      if (
+        req.body.ownerId !== enrollment.studentId &&
+        req.body.ownerId !== enrollment.teacherId
+      ) {
+        res
+          .status(403)
+          .json({ error: "You are not authorized to cancel this enrollment" });
+        return;
+      }
       const sessions =
         await this.courseService.getOneOnOneSessionsByEnrollmentId(
           enrollmentId
@@ -296,14 +314,17 @@ export class EnrollmentController {
   async createRefundRequest(req: Request, res: Response): Promise<void> {
     try {
       const enrollmentId = req.params.id;
-      const courseEnrollment = await this.enrollmentService.getEnrollmentById(
+      const enrollment = await this.enrollmentService.getEnrollmentById(
         enrollmentId
       );
-      const oneOnOneEnrollment = await this.enrollmentService.getEnrollmentById(
-        enrollmentId
-      );
-      if (!courseEnrollment && !oneOnOneEnrollment) {
+      if (!enrollment) {
         res.status(404).json({ error: "Enrollment not found" });
+        return;
+      }
+      if (enrollment.studentId !== req.body.ownerId) {
+        res
+          .status(403)
+          .json({ error: "You are not the owner of this enrollment" });
         return;
       }
       req.body.studentId = req.body.ownerId;
@@ -311,8 +332,7 @@ export class EnrollmentController {
 
       const refundBody = {
         ...req.body,
-        oneOnOneEnrollment: oneOnOneEnrollment,
-        courseEnrollment: courseEnrollment,
+        enrollment,
         type: "refund",
       };
       const refund = await this.feedbackService.createComplaint(refundBody);
@@ -365,6 +385,12 @@ export class EnrollmentController {
       const refund = await this.feedbackService.getComplaintById(refundId);
       if (!refund) {
         res.status(404).json({ error: "Refund not found" });
+        return;
+      }
+      if (refund.studentId !== req.body.ownerId) {
+        res
+          .status(403)
+          .json({ error: "You are not the owner of this enrollment" });
         return;
       }
 

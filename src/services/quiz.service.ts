@@ -133,4 +133,17 @@ export class QuizService {
       throw new Error("Error fetching course quizzes");
     }
   }
+
+  async getQuizOwner(quizId: string): Promise<string | null> {
+    try {
+      const quiz = await this.quizRepo.findOne({
+        where: { id: quizId },
+        relations: ["session", "session.course"],
+      });
+      return quiz?.session?.course?.ownerId ?? null;
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error fetching quiz owner");
+    }
+  }
 }
