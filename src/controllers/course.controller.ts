@@ -16,7 +16,7 @@ export class CourseController {
     this.courseService = new CourseService();
   }
 
-  async createDraftCourse(req: Request, res: Response): Promise<void> {
+  createDraftCourse = async (req: Request, res: Response): Promise<void> => {
     try {
       const courseSettings = await this.courseService.createCourseSettings({});
       const courseSettingsBody = {
@@ -31,9 +31,9 @@ export class CourseController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async updateCourse(req: Request, res: Response): Promise<void> {
+  updateCourse = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
       const course = await this.courseService.getCourseById(req.params.id);
@@ -73,9 +73,9 @@ export class CourseController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async updateDraftCourse(req: Request, res: Response): Promise<void> {
+  updateDraftCourse = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
       const course = await this.courseService.getCourseById(req.params.id);
@@ -118,9 +118,9 @@ export class CourseController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async createCourseSession(req: Request, res: Response): Promise<void> {
+  createCourseSession = async (req: Request, res: Response): Promise<void> => {
     try {
       const course = await this.courseService.getCourseById(req.params.id);
       if (!course) {
@@ -147,9 +147,9 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async updateCourseSession(req: Request, res: Response): Promise<void> {
+  updateCourseSession = async (req: Request, res: Response): Promise<void> => {
     try {
       const courseId = req.params.id;
       const sessionId = req.params.sessionId;
@@ -177,15 +177,15 @@ export class CourseController {
         ...req.body,
       };
 
-      const sessionu = await this.courseService.updateSession(sessionBody);
+      await this.courseService.updateSession(sessionBody);
       res.status(200).json({ message: "Session updated successfully" });
     } catch (error) {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async deleteCourseSession(req: Request, res: Response): Promise<void> {
+  deleteCourseSession = async (req: Request, res: Response): Promise<void> => {
     try {
       const courseId = req.params.id;
       const sessionId = req.params.sessionId;
@@ -211,10 +211,10 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   // create a certificate
-  async createCertificate(req: Request, res: Response): Promise<void> {
+  createCertificate = async (req: Request, res: Response): Promise<void> => {
     try {
       const course = await this.courseService.getCourseById(req.params.id);
       if (!course) {
@@ -241,9 +241,9 @@ export class CourseController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getCourseSessions(req: Request, res: Response): Promise<void> {
+  getCourseSessions = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
       const course = await this.courseService.getCourseById(id);
@@ -257,10 +257,10 @@ export class CourseController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   // cancel course
-  async cancelCourse(req: Request, res: Response): Promise<void> {
+  cancelCourse = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
       const course = await this.courseService.getCourseById(id);
@@ -290,9 +290,9 @@ export class CourseController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getCourseById(req: Request, res: Response): Promise<void> {
+  getCourseById = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
       const course = await this.courseService.getCourseById(id);
@@ -306,10 +306,13 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   //get teachers by courses by teacher id
-  async getCoursesByTeacherId(req: Request, res: Response): Promise<void> {
+  getCoursesByTeacherId = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const id = req.params.id;
       const courseType = req.query.type as string;
@@ -331,10 +334,10 @@ export class CourseController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   //get all courses of type live using pagination
-  async getAllLiveCourses(req: Request, res: Response): Promise<void> {
+  getAllLiveCourses = async (req: Request, res: Response): Promise<void> => {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
@@ -345,9 +348,9 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getAllGroupCourses(req: Request, res: Response): Promise<void> {
+  getAllGroupCourses = async (req: Request, res: Response): Promise<void> => {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
@@ -358,10 +361,13 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   //get all courses of type prerecorded using pagination
-  async getAllPrerecordedCourses(req: Request, res: Response): Promise<void> {
+  getAllPrerecordedCourses = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
@@ -375,9 +381,9 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async deleteCourse(req: Request, res: Response): Promise<void> {
+  deleteCourse = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
       const course = await this.courseService.getCourseById(id);
@@ -395,9 +401,9 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async createLesson(req: Request, res: Response): Promise<void> {
+  createLesson = async (req: Request, res: Response): Promise<void> => {
     try {
       const sessionId = req.params.id;
       const session = await this.courseService.getSessionById(sessionId);
@@ -428,9 +434,9 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async updateLesson(req: Request, res: Response): Promise<void> {
+  updateLesson = async (req: Request, res: Response): Promise<void> => {
     try {
       const sessionId = req.params.id;
       const lessonId = req.params.lessonId;
@@ -464,9 +470,9 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async deleteLesson(req: Request, res: Response): Promise<void> {
+  deleteLesson = async (req: Request, res: Response): Promise<void> => {
     try {
       const sessionId = req.params.id;
       const lessonId = req.params.lessonId;
@@ -495,9 +501,12 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getLessonsBySessionId(req: Request, res: Response): Promise<void> {
+  getLessonsBySessionId = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const sessionId = req.params.id;
       const session = await this.courseService.getSessionById(sessionId);
@@ -514,12 +523,12 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getPrerecordedSessionDetails(
+  getPrerecordedSessionDetails = async (
     req: Request,
     res: Response
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const sessionId = req.params.id;
       const sessionDetails =
@@ -542,12 +551,12 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getPrerecordedCourseSections(
+  getPrerecordedCourseSections = async (
     req: Request,
     res: Response
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const courseId = req.params.id;
       const course = await this.courseService.getCourseById(courseId);
@@ -572,10 +581,10 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   //search courses by its type using pagination
-  async searchCourses(req: Request, res: Response): Promise<void> {
+  searchCourses = async (req: Request, res: Response): Promise<void> => {
     try {
       const courseType = req.query.type as string;
       const courseTypeList = ["group", "live", "prerecorded"];
@@ -596,12 +605,12 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getOneOnOneSessionsByTeacherId(
+  getOneOnOneSessionsByTeacherId = async (
     req: Request,
     res: Response
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const teacherId = req.params.teacherId;
       if (teacherId !== req.body.ownerId) {
@@ -618,5 +627,5 @@ export class CourseController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 }

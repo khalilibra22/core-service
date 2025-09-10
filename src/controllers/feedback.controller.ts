@@ -13,7 +13,7 @@ export class FeedbackController {
     this.courseService = new CourseService();
   }
 
-  async createCourseReview(req: Request, res: Response): Promise<void> {
+  createCourseReview = async (req: Request, res: Response): Promise<void> => {
     try {
       const course = await this.courseService.getCourseById(req.params.id);
       if (!course) {
@@ -35,9 +35,9 @@ export class FeedbackController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async createComplaint(req: Request, res: Response): Promise<void> {
+  createComplaint = async (req: Request, res: Response): Promise<void> => {
     try {
       const sessionId = req.params.id;
       const session = await this.courseService.getSessionById(sessionId);
@@ -63,12 +63,12 @@ export class FeedbackController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async addComplaintInitialResponse(
+  addComplaintInitialResponse = async (
     req: Request,
     res: Response
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const complaint = await this.feedbackService.getComplaintById(
         req.params.id
@@ -101,9 +101,12 @@ export class FeedbackController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async complaintAdminResolve(req: Request, res: Response): Promise<void> {
+  complaintAdminResolve = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const complaintId = req.params.id;
       const complaint = await this.feedbackService.getComplaintById(
@@ -137,9 +140,12 @@ export class FeedbackController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async complaintStudentDecision(req: Request, res: Response): Promise<void> {
+  complaintStudentDecision = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const complaintId = req.params.id;
       const complaint = await this.feedbackService.getComplaintById(
@@ -174,9 +180,9 @@ export class FeedbackController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getAllReviews(req: Request, res: Response): Promise<void> {
+  getAllReviews = async (req: Request, res: Response): Promise<void> => {
     try {
       const reviews = await this.feedbackService.getAllReviews();
       const reviewDtos = plainToInstance(ReviewDto, reviews, {
@@ -186,9 +192,9 @@ export class FeedbackController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getAllComplaints(req: Request, res: Response): Promise<void> {
+  getAllComplaints = async (req: Request, res: Response): Promise<void> => {
     try {
       const complaints = await this.feedbackService.getAllComplaints();
       const complaintDtos = plainToInstance(ComplaintDto, complaints, {
@@ -198,12 +204,12 @@ export class FeedbackController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getAllComplaintsByStudentId(
+  getAllComplaintsByStudentId = async (
     req: Request,
     res: Response
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const studentId = req.params.id;
       const complaints = await this.feedbackService.getComplaintsByStudentId(
@@ -216,10 +222,10 @@ export class FeedbackController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   // delete complaint
-  async deleteComplaint(req: Request, res: Response): Promise<void> {
+  deleteComplaint = async (req: Request, res: Response): Promise<void> => {
     try {
       const complaintId = req.params.id;
       await this.feedbackService.deleteComplaint(complaintId);
@@ -227,13 +233,13 @@ export class FeedbackController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   // get reviews of prerecorded course using pagination
-  async getReviewsOfPrerecordedCourses(
+  getReviewsOfPrerecordedCourses = async (
     req: Request,
     res: Response
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
@@ -248,9 +254,9 @@ export class FeedbackController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getReviewsByCourseId(req: Request, res: Response): Promise<void> {
+  getReviewsByCourseId = async (req: Request, res: Response): Promise<void> => {
     try {
       const courseId = req.params.id;
       const course = await this.courseService.getCourseById(courseId);
@@ -266,10 +272,13 @@ export class FeedbackController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   // get reviews by teacher id
-  async getReviewsByTeacherId(req: Request, res: Response): Promise<void> {
+  getReviewsByTeacherId = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const teacherId = req.params.teacherId;
       if (!teacherId) {
@@ -286,10 +295,10 @@ export class FeedbackController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   // create one on one review
-  async createOneOnOneReview(req: Request, res: Response): Promise<void> {
+  createOneOnOneReview = async (req: Request, res: Response): Promise<void> => {
     try {
       const { ownerId } = req.body;
       if (!req.body.teacherId) {
@@ -309,13 +318,13 @@ export class FeedbackController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   // get reviews by one-on-one teacher id
-  async getReviewsByOneOnOneTeacherId(
+  getReviewsByOneOnOneTeacherId = async (
     req: Request,
     res: Response
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const teacherId = req.params.teacherId;
       const reviews = await this.feedbackService.getReviewsByOneOnOneTeacherId(
@@ -328,10 +337,13 @@ export class FeedbackController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   // get all reviews by by teacher id
-  async getAllReviewsByTeacherId(req: Request, res: Response): Promise<void> {
+  getAllReviewsByTeacherId = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const teacherId = req.params.teacherId;
       const reviews = await this.feedbackService.getAllReviewsByTeacherId(
@@ -344,12 +356,12 @@ export class FeedbackController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getAllComplaintsByTeacherId(
+  getAllComplaintsByTeacherId = async (
     req: Request,
     res: Response
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const teacherId = req.params.teacherId;
       const complaints = await this.feedbackService.getComplaintsTeacherId(
@@ -363,5 +375,5 @@ export class FeedbackController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 }

@@ -23,7 +23,7 @@ export class EnrollmentController {
     this.feedbackService = new FeedbackService();
   }
 
-  async createEnrollment(req: Request, res: Response): Promise<void> {
+  createEnrollment = async (req: Request, res: Response): Promise<void> => {
     try {
       const course = await this.courseService.getCourseByIdWithEnrollments(
         req.params.id
@@ -61,9 +61,12 @@ export class EnrollmentController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async createOneOnOneErollment(req: Request, res: Response): Promise<void> {
+  createOneOnOneErollment = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { teacherId, ownerId, topicId, sessionsNumber, isPaid } = req.body;
       if (!isPaid) {
@@ -111,14 +114,18 @@ export class EnrollmentController {
 
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getCourseEnrollments(req: Request, res: Response): Promise<void> {
+  getCourseEnrollments = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
       const course = await this.courseService.getCourseById(id);
       if (!course) {
         res.status(404).json({ error: "Course not found" });
+        return;
+      }
+      if (course.ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
       const enrollments = await this.enrollmentService.getCourseEnrollments(id);
@@ -135,14 +142,20 @@ export class EnrollmentController {
       }
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getOneOnOneEnrollementByTeacherId(
+  getOneOnOneEnrollementByTeacherId = async (
     req: Request,
     res: Response
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const teacherId = req.params.id;
+      if (teacherId !== req.body.ownerId) {
+        res
+          .status(403)
+          .json({ error: "You are not the owner of this teacher profile" });
+        return;
+      }
       const enrollments =
         await this.enrollmentService.getOneOnOneEnrollementByTeacherId(
           teacherId
@@ -159,12 +172,12 @@ export class EnrollmentController {
       console.error("Error in getOneOnOneEnrollementByTeacherId:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async updateCourseEnrollmentStatus(
+  updateCourseEnrollmentStatus = async (
     req: Request,
     res: Response
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const enrollment = await this.enrollmentService.getEnrollmentById(
         req.params.id
@@ -183,10 +196,13 @@ export class EnrollmentController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   //get student's enrollments by student id
-  async getStudentEnrollments(req: Request, res: Response): Promise<void> {
+  getStudentEnrollments = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const studentId = req.body.ownerId;
       const coursesEnrollments =
@@ -219,10 +235,13 @@ export class EnrollmentController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   // cancel one on one enrollment by id
-  async cancelOneOnOneEnrollment(req: Request, res: Response): Promise<void> {
+  cancelOneOnOneEnrollment = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const enrollmentId = req.params.id;
       const enrollment = await this.enrollmentService.getEnrollmentById(
@@ -274,12 +293,12 @@ export class EnrollmentController {
       console.error("Error in cancelOneOnOneEnrollment:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getOneOnOneEnrollmentSessions(
+  getOneOnOneEnrollmentSessions = async (
     req: Request,
     res: Response
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const enrollmentId = req.params.id;
       const enrollment = await this.enrollmentService.getEnrollmentById(
@@ -309,9 +328,9 @@ export class EnrollmentController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async createRefundRequest(req: Request, res: Response): Promise<void> {
+  createRefundRequest = async (req: Request, res: Response): Promise<void> => {
     try {
       const enrollmentId = req.params.id;
       const enrollment = await this.enrollmentService.getEnrollmentById(
@@ -344,9 +363,12 @@ export class EnrollmentController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async addRefundInitialResponse(req: Request, res: Response): Promise<void> {
+  addRefundInitialResponse = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const refundId = req.params.refundId;
       const refund = await this.feedbackService.getComplaintById(refundId);
@@ -377,9 +399,12 @@ export class EnrollmentController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async refundStudentDecision(req: Request, res: Response): Promise<void> {
+  refundStudentDecision = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const refundId = req.params.refundId;
       const refund = await this.feedbackService.getComplaintById(refundId);
@@ -412,9 +437,9 @@ export class EnrollmentController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async refundAdminResolve(req: Request, res: Response): Promise<void> {
+  refundAdminResolve = async (req: Request, res: Response): Promise<void> => {
     try {
       const refundId = req.params.refundId;
       const refund = await this.feedbackService.getComplaintById(refundId);
@@ -446,5 +471,5 @@ export class EnrollmentController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 }

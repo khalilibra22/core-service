@@ -25,7 +25,7 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
   ValidationMiddleware.validate(createCourseValidationSchema),
-  async (req, res) => await courseController.createDraftCourse(req, res)
+  courseController.createDraftCourse
 );
 
 //update course
@@ -34,7 +34,7 @@ router.put(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
   ValidationMiddleware.validate(courseValidationSchema),
-  async (req, res) => await courseController.updateCourse(req, res)
+  courseController.updateCourse
 );
 
 router.put(
@@ -50,7 +50,7 @@ router.delete(
   "/:id",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
-  async (req, res) => await courseController.deleteCourse(req, res)
+  courseController.deleteCourse
 );
 
 // get course by id
@@ -58,7 +58,7 @@ router.get(
   "/:id/details",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "view"),
-  async (req, res) => await courseController.getCourseById(req, res)
+  courseController.getCourseById
 );
 
 router.post(
@@ -66,7 +66,7 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "manage_sessions"),
   ValidationMiddleware.validate(sessionValidationSchema),
-  async (req, res) => await courseController.createCourseSession(req, res)
+  courseController.createCourseSession
 );
 
 //update session
@@ -75,7 +75,7 @@ router.put(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "manage_sessions"),
   ValidationMiddleware.validate(sessionValidationSchema),
-  async (req, res) => await courseController.updateCourseSession(req, res)
+  courseController.updateCourseSession
 );
 
 // delete session
@@ -83,7 +83,7 @@ router.delete(
   "/:id/sessions/:sessionId",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "manage_sessions"),
-  async (req, res) => await courseController.deleteCourseSession(req, res)
+  courseController.deleteCourseSession
 );
 
 //create a review
@@ -92,7 +92,7 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("reviews", "submit_review"),
   ValidationMiddleware.validate(reviewValdationSchema),
-  async (req, res) => await feedbackController.createCourseReview(req, res)
+  feedbackController.createCourseReview
 );
 
 //get course reviews
@@ -100,7 +100,7 @@ router.get(
   "/:id/reviews",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("reviews", "view"),
-  async (req, res) => await feedbackController.getReviewsByCourseId(req, res)
+  feedbackController.getReviewsByCourseId
 );
 
 //create a certificate
@@ -109,7 +109,7 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
   ValidationMiddleware.validate(certificateValidationSchema),
-  async (req, res) => await courseController.createCertificate(req, res)
+  courseController.createCertificate
 );
 
 // Create course enrollment
@@ -118,7 +118,7 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("enrollments", "enroll_course"),
   ValidationMiddleware.validate(enrollmentValidationsSchema),
-  async (req, res) => await enrollmentController.createEnrollment(req, res)
+  enrollmentController.createEnrollment
 );
 
 // Get all course sessions
@@ -126,7 +126,7 @@ router.get(
   "/:id/sessions",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "view"),
-  async (req, res) => await courseController.getCourseSessions(req, res)
+  courseController.getCourseSessions
 );
 
 // Get all prerecorded course sections
@@ -134,8 +134,7 @@ router.get(
   "/:id/prerecorded-sections",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "view"),
-  async (req, res) =>
-    await courseController.getPrerecordedCourseSections(req, res)
+  courseController.getPrerecordedCourseSections
 );
 
 //cancel course
@@ -144,24 +143,21 @@ router.patch(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "cancel_course"),
   ValidationMiddleware.validate(courseCancellationValidationSchema),
-  async (req, res) => await courseController.cancelCourse(req, res)
+  courseController.cancelCourse
 );
 
 router.get(
   "/:id/enrollments",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("enrollments", "manage_enrollments"),
-  async (req, res) => await enrollmentController.getCourseEnrollments(req, res)
+  enrollmentController.getCourseEnrollments
 );
 
 router.get(
   "/teachers/:id",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
-  async (req, res) => {
-    const id = req.params.id;
-    await courseController.getCoursesByTeacherId(req, res);
-  }
+  courseController.getCoursesByTeacherId
 );
 
 // get all live courses
@@ -169,14 +165,14 @@ router.get(
   "/live",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_all_courses"),
-  async (req, res) => await courseController.getAllLiveCourses(req, res)
+  courseController.getAllLiveCourses
 );
 
 router.get(
   "/group",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_all_courses"),
-  async (req, res) => await courseController.getAllGroupCourses(req, res)
+  courseController.getAllGroupCourses
 );
 
 // get all prerecorded courses
@@ -184,13 +180,13 @@ router.get(
   "/prerecorded",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_all_courses"),
-  async (req, res) => await courseController.getAllPrerecordedCourses(req, res)
+  courseController.getAllPrerecordedCourses
 );
 
 router.get(
   "/",
   //AuthMiddleware.verifyToken,
-  async (req, res) => await courseController.searchCourses(req, res)
+  courseController.searchCourses
 );
 
 export { router as courseRouter };

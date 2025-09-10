@@ -13,7 +13,10 @@ export class SessionTimeRequestController {
     this.courseService = new CourseService();
   }
 
-  async createSessionTimeRequest(req: Request, res: Response): Promise<void> {
+  createSessionTimeRequest = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const session = await this.courseService.getSessionById(req.params.id);
       if (!session) {
@@ -42,12 +45,12 @@ export class SessionTimeRequestController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async changeSessionTimeRequestStatus(
+  changeSessionTimeRequestStatus = async (
     req: Request,
     res: Response
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const sessionTimeRequest =
         await this.sessionTimeRequestService.getSessionTimeRequestById(
@@ -82,5 +85,5 @@ export class SessionTimeRequestController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 }

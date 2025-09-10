@@ -13,7 +13,7 @@ export class QuizController {
     this.courseService = new CourseService();
   }
 
-  async createQuiz(req: Request, res: Response): Promise<void> {
+  createQuiz = async (req: Request, res: Response): Promise<void> => {
     try {
       const session = await this.courseService.getSessionById(req.params.id);
       if (!session) {
@@ -42,9 +42,9 @@ export class QuizController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async updateQuiz(req: Request, res: Response): Promise<void> {
+  updateQuiz = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id, quizId } = req.params;
       const updates = req.body;
@@ -73,9 +73,9 @@ export class QuizController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async deleteQuiz(req: Request, res: Response): Promise<void> {
+  deleteQuiz = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id, quizId } = req.params;
       const session = await this.courseService.getSessionById(id);
@@ -101,9 +101,9 @@ export class QuizController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async createQuestion(req: Request, res: Response): Promise<void> {
+  createQuestion = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
       const quiz = await this.quizService.getQuizById(id);
@@ -131,9 +131,9 @@ export class QuizController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async updateQuestion(req: Request, res: Response): Promise<void> {
+  updateQuestion = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id, questionId } = req.params;
       const updates = req.body;
@@ -160,9 +160,9 @@ export class QuizController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async deleteQuestion(req: Request, res: Response): Promise<void> {
+  deleteQuestion = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id, questionId } = req.params;
       const quiz = await this.quizService.getQuizById(id);
@@ -186,9 +186,9 @@ export class QuizController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getSessionQuizzes(req: Request, res: Response): Promise<void> {
+  getSessionQuizzes = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
       const session = await this.courseService.getSessionById(id);
@@ -205,9 +205,9 @@ export class QuizController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getQuizDetails(req: Request, res: Response): Promise<void> {
+  getQuizDetails = async (req: Request, res: Response): Promise<void> => {
     try {
       const quizId = req.params.id;
       const quiz = await this.quizService.getQuizDetails(quizId);
@@ -223,5 +223,5 @@ export class QuizController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 }

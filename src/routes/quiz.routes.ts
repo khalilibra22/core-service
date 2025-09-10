@@ -14,7 +14,7 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "manage_sessions"),
   ValidationMiddleware.validate(quizQuestionValidation),
-  async (req, res) => await quizController.createQuestion(req, res)
+  quizController.createQuestion
 );
 
 // update question
@@ -23,7 +23,7 @@ router.put(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "manage_sessions"),
   ValidationMiddleware.validate(quizQuestionValidation),
-  async (req, res) => await quizController.updateQuestion(req, res)
+  quizController.updateQuestion
 );
 
 // delete question
@@ -31,7 +31,7 @@ router.delete(
   "/:id/questions/:questionId",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "manage_sessions"),
-  async (req, res) => await quizController.deleteQuestion(req, res)
+  quizController.deleteQuestion
 );
 
 // get quiz by id
@@ -39,7 +39,7 @@ router.get(
   "/:id",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "view"),
-  async (req, res) => await quizController.getQuizDetails(req, res)
+  quizController.getQuizDetails
 );
 
 export { router as quizRouter };

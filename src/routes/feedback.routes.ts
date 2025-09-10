@@ -18,8 +18,7 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("complaints", "respond_complaints"),
   ValidationMiddleware.validate(complaintInitialResponseSchema),
-  async (req, res) =>
-    await feedbackController.addComplaintInitialResponse(req, res)
+  feedbackController.addComplaintInitialResponse
 );
 
 // resolve complaint
@@ -28,7 +27,7 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("complaints", "manage_all_complaints"),
   ValidationMiddleware.validate(resolveComplaintSchema),
-  async (req, res) => await feedbackController.complaintAdminResolve(req, res)
+  feedbackController.complaintAdminResolve
 );
 
 router.post(
@@ -36,8 +35,7 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("complaints", "complain"),
   ValidationMiddleware.validate(studentDecisionComplaintSchema),
-  async (req, res) =>
-    await feedbackController.complaintStudentDecision(req, res)
+  feedbackController.complaintStudentDecision
 );
 
 // get all complaints
@@ -45,7 +43,7 @@ router.get(
   "/complaints",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("complaints", "manage_all_complaints"),
-  async (req, res) => await feedbackController.getAllComplaints(req, res)
+  feedbackController.getAllComplaints
 );
 
 // get all reviews
@@ -53,7 +51,7 @@ router.get(
   "/reviews",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("reviews", "manage_all_reviews"),
-  async (req, res) => await feedbackController.getAllReviews(req, res)
+  feedbackController.getAllReviews
 );
 
 // get all complaints by user id
@@ -61,9 +59,7 @@ router.get(
   "/complaints/users/:id",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("reviews", "manage_reviews"),
-
-  async (req, res) =>
-    await feedbackController.getAllComplaintsByStudentId(req, res)
+  feedbackController.getAllComplaintsByStudentId
 );
 
 //delete complaint
@@ -71,7 +67,7 @@ router.delete(
   "/complaints/:id",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("complaints", "manage_all_complaints"),
-  async (req, res) => await feedbackController.deleteComplaint(req, res)
+  feedbackController.deleteComplaint
 );
 
 // get reviews of prerecorded course using pagination
@@ -79,8 +75,7 @@ router.get(
   "/reviews/prerecorded",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("reviews", "view"),
-  async (req, res) =>
-    await feedbackController.getReviewsOfPrerecordedCourses(req, res)
+  feedbackController.getReviewsOfPrerecordedCourses
 );
 
 // get reviews by teacher id
@@ -88,7 +83,7 @@ router.get(
   "/teachers/:teacherId/reviews/courses",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("reviews", "view"),
-  async (req, res) => await feedbackController.getReviewsByTeacherId(req, res)
+  feedbackController.getReviewsByTeacherId
 );
 
 // create review for one-on-one
@@ -97,31 +92,28 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("reviews", "submit_review"),
   ValidationMiddleware.validate(reviewValdationSchema),
-  async (req, res) => await feedbackController.createOneOnOneReview(req, res)
+  feedbackController.createOneOnOneReview
 );
 
 router.get(
   "/teachers/:teacherId/reviews/one-on-one",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("reviews", "view"),
-  async (req, res) =>
-    await feedbackController.getReviewsByOneOnOneTeacherId(req, res)
+  feedbackController.getReviewsByOneOnOneTeacherId
 );
 
 router.get(
   "/teachers/:teacherId/reviews",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("reviews", "view"),
-  async (req, res) =>
-    await feedbackController.getAllReviewsByTeacherId(req, res)
+  feedbackController.getAllReviewsByTeacherId
 );
 
 router.get(
   "/teachers/:teacherId/complaints",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("complaints", "respond_complaints"),
-  async (req, res) =>
-    await feedbackController.getAllComplaintsByTeacherId(req, res)
+  feedbackController.getAllComplaintsByTeacherId
 );
 
 export { router as feedbackRouter };

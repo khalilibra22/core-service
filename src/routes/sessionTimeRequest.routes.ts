@@ -13,8 +13,7 @@ router.patch(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "request_time_change"),
   ValidationMiddleware.validate(timeChangeRequestStatusSchema),
-  async (req, res) =>
-    await sessionTimeRequestController.changeSessionTimeRequestStatus(req, res)
+  sessionTimeRequestController.changeSessionTimeRequestStatus
 );
 
 export { router as sessionTimeRequestRouter };
