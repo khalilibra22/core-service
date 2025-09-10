@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { SessionTimeRequestService } from "../services/sessionTimeRequest.service";
+import { SessionTimeRequestService } from "../services/session-time-request.service";
 import { CourseService } from "../services/course.service";
 import { plainToInstance } from "class-transformer";
-import { SessionTimeChangeRequestDto } from "../dtos/sessionTimeChangeRequest.dto";
+import { SessionTimeChangeRequestDto } from "../dtos/session-time-change-request.dto";
 
 export class SessionTimeRequestController {
   private sessionTimeRequestService: SessionTimeRequestService;

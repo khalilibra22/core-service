@@ -3,7 +3,7 @@ import { CourseService } from "../services/course.service";
 import { EnrollmentService } from "../services/enrollment.service";
 import { EnrollmentDto } from "../dtos/enrollment.dto";
 import { plainToInstance } from "class-transformer";
-import { OneOnOneEnollmentDto } from "../dtos/oneOnOneEnrollment.dto";
+import { OneOnOneEnollmentDto } from "../dtos/one-on-one-enrollment.dto";
 import { generateSessionsFromAvailabilities } from "../utils";
 import { ExternalService } from "../services/external.service";
 import { SessionDto } from "../dtos/session.dto";

@@ -3,7 +3,7 @@ import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import { courseRouter } from "../routes/course.routes";
 import { feedbackRouter } from "../routes/feedback.routes";
-import { sessionTimeRequestRouter } from "../routes/sessionTimeRequest.routes";
+import { sessionTimeRequestRouter } from "../routes/session-time-request.routes";
 import { enrollmentRouter } from "../routes/enrollment.routes";
 import { settingRouter } from "../routes/setting.routes";
 import { quizRouter } from "../routes/quiz.routes";

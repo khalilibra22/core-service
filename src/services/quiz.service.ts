@@ -2,7 +2,7 @@ import { AppDataSource } from "../config/database";
 import { AnswerModel } from "../models/answer.model";
 import { QuestionModel } from "../models/question.model";
 import { QuizModel } from "../models/quiz.model";
-import { QuizAttemptModel } from "../models/quizAttempt.model";
+import { QuizAttemptModel } from "../models/quiz-attempt.model";
 
 export class QuizService {
   quizRepo: any;

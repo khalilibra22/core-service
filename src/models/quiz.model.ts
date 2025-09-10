@@ -10,7 +10,7 @@ import {
 } from "typeorm";
 import { CourseModel } from "./course.model";
 import { QuestionModel } from "./question.model";
-import { QuizAttemptModel } from "./quizAttempt.model";
+import { QuizAttemptModel } from "./quiz-attempt.model";
 import { SessionModel } from "./session.model";
 
 @Entity("quizzes")

@@ -1,5 +1,5 @@
 import { AvailabilityDto } from "../dtos/availability.dto";
-import { RestApiSetup } from "../config/restApiSetup";
+import { RestApiSetup } from "../config/rest-api-setup";
 
 export class ExternalService {
   private api: RestApiSetup;

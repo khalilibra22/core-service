@@ -10,7 +10,7 @@ import {
 } from "../validations/course.validation";
 import { FeedbackController } from "../controllers/feedback.controller";
 import { complaintValdationSchema } from "../validations/feedback.validation";
-import { SessionTimeRequestController } from "../controllers/sessionTimeRequest.controller";
+import { SessionTimeRequestController } from "../controllers/session-time-request.controller";
 
 const router = express.Router();
 

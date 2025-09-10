@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
-import { Action, Resource } from "./permissionTypes";
-import { UserRole } from "../enums/userRoles.enum";
+import { Action, Resource } from "./permission-types";
+import { UserRole } from "../enums/user-roles.enum";
 import { permissions } from "../config/permissions";
 
 export class AuthMiddleware {

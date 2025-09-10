@@ -1,5 +1,5 @@
 import express from "express";
-import { SessionTimeRequestController } from "../controllers/sessionTimeRequest.controller";
+import { SessionTimeRequestController } from "../controllers/session-time-request.controller";
 import { ValidationMiddleware } from "../utils/validation.middleware";
 import { timeChangeRequestStatusSchema } from "../validations/course.validation";
 import { AuthMiddleware } from "../utils/auth.middleware";

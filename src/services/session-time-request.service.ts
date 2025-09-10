@@ -1,5 +1,5 @@
 import { AppDataSource } from "../config/database";
-import { SessionTimeChangeRequestModel } from "../models/sessionTimeChangeRequest.model";
+import { SessionTimeChangeRequestModel } from "../models/session-time-change-request.model";
 
 export class SessionTimeRequestService {
   sessionTimeRequestRepo: any;

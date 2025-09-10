@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
 import { CourseService } from "../services/course.service";
 import { plainToInstance } from "class-transformer";
-import { CourseSettingsModel } from "../models/courseSettings.model";
+import { CourseSettingsModel } from "../models/course-settings.model";
 import { CourseModel } from "../models/course.model";
-import { MinimalCourseDto } from "../dtos/minimalCourse.dto";
+import { MinimalCourseDto } from "../dtos/minimal-course.dto";
 import { getCourseDto, getSessionDto } from "../utils";
 import { CertificateDto } from "../dtos/certificate.dto";
 import { LessonDto } from "../dtos/lesson.dto";
-import { RecordedSessionDto } from "../dtos/recordedSession.dto";
+import { RecordedSessionDto } from "../dtos/recorded-session.dto";
 import { SessionDto } from "../dtos/session.dto";
 
 export class CourseController {

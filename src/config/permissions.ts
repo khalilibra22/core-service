@@ -1,5 +1,5 @@
-import { UserRole } from "../enums/userRoles.enum";
-import { Action, Resource } from "../utils/permissionTypes";
+import { UserRole } from "../enums/user-roles.enum";
+import { Action, Resource } from "../utils/permission-types";
 
 export const permissions: Record<UserRole, Record<Resource, Action[]>> = {
   [UserRole.SUPERVISOR]: {
