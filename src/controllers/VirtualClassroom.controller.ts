@@ -1,14 +1,14 @@
 import { Request, Response } from "express";
-import { VirtualClassroomService } from "../interfaces/virtualClassroomService.interface";
-import { CoursService } from "../services/course.service";
+import { VirtualClassroomService } from "../interfaces/virtual-classroom-service.interface";
+import { CourseService } from "../services/course.service";
 
 export class VirtualClassroomController {
   private virtualClassroomService: VirtualClassroomService;
-  private courseService: CoursService;
+  private courseService: CourseService;
 
   constructor(virtualClassroomService: VirtualClassroomService) {
     this.virtualClassroomService = virtualClassroomService;
-    this.courseService = new CoursService();
+    this.courseService = new CourseService();
   }
 
   launchMeeting = async (req: Request, res: Response): Promise<void> => {
@@ -42,9 +42,9 @@ export class VirtualClassroomController {
 
   endMeeting = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
+      const { meetingId } = req.params;
       const deleted = await this.virtualClassroomService.endMeeting(
-        id,
+        meetingId,
         req.body.moderatorPassword
       );
       if (!deleted) {
@@ -59,8 +59,10 @@ export class VirtualClassroomController {
 
   isMeetingRunning = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
-      const isRunning = await this.virtualClassroomService.isMeetingRunning(id);
+      const { meetingId } = req.params;
+      const isRunning = await this.virtualClassroomService.isMeetingRunning(
+        meetingId
+      );
       res.status(200).json({ isRunning });
     } catch (error: any) {
       res.status(500).json({ error: error.message });

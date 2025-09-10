@@ -13,7 +13,16 @@ export const permissions: Record<UserRole, Record<Resource, Action[]>> = {
   [UserRole.TEACHER]: {
     enrollments: ["manage_enrollments", "cancel_enrollment"],
     courses: ["manage_courses", "cancel_course", "view"],
-    sessions: ["manage_sessions", "view", "request_time_change"],
+    sessions: [
+      "manage_sessions",
+      "view",
+      "request_time_change",
+      "launch_meeting",
+      "end_meeting",
+      "upload_streaming_materials",
+      "watch_stream",
+      "delete_streaming_materials",
+    ],
     reviews: ["respond_reviews", "view"],
     complaints: ["respond_complaints"],
     payments: [],
@@ -21,7 +30,7 @@ export const permissions: Record<UserRole, Record<Resource, Action[]>> = {
   [UserRole.STUDENT]: {
     enrollments: ["enroll_course", "cancel_enrollment", "view"],
     courses: ["view_course", "download_materials", "view"],
-    sessions: ["view", "request_time_change"],
+    sessions: ["view", "request_time_change", "join_meeting", "watch_stream"],
     reviews: ["submit_review", "manage_reviews", "view"],
     complaints: ["complain", "student_complaint_veiw"],
     payments: ["make_payments"],
@@ -29,7 +38,13 @@ export const permissions: Record<UserRole, Record<Resource, Action[]>> = {
   [UserRole.ACADEMY]: {
     enrollments: ["manage_enrollments", "cancel_enrollment"],
     courses: ["manage_courses", "cancel_course", "view", "assign_teacher"],
-    sessions: ["manage_sessions", "view", "request_time_change"],
+    sessions: [
+      "manage_sessions",
+      "view",
+      "request_time_change",
+      "end_meeting",
+      "join_meeting",
+    ],
     reviews: ["respond_reviews", "view"],
     complaints: ["respond_complaints"],
     payments: ["make_payments"],
@@ -45,7 +60,7 @@ export const permissions: Record<UserRole, Record<Resource, Action[]>> = {
   [UserRole.ACADEMY_TEACHER]: {
     enrollments: [],
     courses: ["view"],
-    sessions: ["view"],
+    sessions: ["view", "launch_meeting", "end_meeting"],
     reviews: [],
     complaints: [],
     payments: [],

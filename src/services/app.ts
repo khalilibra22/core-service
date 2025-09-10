@@ -8,7 +8,6 @@ import { enrollmentRouter } from "../routes/enrollment.routes";
 import { settingRouter } from "../routes/setting.routes";
 import { quizRouter } from "../routes/quiz.routes";
 import { sessionRouter } from "../routes/session.routes";
-import { virtualClassroomRouter } from "../routes/virtualClassroom.routes";
 
 dotenv.config();
 
@@ -34,8 +33,6 @@ app.use("/enrollments", enrollmentRouter);
 app.use("/settings", settingRouter);
 app.use("/quizzes", quizRouter);
 app.use("/sessions", sessionRouter);
-
-app.use("/virtual-classrooms", virtualClassroomRouter);
 
 app.get("/", async (req: Request, res: Response) => {
   res.send("running !");

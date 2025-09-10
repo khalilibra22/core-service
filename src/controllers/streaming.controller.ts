@@ -1,14 +1,14 @@
 import { Request, Response } from "express";
-import { CoursService } from "../services/course.service";
+import { CourseService } from "../services/course.service";
 import { StreamingService } from "../services/streaming.service";
 
 export class StreamingServiceController {
   private streamingService: StreamingService;
-  private courseService: CoursService;
+  private courseService: CourseService;
 
   constructor() {
     this.streamingService = new StreamingService();
-    this.courseService = new CoursService();
+    this.courseService = new CourseService();
   }
 
   createVideoEntry = async (req: Request, res: Response): Promise<void> => {

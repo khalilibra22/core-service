@@ -4,9 +4,8 @@ import { AuthMiddleware } from "../utils/auth.middleware";
 import { CourseController } from "../controllers/course.controller";
 import { QuizController } from "../controllers/Quiz.controller";
 import { quizValidation } from "../validations/quiz.validation";
-import { lessonValidationSchema } from "../validations/course.validation";
 import { VirtualClassroomController } from "../controllers/VirtualClassroom.controller";
-import { BigBlueButtonService } from "../services/bigBlueButton.service";
+import { BigBlueButtonService } from "../services/big-blue-button.service";
 import { StreamingServiceController } from "../controllers/streaming.controller";
 import {
   lessonValidationSchema,
@@ -15,6 +14,7 @@ import {
 import { FeedbackController } from "../controllers/feedback.controller";
 import { complaintValdationSchema } from "../validations/feedback.validation";
 import { SessionTimeRequestController } from "../controllers/session-time-request.controller";
+import { endMeetingValidationSchema } from "../validations/virtualClassroom.validation";
 
 const router = express.Router();
 
@@ -32,7 +32,7 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "manage_sessions"),
   ValidationMiddleware.validate(lessonValidationSchema),
-  async (req, res) => await courseController.createLesson(req, res)
+  courseController.createLesson
 );
 
 router.put(
@@ -40,21 +40,21 @@ router.put(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "manage_sessions"),
   ValidationMiddleware.validate(lessonValidationSchema),
-  async (req, res) => await courseController.updateLesson(req, res)
+  courseController.updateLesson
 );
 
 router.delete(
   "/:id/lessons/:lessonId",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "manage_sessions"),
-  async (req, res) => await courseController.deleteLesson(req, res)
+  courseController.deleteLesson
 );
 
 router.get(
   "/:id/lessons",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "view"),
-  async (req, res) => await courseController.getLessonsBySessionId(req, res)
+  courseController.getLessonsBySessionId
 );
 
 // Create quiz
@@ -63,7 +63,7 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "manage_sessions"),
   ValidationMiddleware.validate(quizValidation),
-  async (req, res) => await quizController.createQuiz(req, res)
+  quizController.createQuiz
 );
 
 // Update quiz
@@ -72,7 +72,7 @@ router.put(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "manage_sessions"),
   ValidationMiddleware.validate(quizValidation),
-  async (req, res) => await quizController.updateQuiz(req, res)
+  quizController.updateQuiz
 );
 
 // Delete quiz
@@ -126,30 +126,51 @@ router.get(
 router.get(
   "/:id/launch-meeting",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "launch_meeting"),
   virtualClassroomController.launchMeeting
 );
 
 router.get(
   "/:id/join-meeting",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "join_meeting"),
   virtualClassroomController.joinMeeting
+);
+
+router.post(
+  "/:id/meetings/:meetingId/end",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "end_meeting"),
+  ValidationMiddleware.validate(endMeetingValidationSchema),
+  virtualClassroomController.endMeeting
+);
+
+// check if a meeting is running
+router.get(
+  "/:id/meetings/:meetingId/check",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "join_meeting"),
+  virtualClassroomController.isMeetingRunning
 );
 
 router.get(
   "/:id/videos/create-entry",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "upload_streaming_materials"),
   streamingServiceController.createVideoEntry
 );
 
 router.get(
   "/:id/videos/:videoId",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "watch_stream"),
   streamingServiceController.getVideoById
 );
 
 router.delete(
   "/:id/videos/:videoId",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "delete_streaming_materials"),
   streamingServiceController.deleteVideoById
 );
 

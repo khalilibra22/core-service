@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import axios from "axios";
-import { VirtualClassroomService } from "../interfaces/virtualClassroomService.interface";
+import { VirtualClassroomService } from "../interfaces/virtual-classroom-service.interface";
 
 export class BigBlueButtonService implements VirtualClassroomService {
   private bbbApiUrl: string;

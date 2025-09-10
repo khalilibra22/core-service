@@ -2,6 +2,8 @@ type TeacherAndAcademyAction =
   | "grade_students"
   | "make_payments"
   | "upload_materials"
+  | "upload_streaming_materials"
+  | "delete_streaming_materials"
   | "cancel_enrollment"
   | "manage_enrollments"
   | "manage_courses"
@@ -15,6 +17,8 @@ type TeacherAndAcademyAction =
   | "overview_courses"
   | "export_course_data"
   | "request_time_change"
+  | "launch_meeting"
+  | "end_meeting"
   | "import_course_data";
 
 // Student actions
@@ -27,6 +31,7 @@ type StudentAction =
   | "drop_course"
   | "student_complaint_veiw"
   | "manage_reviews"
+  | "join_meeting"
   | "view_grades";
 
 // Admin actions
@@ -44,6 +49,7 @@ type AdminAction =
 
 export type Action =
   | "view"
+  | "watch_stream"
   | TeacherAndAcademyAction
   | StudentAction
   | AdminAction;
