@@ -19,7 +19,7 @@ export const permissions: Record<UserRole, Record<Resource, Action[]>> = {
     payments: [],
   },
   [UserRole.STUDENT]: {
-    enrollments: ["enroll_course", "cancel_enrollment"],
+    enrollments: ["enroll_course", "cancel_enrollment", "view"],
     courses: ["view_course", "download_materials", "view"],
     sessions: ["view", "request_time_change"],
     reviews: ["submit_review", "manage_reviews", "view"],

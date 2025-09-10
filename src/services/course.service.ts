@@ -67,7 +67,7 @@ export class CourseService {
         where: {
           id: id,
         },
-        relations: ["course"],
+        relations: ["course", "enrollment"],
       });
     } catch (error) {
       throw new Error("Error fetching session by ID");

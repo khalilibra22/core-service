@@ -30,7 +30,7 @@ export class SessionTimeRequestService {
         where: {
           id: id,
         },
-        relations: ["session"],
+        relations: ["session", "session.enrollment"],
       });
     } catch (error) {
       throw new Error("Error fetching session time change request by ID");

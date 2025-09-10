@@ -20,17 +20,6 @@ export class EnrollmentService {
     }
   }
 
-  // async createSessionEnrollment(
-  //   enrollment: SessionEnrollmentModel
-  // ): Promise<SessionEnrollmentModel> {
-  //   try {
-  //     return await this.enrollmentRepo.save(enrollment);
-  //   } catch (error) {
-  //     console.log("Error in createSessionEnrollment:", error);
-  //     throw new Error("Error creating session enrollment");
-  //   }
-  // }
-
   async getCourseEnrollments(courseId: string): Promise<EnrollmentModel[]> {
     try {
       return await this.enrollmentRepo.find({

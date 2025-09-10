@@ -364,7 +364,7 @@ export class FeedbackController {
   ): Promise<void> => {
     try {
       const teacherId = req.params.teacherId;
-      const complaints = await this.feedbackService.getComplaintsTeacherId(
+      const complaints = await this.feedbackService.getComplaintsByTeacherId(
         teacherId
       );
       const complaintDtos = plainToInstance(ComplaintDto, complaints, {

@@ -25,10 +25,18 @@ export class SessionTimeRequestController {
       }
       req.body.userId = req.body.ownerId;
       delete req.body.ownerId;
+      if (
+        req.body.userId !== session.enrollment?.teacherId &&
+        req.body.userId !== session.enrollment?.studentId
+      ) {
+        res.status(403).json({ error: "You are not authorized" });
+        return;
+      }
       const sessionTimeRequestBody = {
         ...req.body,
         session: session,
       };
+
       const sessionTimeRequest =
         await this.sessionTimeRequestService.createSessionTimeRequest(
           sessionTimeRequestBody
@@ -56,6 +64,15 @@ export class SessionTimeRequestController {
         await this.sessionTimeRequestService.getSessionTimeRequestById(
           req.params.id
         );
+      const userId =
+        sessionTimeRequest?.userId ===
+        sessionTimeRequest?.session?.enrollment?.studentId
+          ? sessionTimeRequest?.session?.enrollment?.teacherId
+          : sessionTimeRequest?.session?.enrollment?.studentId;
+      if (req.body.ownerId !== userId) {
+        res.status(403).json({ error: "You are not authorized" });
+        return;
+      }
       if (!sessionTimeRequest) {
         res.status(404).json({ error: "Session time request not found" });
         return;

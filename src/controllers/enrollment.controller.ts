@@ -32,6 +32,15 @@ export class EnrollmentController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
+      //check if the user already enrolled
+      if (
+        course.enrollments?.some(
+          (enrollment) => enrollment.studentId === req.body.ownerId
+        )
+      ) {
+        res.status(409).json({ error: "User already enrolled in this course" });
+        return;
+      }
       if (course.couresSettings?.isCanceled) {
         res.status(409).json({ error: "Course is canceled" });
         return;
@@ -279,13 +288,6 @@ export class EnrollmentController {
       If yes, call the payment service to process the refund, in app refund policy
       */
 
-      // const availabilityIds = enrollment.sessions.map(
-      //   (session) => session.availabilityId
-      // );
-      // await this.externalService.updateAvailabilitiesStatus(
-      //   availabilityIds,
-      //   "available"
-      // );
       res
         .status(200)
         .json({ message: "One-on-one enrollment canceled successfully" });
@@ -371,9 +373,20 @@ export class EnrollmentController {
   ): Promise<void> => {
     try {
       const refundId = req.params.refundId;
-      const refund = await this.feedbackService.getComplaintById(refundId);
+      const refund = await this.feedbackService.getRefundComplaintById(
+        refundId
+      );
       if (!refund) {
         res.status(404).json({ error: "Refund not found" });
+        return;
+      }
+      if (
+        refund.enrollment?.teacherId !== req.body.ownerId &&
+        refund.enrollment?.course?.ownerId !== req.body.ownerId
+      ) {
+        res
+          .status(403)
+          .json({ error: "You are not authorized to respond to this refund" });
         return;
       }
       if (refund.status !== "pending") {

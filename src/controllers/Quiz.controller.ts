@@ -20,13 +20,13 @@ export class QuizController {
         res.status(404).json({ error: "Session not found" });
         return;
       }
-      // if (
-      //   !session.course?.ownerId ||
-      //   session.course?.ownerId !== req.body.ownerId
-      // ) {
-      //   res.status(403).json({ error: "You are not the owner of this course" });
-      //   return;
-      // }
+      if (
+        !session.course?.ownerId ||
+        session.course?.ownerId !== req.body.ownerId
+      ) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       delete req.body.ownerId;
       const quizBody = {
         ...req.body,

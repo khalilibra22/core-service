@@ -43,7 +43,7 @@ router.post(
 router.get(
   "/student",
   AuthMiddleware.verifyToken,
-  AuthMiddleware.authorize("enrollments", "manage_enrollments"),
+  AuthMiddleware.authorize("enrollments", "view"),
   enrollmentController.getStudentEnrollments
 );
 
