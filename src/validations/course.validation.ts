@@ -2,9 +2,7 @@ import Joi from "joi";
 
 export const createCourseValidationSchema = Joi.object({
   ownerId: Joi.string().uuid().optional(),
-  type: Joi.string()
-    .valid("one-on-one", "group", "live", "prerecorded")
-    .required(),
+  type: Joi.string().valid("group", "live", "prerecorded").required(),
 });
 
 // Shared Fields
@@ -78,16 +76,20 @@ const prerecordedSchema = Joi.object({
   prerequisites: Joi.array().items(Joi.string()).required(),
   targetAudience: Joi.array().items(Joi.string()).required(),
   isCertified: Joi.boolean().required(),
-  certificateType: Joi.string().required(),
-  certificateShippingType: Joi.string().required(),
-});
-
-const oneOnOneSchema = Joi.object({
-  type: Joi.string().valid("one-on-one").required(),
+  certificateType: Joi.string().when("isCertified", {
+    is: true,
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  certificateShippingType: Joi.string().when("isCertified", {
+    is: true,
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
 });
 
 const sessionSchema = Joi.object({
-  type: Joi.string().valid("one-on-one", "group", "live").required(),
+  type: Joi.string().valid("group", "live").required(),
   date: Joi.date().timestamp().required(),
   duration: Joi.number().min(1).required(),
   durationUnit: Joi.string().valid("minute", "hour").required(),
@@ -106,10 +108,10 @@ const prerecordedSessionSchema = Joi.object({
 });
 
 export const courseValidationSchema = Joi.alternatives()
-  .try(groupSchema, liveSchema, prerecordedSchema, oneOnOneSchema)
+  .try(groupSchema, liveSchema, prerecordedSchema)
   .messages({
     "alternatives.match":
-      "Course data is invalid or does not match any allowed course type (one-on-one, group, live, prerecorded).",
+      "Course data is invalid or does not match any allowed course type ( group, live, prerecorded).",
   });
 
 export const sessionValidationSchema = Joi.alternatives()

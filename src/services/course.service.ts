@@ -1,7 +1,7 @@
 import { AppDataSource } from "../config/database";
 import { CertificateModel } from "../models/certificate.model";
 import { CourseModel } from "../models/course.model";
-import { CourseSettingsModel } from "../models/courseSettings.model";
+import { CourseSettingsModel } from "../models/course-settings.model";
 import { LessonModel } from "../models/lesson.model";
 import { SessionModel } from "../models/session.model";
 
@@ -67,6 +67,7 @@ export class CourseService {
         where: {
           id: id,
         },
+        relations: ["course", "enrollment"],
       });
     } catch (error) {
       throw new Error("Error fetching session by ID");

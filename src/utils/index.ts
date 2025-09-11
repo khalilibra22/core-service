@@ -1,12 +1,12 @@
 import { plainToInstance } from "class-transformer";
 import { CourseModel } from "../models/course.model";
-import { GroupClassDto } from "../dtos/groupClass.dto";
-import { LiveCourseDto } from "../dtos/liveCourse.dto";
-import { MinimalCourseDto } from "../dtos/minimalCourse.dto";
-import { PrerecordedCourseDto } from "../dtos/prerecordedCourse.dto";
+import { GroupClassDto } from "../dtos/group-class.dto";
+import { LiveCourseDto } from "../dtos/live-course.dto";
+import { MinimalCourseDto } from "../dtos/minimal-course.dto";
+import { PrerecordedCourseDto } from "../dtos/prerecorded-course.dto";
 import { SessionModel } from "../models/session.model";
 import { SessionDto } from "../dtos/session.dto";
-import { RecordedSessionDto } from "../dtos/recordedSession.dto";
+import { RecordedSessionDto } from "../dtos/recorded-session.dto";
 import { AvailabilityDto } from "../dtos/availability.dto";
 
 export const getCourseDto = (

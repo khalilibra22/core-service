@@ -3,7 +3,7 @@ import { CourseService } from "../services/course.service";
 import { EnrollmentService } from "../services/enrollment.service";
 import { EnrollmentDto } from "../dtos/enrollment.dto";
 import { plainToInstance } from "class-transformer";
-import { OneOnOneEnollmentDto } from "../dtos/oneOnOneEnrollment.dto";
+import { OneOnOneEnollmentDto } from "../dtos/one-on-one-enrollment.dto";
 import { generateSessionsFromAvailabilities } from "../utils";
 import { ExternalService } from "../services/external.service";
 import { SessionDto } from "../dtos/session.dto";
@@ -23,13 +23,29 @@ export class EnrollmentController {
     this.feedbackService = new FeedbackService();
   }
 
-  async createEnrollment(req: Request, res: Response): Promise<void> {
+  createEnrollment = async (req: Request, res: Response): Promise<void> => {
     try {
       const course = await this.courseService.getCourseByIdWithEnrollments(
         req.params.id
       );
       if (!course) {
         res.status(404).json({ error: "Course not found" });
+        return;
+      }
+      //check if course status is published
+      if (course.status !== "published") {
+        res
+          .status(409)
+          .json({ error: "Course is not published yet or canceled" });
+        return;
+      }
+      //check if the user already enrolled
+      if (
+        course.enrollments?.some(
+          (enrollment) => enrollment.studentId === req.body.ownerId
+        )
+      ) {
+        res.status(409).json({ error: "User already enrolled in this course" });
         return;
       }
       if (course.couresSettings?.isCanceled) {
@@ -61,9 +77,12 @@ export class EnrollmentController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async createOneOnOneErollment(req: Request, res: Response): Promise<void> {
+  createOneOnOneErollment = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { teacherId, ownerId, topicId, sessionsNumber, isPaid } = req.body;
       if (!isPaid) {
@@ -111,14 +130,18 @@ export class EnrollmentController {
 
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getCourseEnrollments(req: Request, res: Response): Promise<void> {
+  getCourseEnrollments = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
       const course = await this.courseService.getCourseById(id);
       if (!course) {
         res.status(404).json({ error: "Course not found" });
+        return;
+      }
+      if (course.ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
       const enrollments = await this.enrollmentService.getCourseEnrollments(id);
@@ -135,14 +158,20 @@ export class EnrollmentController {
       }
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getOneOnOneEnrollementByTeacherId(
+  getOneOnOneEnrollementByTeacherId = async (
     req: Request,
     res: Response
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const teacherId = req.params.id;
+      if (teacherId !== req.body.ownerId) {
+        res
+          .status(403)
+          .json({ error: "You are not the owner of this teacher profile" });
+        return;
+      }
       const enrollments =
         await this.enrollmentService.getOneOnOneEnrollementByTeacherId(
           teacherId
@@ -159,12 +188,12 @@ export class EnrollmentController {
       console.error("Error in getOneOnOneEnrollementByTeacherId:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async updateCourseEnrollmentStatus(
+  updateCourseEnrollmentStatus = async (
     req: Request,
     res: Response
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const enrollment = await this.enrollmentService.getEnrollmentById(
         req.params.id
@@ -183,10 +212,13 @@ export class EnrollmentController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   //get student's enrollments by student id
-  async getStudentEnrollments(req: Request, res: Response): Promise<void> {
+  getStudentEnrollments = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const studentId = req.body.ownerId;
       const coursesEnrollments =
@@ -219,10 +251,13 @@ export class EnrollmentController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   // cancel one on one enrollment by id
-  async cancelOneOnOneEnrollment(req: Request, res: Response): Promise<void> {
+  cancelOneOnOneEnrollment = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const enrollmentId = req.params.id;
       const enrollment = await this.enrollmentService.getEnrollmentById(
@@ -230,6 +265,15 @@ export class EnrollmentController {
       );
       if (!enrollment) {
         res.status(404).json({ error: "Enrollment not found" });
+        return;
+      }
+      if (
+        req.body.ownerId !== enrollment.studentId &&
+        req.body.ownerId !== enrollment.teacherId
+      ) {
+        res
+          .status(403)
+          .json({ error: "You are not authorized to cancel this enrollment" });
         return;
       }
       if (enrollment.status === "canceled") {
@@ -251,13 +295,6 @@ export class EnrollmentController {
       If yes, call the payment service to process the refund, in app refund policy
       */
 
-      // const availabilityIds = enrollment.sessions.map(
-      //   (session) => session.availabilityId
-      // );
-      // await this.externalService.updateAvailabilitiesStatus(
-      //   availabilityIds,
-      //   "available"
-      // );
       res
         .status(200)
         .json({ message: "One-on-one enrollment canceled successfully" });
@@ -265,12 +302,12 @@ export class EnrollmentController {
       console.error("Error in cancelOneOnOneEnrollment:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getOneOnOneEnrollmentSessions(
+  getOneOnOneEnrollmentSessions = async (
     req: Request,
     res: Response
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const enrollmentId = req.params.id;
       const enrollment = await this.enrollmentService.getEnrollmentById(
@@ -278,6 +315,15 @@ export class EnrollmentController {
       );
       if (!enrollment) {
         res.status(404).json({ error: "Enrollment not found" });
+        return;
+      }
+      if (
+        req.body.ownerId !== enrollment.studentId &&
+        req.body.ownerId !== enrollment.teacherId
+      ) {
+        res
+          .status(403)
+          .json({ error: "You are not authorized to cancel this enrollment" });
         return;
       }
       const sessions =
@@ -291,19 +337,22 @@ export class EnrollmentController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async createRefundRequest(req: Request, res: Response): Promise<void> {
+  createRefundRequest = async (req: Request, res: Response): Promise<void> => {
     try {
       const enrollmentId = req.params.id;
-      const courseEnrollment = await this.enrollmentService.getEnrollmentById(
+      const enrollment = await this.enrollmentService.getEnrollmentById(
         enrollmentId
       );
-      const oneOnOneEnrollment = await this.enrollmentService.getEnrollmentById(
-        enrollmentId
-      );
-      if (!courseEnrollment && !oneOnOneEnrollment) {
+      if (!enrollment) {
         res.status(404).json({ error: "Enrollment not found" });
+        return;
+      }
+      if (enrollment.studentId !== req.body.ownerId) {
+        res
+          .status(403)
+          .json({ error: "You are not the owner of this enrollment" });
         return;
       }
       req.body.studentId = req.body.ownerId;
@@ -311,8 +360,7 @@ export class EnrollmentController {
 
       const refundBody = {
         ...req.body,
-        oneOnOneEnrollment: oneOnOneEnrollment,
-        courseEnrollment: courseEnrollment,
+        enrollment,
         type: "refund",
       };
       const refund = await this.feedbackService.createComplaint(refundBody);
@@ -324,14 +372,28 @@ export class EnrollmentController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async addRefundInitialResponse(req: Request, res: Response): Promise<void> {
+  addRefundInitialResponse = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const refundId = req.params.refundId;
-      const refund = await this.feedbackService.getComplaintById(refundId);
+      const refund = await this.feedbackService.getRefundComplaintById(
+        refundId
+      );
       if (!refund) {
         res.status(404).json({ error: "Refund not found" });
+        return;
+      }
+      if (
+        refund.enrollment?.teacherId !== req.body.ownerId &&
+        refund.enrollment?.course?.ownerId !== req.body.ownerId
+      ) {
+        res
+          .status(403)
+          .json({ error: "You are not authorized to respond to this refund" });
         return;
       }
       if (refund.status !== "pending") {
@@ -357,14 +419,23 @@ export class EnrollmentController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async refundStudentDecision(req: Request, res: Response): Promise<void> {
+  refundStudentDecision = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const refundId = req.params.refundId;
       const refund = await this.feedbackService.getComplaintById(refundId);
       if (!refund) {
         res.status(404).json({ error: "Refund not found" });
+        return;
+      }
+      if (refund.studentId !== req.body.ownerId) {
+        res
+          .status(403)
+          .json({ error: "You are not the owner of this enrollment" });
         return;
       }
 
@@ -386,9 +457,9 @@ export class EnrollmentController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async refundAdminResolve(req: Request, res: Response): Promise<void> {
+  refundAdminResolve = async (req: Request, res: Response): Promise<void> => {
     try {
       const refundId = req.params.refundId;
       const refund = await this.feedbackService.getComplaintById(refundId);
@@ -420,5 +491,5 @@ export class EnrollmentController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 }

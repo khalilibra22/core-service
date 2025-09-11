@@ -1,15 +1,13 @@
-import dotenv from "dotenv";
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import { courseRouter } from "../routes/course.routes";
 import { feedbackRouter } from "../routes/feedback.routes";
-import { sessionTimeRequestRouter } from "../routes/sessionTimeRequest.routes";
+import { sessionTimeRequestRouter } from "../routes/session-time-request.routes";
 import { enrollmentRouter } from "../routes/enrollment.routes";
 import { settingRouter } from "../routes/setting.routes";
 import { quizRouter } from "../routes/quiz.routes";
 import { sessionRouter } from "../routes/session.routes";
-
-dotenv.config();
+import { storageRouter } from "../routes/storage.routes";
 
 const app = express();
 const port = process.env.PORT || 5001;
@@ -33,6 +31,7 @@ app.use("/enrollments", enrollmentRouter);
 app.use("/settings", settingRouter);
 app.use("/quizzes", quizRouter);
 app.use("/sessions", sessionRouter);
+app.use("/uploads", storageRouter);
 
 app.get("/", async (req: Request, res: Response) => {
   res.send("running !");

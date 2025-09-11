@@ -1,5 +1,5 @@
 import { AppDataSource } from "../config/database";
-import { SessionTimeChangeRequestModel } from "../models/sessionTimeChangeRequest.model";
+import { SessionTimeChangeRequestModel } from "../models/session-time-change-request.model";
 
 export class SessionTimeRequestService {
   sessionTimeRequestRepo: any;
@@ -30,7 +30,7 @@ export class SessionTimeRequestService {
         where: {
           id: id,
         },
-        relations: ["session"],
+        relations: ["session", "session.enrollment"],
       });
     } catch (error) {
       throw new Error("Error fetching session time change request by ID");

@@ -1,12 +1,13 @@
 import { AvailabilityDto } from "../dtos/availability.dto";
-import { RestApiSetup } from "../config/restApiSetup";
+import { RestApiSetup } from "../config/rest-api-setup";
 
 export class ExternalService {
   private api: RestApiSetup;
   private baseURL: string;
 
   constructor() {
-    this.baseURL = "https://user-service-0u8y.onrender.com";
+    this.baseURL =
+      process.env.USER_SERVICE_URL || "https://user-service-0u8y.onrender.com";
     this.api = new RestApiSetup(this.baseURL);
   }
 

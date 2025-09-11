@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
 import { CourseService } from "../services/course.service";
 import { plainToInstance } from "class-transformer";
-import { CourseSettingsModel } from "../models/courseSettings.model";
+import { CourseSettingsModel } from "../models/course-settings.model";
 import { CourseModel } from "../models/course.model";
-import { MinimalCourseDto } from "../dtos/minimalCourse.dto";
+import { MinimalCourseDto } from "../dtos/minimal-course.dto";
 import { getCourseDto, getSessionDto } from "../utils";
 import { CertificateDto } from "../dtos/certificate.dto";
 import { LessonDto } from "../dtos/lesson.dto";
-import { RecordedSessionDto } from "../dtos/recordedSession.dto";
+import { RecordedSessionDto } from "../dtos/recorded-session.dto";
 import { SessionDto } from "../dtos/session.dto";
 
 export class CourseController {
@@ -16,7 +16,7 @@ export class CourseController {
     this.courseService = new CourseService();
   }
 
-  async createDraftCourse(req: Request, res: Response): Promise<void> {
+  createDraftCourse = async (req: Request, res: Response): Promise<void> => {
     try {
       const courseSettings = await this.courseService.createCourseSettings({});
       const courseSettingsBody = {
@@ -31,14 +31,18 @@ export class CourseController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async updateCourse(req: Request, res: Response): Promise<void> {
+  updateCourse = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
       const course = await this.courseService.getCourseById(req.params.id);
       if (!course) {
         res.status(404).json({ error: "Course not found" });
+        return;
+      }
+      if (course.ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
       if (course.type !== req.body.type) {
@@ -69,14 +73,18 @@ export class CourseController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async updateDraftCourse(req: Request, res: Response): Promise<void> {
+  updateDraftCourse = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
       const course = await this.courseService.getCourseById(req.params.id);
       if (!course) {
         res.status(404).json({ error: "Course not found" });
+        return;
+      }
+      if (course.ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
       if (course.status !== "draft") {
@@ -110,13 +118,17 @@ export class CourseController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async createCourseSession(req: Request, res: Response): Promise<void> {
+  createCourseSession = async (req: Request, res: Response): Promise<void> => {
     try {
       const course = await this.courseService.getCourseById(req.params.id);
       if (!course) {
         res.status(404).json({ error: "Course not found" });
+        return;
+      }
+      if (course.ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
       if (course.type !== req.body.type) {
@@ -135,9 +147,9 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async updateCourseSession(req: Request, res: Response): Promise<void> {
+  updateCourseSession = async (req: Request, res: Response): Promise<void> => {
     try {
       const courseId = req.params.id;
       const sessionId = req.params.sessionId;
@@ -147,7 +159,10 @@ export class CourseController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
-
+      if (course.ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       const session = await this.courseService.getSessionById(sessionId);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
@@ -162,15 +177,15 @@ export class CourseController {
         ...req.body,
       };
 
-      const sessionu = await this.courseService.updateSession(sessionBody);
+      await this.courseService.updateSession(sessionBody);
       res.status(200).json({ message: "Session updated successfully" });
     } catch (error) {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async deleteCourseSession(req: Request, res: Response): Promise<void> {
+  deleteCourseSession = async (req: Request, res: Response): Promise<void> => {
     try {
       const courseId = req.params.id;
       const sessionId = req.params.sessionId;
@@ -180,7 +195,10 @@ export class CourseController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
-
+      if (course.ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       const session = await this.courseService.getSessionById(sessionId);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
@@ -193,14 +211,18 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   // create a certificate
-  async createCertificate(req: Request, res: Response): Promise<void> {
+  createCertificate = async (req: Request, res: Response): Promise<void> => {
     try {
       const course = await this.courseService.getCourseById(req.params.id);
       if (!course) {
         res.status(404).json({ error: "Course not found" });
+        return;
+      }
+      if (course.ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
       delete req.body.ownerId;
@@ -219,9 +241,9 @@ export class CourseController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getCourseSessions(req: Request, res: Response): Promise<void> {
+  getCourseSessions = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
       const course = await this.courseService.getCourseById(id);
@@ -235,15 +257,19 @@ export class CourseController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   // cancel course
-  async cancelCourse(req: Request, res: Response): Promise<void> {
+  cancelCourse = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
       const course = await this.courseService.getCourseById(id);
       if (!course) {
         res.status(404).json({ error: "Course not found" });
+        return;
+      }
+      if (course.ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
       // TODO: check if user is allowed to cancel the course
@@ -258,15 +284,16 @@ export class CourseController {
           req.body.reasonOfCancellation;
         course.couresSettings.canceledBy = req.body.ownerId;
       }
+      course.status = "canceled";
       await this.courseService.updateCourse(course);
 
       res.status(200).json({ message: "Course canceled successfully" });
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getCourseById(req: Request, res: Response): Promise<void> {
+  getCourseById = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
       const course = await this.courseService.getCourseById(id);
@@ -280,14 +307,21 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   //get teachers by courses by teacher id
-  async getCoursesByTeacherId(req: Request, res: Response): Promise<void> {
+  getCoursesByTeacherId = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const id = req.params.id;
       const courseType = req.query.type as string;
       const courseTypeList = ["group", "live", "prerecorded"];
+      if (id !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       if (!courseTypeList.includes(courseType)) {
         res.status(400).json({ error: "Invalid course type" });
         return;
@@ -301,10 +335,10 @@ export class CourseController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   //get all courses of type live using pagination
-  async getAllLiveCourses(req: Request, res: Response): Promise<void> {
+  getAllLiveCourses = async (req: Request, res: Response): Promise<void> => {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
@@ -315,9 +349,9 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getAllGroupCourses(req: Request, res: Response): Promise<void> {
+  getAllGroupCourses = async (req: Request, res: Response): Promise<void> => {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
@@ -328,10 +362,13 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   //get all courses of type prerecorded using pagination
-  async getAllPrerecordedCourses(req: Request, res: Response): Promise<void> {
+  getAllPrerecordedCourses = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
@@ -345,14 +382,18 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async deleteCourse(req: Request, res: Response): Promise<void> {
+  deleteCourse = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
       const course = await this.courseService.getCourseById(id);
       if (!course) {
         res.status(404).json({ error: "Course not found" });
+        return;
+      }
+      if (course.ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
       await this.courseService.deleteCourse(id);
@@ -361,14 +402,21 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async createLesson(req: Request, res: Response): Promise<void> {
+  createLesson = async (req: Request, res: Response): Promise<void> => {
     try {
       const sessionId = req.params.id;
       const session = await this.courseService.getSessionById(sessionId);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
+        return;
+      }
+      if (
+        !session.course?.ownerId ||
+        session.course?.ownerId !== req.body.ownerId
+      ) {
+        res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
 
@@ -387,9 +435,9 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async updateLesson(req: Request, res: Response): Promise<void> {
+  updateLesson = async (req: Request, res: Response): Promise<void> => {
     try {
       const sessionId = req.params.id;
       const lessonId = req.params.lessonId;
@@ -399,7 +447,13 @@ export class CourseController {
         res.status(404).json({ error: "Session not found" });
         return;
       }
-
+      if (
+        !session.course?.ownerId ||
+        session.course?.ownerId !== req.body.ownerId
+      ) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       const lesson = await this.courseService.getLessonById(lessonId);
       if (!lesson) {
         res.status(404).json({ error: "Lesson not found" });
@@ -417,9 +471,9 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async deleteLesson(req: Request, res: Response): Promise<void> {
+  deleteLesson = async (req: Request, res: Response): Promise<void> => {
     try {
       const sessionId = req.params.id;
       const lessonId = req.params.lessonId;
@@ -429,7 +483,13 @@ export class CourseController {
         res.status(404).json({ error: "Session not found" });
         return;
       }
-
+      if (
+        !session.course?.ownerId ||
+        session.course?.ownerId !== req.body.ownerId
+      ) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       const lesson = await this.courseService.getLessonById(lessonId);
       if (!lesson) {
         res.status(404).json({ error: "Lesson not found" });
@@ -442,9 +502,12 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getLessonsBySessionId(req: Request, res: Response): Promise<void> {
+  getLessonsBySessionId = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const sessionId = req.params.id;
       const session = await this.courseService.getSessionById(sessionId);
@@ -461,12 +524,12 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getPrerecordedSessionDetails(
+  getPrerecordedSessionDetails = async (
     req: Request,
     res: Response
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const sessionId = req.params.id;
       const sessionDetails =
@@ -489,12 +552,12 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getPrerecordedCourseSections(
+  getPrerecordedCourseSections = async (
     req: Request,
     res: Response
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const courseId = req.params.id;
       const course = await this.courseService.getCourseById(courseId);
@@ -519,10 +582,10 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
   //search courses by its type using pagination
-  async searchCourses(req: Request, res: Response): Promise<void> {
+  searchCourses = async (req: Request, res: Response): Promise<void> => {
     try {
       const courseType = req.query.type as string;
       const courseTypeList = ["group", "live", "prerecorded"];
@@ -543,14 +606,18 @@ export class CourseController {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getOneOnOneSessionsByTeacherId(
+  getOneOnOneSessionsByTeacherId = async (
     req: Request,
     res: Response
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const teacherId = req.params.teacherId;
+      if (teacherId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       const sessions = await this.courseService.getTeacherOneOnOneSessions(
         teacherId
       );
@@ -561,5 +628,5 @@ export class CourseController {
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 }

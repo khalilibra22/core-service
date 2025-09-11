@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { SessionTimeRequestService } from "../services/sessionTimeRequest.service";
+import { SessionTimeRequestService } from "../services/session-time-request.service";
 import { CourseService } from "../services/course.service";
 import { plainToInstance } from "class-transformer";
-import { SessionTimeChangeRequestDto } from "../dtos/sessionTimeChangeRequest.dto";
+import { SessionTimeChangeRequestDto } from "../dtos/session-time-change-request.dto";
 
 export class SessionTimeRequestController {
   private sessionTimeRequestService: SessionTimeRequestService;
@@ -13,7 +13,10 @@ export class SessionTimeRequestController {
     this.courseService = new CourseService();
   }
 
-  async createSessionTimeRequest(req: Request, res: Response): Promise<void> {
+  createSessionTimeRequest = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const session = await this.courseService.getSessionById(req.params.id);
       if (!session) {
@@ -22,10 +25,18 @@ export class SessionTimeRequestController {
       }
       req.body.userId = req.body.ownerId;
       delete req.body.ownerId;
+      if (
+        req.body.userId !== session.enrollment?.teacherId &&
+        req.body.userId !== session.enrollment?.studentId
+      ) {
+        res.status(403).json({ error: "You are not authorized" });
+        return;
+      }
       const sessionTimeRequestBody = {
         ...req.body,
         session: session,
       };
+
       const sessionTimeRequest =
         await this.sessionTimeRequestService.createSessionTimeRequest(
           sessionTimeRequestBody
@@ -42,17 +53,26 @@ export class SessionTimeRequestController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async changeSessionTimeRequestStatus(
+  changeSessionTimeRequestStatus = async (
     req: Request,
     res: Response
-  ): Promise<void> {
+  ): Promise<void> => {
     try {
       const sessionTimeRequest =
         await this.sessionTimeRequestService.getSessionTimeRequestById(
           req.params.id
         );
+      const userId =
+        sessionTimeRequest?.userId ===
+        sessionTimeRequest?.session?.enrollment?.studentId
+          ? sessionTimeRequest?.session?.enrollment?.teacherId
+          : sessionTimeRequest?.session?.enrollment?.studentId;
+      if (req.body.ownerId !== userId) {
+        res.status(403).json({ error: "You are not authorized" });
+        return;
+      }
       if (!sessionTimeRequest) {
         res.status(404).json({ error: "Session time request not found" });
         return;
@@ -82,5 +102,5 @@ export class SessionTimeRequestController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 }

@@ -6,7 +6,10 @@ export class SettingController {
   constructor() {
     this.settingService = new SettingService();
   }
-  async createOrUpdateSettings(req: Request, res: Response): Promise<void> {
+  createOrUpdateSettings = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const settings = await this.settingService.getSettingsById(1);
       delete req.body.ownerId;
@@ -20,9 +23,9 @@ export class SettingController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 
-  async getSettings(req: Request, res: Response): Promise<void> {
+  getSettings = async (req: Request, res: Response): Promise<void> => {
     try {
       const settings = await this.settingService.getSettingsById(1);
       if (!settings) {
@@ -35,5 +38,5 @@ export class SettingController {
       console.error(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  };
 }

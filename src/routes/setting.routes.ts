@@ -12,13 +12,9 @@ router.put(
   "/",
   AuthMiddleware.verifyToken,
   ValidationMiddleware.validate(settingValidationSchema),
-  async (req, res) => await settingController.createOrUpdateSettings(req, res)
+  settingController.createOrUpdateSettings
 );
 
-router.get(
-  "/",
-  AuthMiddleware.verifyToken,
-  async (req, res) => await settingController.getSettings(req, res)
-);
+router.get("/", AuthMiddleware.verifyToken, settingController.getSettings);
 
 export { router as settingRouter };

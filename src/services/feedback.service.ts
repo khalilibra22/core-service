@@ -194,7 +194,7 @@ export class FeedbackService {
     }
   }
 
-  async getComplaintsTeacherId(teacherId: string): Promise<ComplaintModel[]> {
+  async getComplaintsByTeacherId(teacherId: string): Promise<ComplaintModel[]> {
     try {
       return await this.complaintRepo
         .createQueryBuilder("complaint")
@@ -207,6 +207,32 @@ export class FeedbackService {
     } catch (error) {
       console.log(error);
       throw new Error("Error fetching complaints by teacher ID");
+    }
+  }
+
+  async getTeacherIdByComplaintId(complaintId: string): Promise<string | null> {
+    try {
+      const complaint = await this.complaintRepo.findOne({
+        where: { id: complaintId },
+        relations: ["session", "session.course"],
+      });
+      return complaint?.session?.course?.ownerId ?? null;
+    } catch (error) {
+      throw new Error("Error fetching teacher ID by complaint ID");
+    }
+  }
+
+  async getRefundComplaintById(id: string): Promise<ComplaintModel | null> {
+    try {
+      return await this.complaintRepo.findOne({
+        where: {
+          id: id,
+          type: "refund",
+        },
+        relations: ["enrollment", "enrollment.course"],
+      });
+    } catch (error) {
+      throw new Error("Error fetching complaint by ID");
     }
   }
 }

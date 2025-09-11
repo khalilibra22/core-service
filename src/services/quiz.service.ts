@@ -2,7 +2,7 @@ import { AppDataSource } from "../config/database";
 import { AnswerModel } from "../models/answer.model";
 import { QuestionModel } from "../models/question.model";
 import { QuizModel } from "../models/quiz.model";
-import { QuizAttemptModel } from "../models/quizAttempt.model";
+import { QuizAttemptModel } from "../models/quiz-attempt.model";
 
 export class QuizService {
   quizRepo: any;
@@ -131,6 +131,19 @@ export class QuizService {
     } catch (error) {
       console.error(error);
       throw new Error("Error fetching course quizzes");
+    }
+  }
+
+  async getQuizOwner(quizId: string): Promise<string | null> {
+    try {
+      const quiz = await this.quizRepo.findOne({
+        where: { id: quizId },
+        relations: ["session", "session.course"],
+      });
+      return quiz?.session?.course?.ownerId ?? null;
+    } catch (error) {
+      console.error(error);
+      throw new Error("Error fetching quiz owner");
     }
   }
 }

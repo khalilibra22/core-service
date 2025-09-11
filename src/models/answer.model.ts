@@ -7,7 +7,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
 } from "typeorm";
-import { QuizAttemptModel } from "./quizAttempt.model";
+import { QuizAttemptModel } from "./quiz-attempt.model";
 
 @Entity("answers")
 export class AnswerModel {

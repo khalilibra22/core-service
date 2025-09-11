@@ -9,7 +9,7 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { CourseModel } from "./course.model";
-import { SessionTimeChangeRequestModel } from "./sessionTimeChangeRequest.model";
+import { SessionTimeChangeRequestModel } from "./session-time-change-request.model";
 import { ComplaintModel } from "./complaint.model";
 import { LessonModel } from "./lesson.model";
 import { QuizModel } from "./quiz.model";
