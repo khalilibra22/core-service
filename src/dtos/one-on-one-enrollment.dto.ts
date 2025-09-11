@@ -13,6 +13,10 @@ export class OneOnOneEnollmentDto {
   teacherFullname?: string;
 
   @Expose()
+  @Transform(() => "to be filled")
+  address?: string;
+
+  @Expose()
   topicId?: number;
 
   @Expose()
