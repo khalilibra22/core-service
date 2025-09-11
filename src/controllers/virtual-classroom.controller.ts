@@ -23,6 +23,16 @@ export class VirtualClassroomController {
         res.status(404).json({ error: "Session not found" });
         return;
       }
+      if (
+        session.course?.ownerId !== req.body.ownerId &&
+        session.course?.instructorId !== req.body.ownerId &&
+        session.enrollment?.teacherId !== req.body.ownerId
+      ) {
+        res
+          .status(403)
+          .json({ error: "You are not authorized to launch this session" });
+        return;
+      }
       const meetingData = {
         meetingID: session.id,
         name: session.title,
@@ -42,7 +52,22 @@ export class VirtualClassroomController {
 
   endMeeting = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { meetingId } = req.params;
+      const { id, meetingId } = req.params;
+      const session = await this.courseService.getSessionById(id);
+      if (!session) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+      if (
+        session.course?.ownerId !== req.body.ownerId &&
+        session.course?.instructorId !== req.body.ownerId &&
+        session.enrollment?.teacherId !== req.body.ownerId
+      ) {
+        res
+          .status(403)
+          .json({ error: "You are not authorized to end this session" });
+        return;
+      }
       const deleted = await this.virtualClassroomService.endMeeting(
         meetingId,
         req.body.moderatorPassword
@@ -71,16 +96,33 @@ export class VirtualClassroomController {
 
   joinMeeting = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id: meetingID } = req.params;
+      const { id } = req.params;
       const { fullName } = req.query;
       if (!fullName) {
         res.status(400).json({ error: "Full name is required" });
         return;
       }
-      const joinUrl = await this.virtualClassroomService.joinMeeting(
-        meetingID,
-        { fullName, password: "password_" }
-      );
+      // const session = await this.courseService.getSessionById(id);
+      // if (!session) {
+      //   res.status(404).json({ error: "Session not found" });
+      //   return;
+      // }
+      // if (
+      //   session.course?.ownerId !== req.body.ownerId &&
+      //   session.enrollment?.teacherId !== req.body.ownerId &&
+      //   session.enrollment?.studentId !== req.body.ownerId
+      // ) {
+      //   res
+      //     .status(403)
+      //     .json({ error: "You are not authorized to join this session" });
+      //   return;
+      // }
+
+      // TODO: check if users enrolled in the course // live / group
+      const joinUrl = await this.virtualClassroomService.joinMeeting(id, {
+        fullName,
+        password: "password_",
+      });
       res.status(200).json({ joinUrl });
     } catch (error: any) {
       res.status(500).json({ error: error.message });

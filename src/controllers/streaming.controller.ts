@@ -19,6 +19,12 @@ export class StreamingServiceController {
         res.status(404).json({ error: "Session not found" });
         return;
       }
+      if (session.course?.ownerId !== req.body.ownerId) {
+        res.status(403).json({
+          error: "You are not authorized to create video for this session",
+        });
+        return;
+      }
       const presignedHeaders = await this.streamingService.createVideoEntry(
         session.title ?? "Untitled"
       );
@@ -31,7 +37,27 @@ export class StreamingServiceController {
 
   getVideoById = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { videoId } = req.params;
+      const { id, videoId } = req.params;
+      const session = await this.courseService.getSessionById(id);
+      if (!session) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+      const course = await this.courseService.getCourseByIdWithEnrollments(
+        session.course?.id ?? ""
+      );
+      const enrollment = course?.enrollments?.find(
+        (enrollment) => enrollment.studentId === req.body.ownerId
+      );
+      if (
+        session.course?.ownerId !== req.body.ownerId &&
+        !enrollment?.studentId !== req.body.ownerId
+      ) {
+        res.status(403).json({
+          error: "You are not authorized to access this video",
+        });
+        return;
+      }
       const playerUrl = await this.streamingService.getVideoById(videoId);
       res.status(200).json({ playerUrl });
     } catch (error: any) {
@@ -45,7 +71,18 @@ export class StreamingServiceController {
 
   deleteVideoById = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { videoId } = req.params;
+      const { id, videoId } = req.params;
+      const session = await this.courseService.getSessionById(id);
+      if (!session) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+      if (session.course?.ownerId !== req.body.ownerId) {
+        res.status(403).json({
+          error: "You are not authorized to delete video for this session",
+        });
+        return;
+      }
       await this.streamingService.deleteVideoById(videoId);
       res.status(204).send();
     } catch (error: any) {

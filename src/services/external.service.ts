@@ -6,7 +6,8 @@ export class ExternalService {
   private baseURL: string;
 
   constructor() {
-    this.baseURL = "https://user-service-0u8y.onrender.com";
+    this.baseURL =
+      process.env.USER_SERVICE_URL || "https://user-service-0u8y.onrender.com";
     this.api = new RestApiSetup(this.baseURL);
   }
 

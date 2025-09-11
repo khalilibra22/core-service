@@ -10,14 +10,25 @@ const storageController = new StorageController();
 router.post(
   "/",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "upload_materials"),
   upload.single("file"),
   storageController.uploadFile
 );
 
 // // Get file by ID
-router.get("/:id", AuthMiddleware.verifyToken, storageController.getFileUrl);
+router.get(
+  "/:id",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "download_materials"),
+  storageController.getFileUrl
+);
 
 // // Delete file
-router.delete("/:id", AuthMiddleware.verifyToken, storageController.deleteFile);
+router.delete(
+  "/:id",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "download_materials"),
+  storageController.deleteFile
+);
 
 export { router as storageRouter };

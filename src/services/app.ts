@@ -1,4 +1,3 @@
-import dotenv from "dotenv";
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import { courseRouter } from "../routes/course.routes";
@@ -9,8 +8,6 @@ import { settingRouter } from "../routes/setting.routes";
 import { quizRouter } from "../routes/quiz.routes";
 import { sessionRouter } from "../routes/session.routes";
 import { storageRouter } from "../routes/storage.routes";
-
-dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5001;

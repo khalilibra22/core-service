@@ -11,10 +11,10 @@ export class StreamingService {
     this.bunnyApiUrl =
       process.env.BUNNY_API_URL || "https://video.bunnycdn.com";
     this.bunnySecret =
-      process.env.BUNNY_SECRET || "84f8b64c-4da3-4817-b75586c5975f-2179-472a";
-    this.libraryId = process.env.LIBRARY_ID || "478957"; // must be numeric
+      process.env.BUNNY_API_KEY || "84f8b64c-4da3-4817-b75586c5975f-2179-472a";
+    this.libraryId = process.env.BUNNY_LIBRARY_ID || "478957"; // must be numeric
     this.iframeUrl =
-      process.env.IFRAME_URL ||
+      process.env.BUNNY_IFRAME_URL ||
       `https://iframe.mediadelivery.net/embed/${this.libraryId}`;
   }
 

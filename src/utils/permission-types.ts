@@ -2,6 +2,7 @@ type TeacherAndAcademyAction =
   | "grade_students"
   | "make_payments"
   | "upload_materials"
+  | "delete_materials"
   | "upload_streaming_materials"
   | "delete_streaming_materials"
   | "cancel_enrollment"
@@ -27,7 +28,6 @@ type StudentAction =
   | "view_course"
   | "submit_review"
   | "complain"
-  | "download_materials"
   | "drop_course"
   | "student_complaint_veiw"
   | "manage_reviews"
@@ -50,6 +50,7 @@ type AdminAction =
 export type Action =
   | "view"
   | "watch_stream"
+  | "download_materials"
   | TeacherAndAcademyAction
   | StudentAction
   | AdminAction;

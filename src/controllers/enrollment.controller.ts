@@ -32,6 +32,13 @@ export class EnrollmentController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
+      //check if course status is published
+      if (course.status !== "published") {
+        res
+          .status(409)
+          .json({ error: "Course is not published yet or canceled" });
+        return;
+      }
       //check if the user already enrolled
       if (
         course.enrollments?.some(

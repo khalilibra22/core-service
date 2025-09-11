@@ -284,6 +284,7 @@ export class CourseController {
           req.body.reasonOfCancellation;
         course.couresSettings.canceledBy = req.body.ownerId;
       }
+      course.status = "canceled";
       await this.courseService.updateCourse(course);
 
       res.status(200).json({ message: "Course canceled successfully" });

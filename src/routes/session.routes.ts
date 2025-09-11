@@ -4,7 +4,7 @@ import { AuthMiddleware } from "../utils/auth.middleware";
 import { CourseController } from "../controllers/course.controller";
 import { QuizController } from "../controllers/Quiz.controller";
 import { quizValidation } from "../validations/quiz.validation";
-import { VirtualClassroomController } from "../controllers/VirtualClassroom.controller";
+import { VirtualClassroomController } from "../controllers/virtual-classroom.controller";
 import { BigBlueButtonService } from "../services/big-blue-button.service";
 import { StreamingServiceController } from "../controllers/streaming.controller";
 import {
@@ -14,7 +14,7 @@ import {
 import { FeedbackController } from "../controllers/feedback.controller";
 import { complaintValdationSchema } from "../validations/feedback.validation";
 import { SessionTimeRequestController } from "../controllers/session-time-request.controller";
-import { endMeetingValidationSchema } from "../validations/virtualClassroom.validation";
+import { endMeetingValidationSchema } from "../validations/virtual-classroom.validation";
 
 const router = express.Router();
 
@@ -46,7 +46,7 @@ router.put(
 router.delete(
   "/:id/lessons/:lessonId",
   AuthMiddleware.verifyToken,
-  AuthMiddleware.authorize("sessions", "manage_sessions"),
+  AuthMiddleware.authorize("sessions", "delete_materials"),
   courseController.deleteLesson
 );
 
