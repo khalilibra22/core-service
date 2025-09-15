@@ -8,6 +8,13 @@ export class GroupClassDto {
   name?: string;
 
   @Expose()
+  ownerId?: string;
+
+  @Expose()
+  @Transform(() => "to be filled")
+  ownerName?: string;
+
+  @Expose()
   type?: string;
 
   @Expose()
@@ -65,6 +72,25 @@ export class GroupClassDto {
   @Expose()
   @Transform(({ obj }) => obj.couresSettings?.canceledBy)
   canceledBy?: string;
+
+  @Expose()
+  @Transform(
+    () =>
+      //random number between 1 and 5
+      Math.floor(Math.random() * 5) + 1
+  )
+  ownerRating?: number;
+
+  @Expose()
+  @Transform(() => Math.floor(Math.random() * 1000))
+  ownerReviewsCount?: number;
+
+  // feild boolean to know if there are enrollments
+  // @Expose()
+  // @Transform(({ obj }) =>
+  //   obj.enrollments && obj.enrollments.length > 0 ? true : false
+  // )
+  // hasEnrollments?: boolean;
 
   @Expose()
   @Transform(({ obj }) => obj.createdAt)
