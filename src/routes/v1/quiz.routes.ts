@@ -1,8 +1,8 @@
 import express from "express";
-import { ValidationMiddleware } from "../utils/validation.middleware";
-import { AuthMiddleware } from "../utils/auth.middleware";
-import { QuizController } from "../controllers/Quiz.controller";
-import { quizQuestionValidation } from "../validations/quiz.validation";
+import { ValidationMiddleware } from "../../utils/validation.middleware";
+import { AuthMiddleware } from "../../utils/auth.middleware";
+import { QuizController } from "../../controllers/Quiz.controller";
+import { quizQuestionValidation } from "../../validations/quiz.validation";
 
 const router = express.Router();
 

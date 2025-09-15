@@ -1,6 +1,6 @@
 import express from "express";
-import { EnrollmentController } from "../controllers/enrollment.controller";
-import { ValidationMiddleware } from "../utils/validation.middleware";
+import { EnrollmentController } from "../../controllers/enrollment.controller";
+import { ValidationMiddleware } from "../../utils/validation.middleware";
 import {
   cancelEnrollmentShcema,
   enrollmentStatusSchema,
@@ -9,8 +9,8 @@ import {
   refundValdationSchema,
   resolveRefundSchema,
   refundStudentDecisionSchema,
-} from "../validations/enrollment.validation";
-import { AuthMiddleware } from "../utils/auth.middleware";
+} from "../../validations/enrollment.validation";
+import { AuthMiddleware } from "../../utils/auth.middleware";
 
 const router = express.Router();
 

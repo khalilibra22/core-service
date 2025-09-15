@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { StorageController } from "../controllers/storage.controller";
-import { upload } from "../config/multer";
-import { AuthMiddleware } from "../utils/auth.middleware";
+import { StorageController } from "../../controllers/storage.controller";
+import { upload } from "../../config/multer";
+import { AuthMiddleware } from "../../utils/auth.middleware";
 
 const router = Router();
 const storageController = new StorageController();

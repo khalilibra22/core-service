@@ -1,18 +1,18 @@
 import express from "express";
-import { CourseController } from "../controllers/course.controller";
-import { FeedbackController } from "../controllers/feedback.controller";
-import { EnrollmentController } from "../controllers/enrollment.controller";
-import { ValidationMiddleware } from "../utils/validation.middleware";
+import { CourseController } from "../../controllers/course.controller";
+import { FeedbackController } from "../../controllers/feedback.controller";
+import { EnrollmentController } from "../../controllers/enrollment.controller";
+import { ValidationMiddleware } from "../../utils/validation.middleware";
 import {
   certificateValidationSchema,
   courseCancellationValidationSchema,
   courseValidationSchema,
   createCourseValidationSchema,
   sessionValidationSchema,
-} from "../validations/course.validation";
-import { reviewValdationSchema } from "../validations/feedback.validation";
-import { enrollmentValidationsSchema } from "../validations/enrollment.validation";
-import { AuthMiddleware } from "../utils/auth.middleware";
+} from "../../validations/course.validation";
+import { reviewValdationSchema } from "../../validations/feedback.validation";
+import { enrollmentValidationsSchema } from "../../validations/enrollment.validation";
+import { AuthMiddleware } from "../../utils/auth.middleware";
 
 const router = express.Router();
 

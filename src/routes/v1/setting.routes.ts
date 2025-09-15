@@ -1,8 +1,8 @@
 import express from "express";
-import { SettingController } from "../controllers/setting.controller";
-import { ValidationMiddleware } from "../utils/validation.middleware";
-import { AuthMiddleware } from "../utils/auth.middleware";
-import { settingValidationSchema } from "../validations/settings.validation";
+import { SettingController } from "../../controllers/setting.controller";
+import { ValidationMiddleware } from "../../utils/validation.middleware";
+import { AuthMiddleware } from "../../utils/auth.middleware";
+import { settingValidationSchema } from "../../validations/settings.validation";
 
 const router = express.Router();
 
