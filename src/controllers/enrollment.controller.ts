@@ -9,6 +9,7 @@ import { ExternalService } from "../services/external.service";
 import { SessionDto } from "../dtos/session.dto";
 import { RefundDto } from "../dtos/refund.dto";
 import { FeedbackService } from "../services/feedback.service";
+import { LruInMemoryCache } from "../cache/lru-in-memory.cache";
 
 export class EnrollmentController {
   private enrollmentService: EnrollmentService;
@@ -140,14 +141,34 @@ export class EnrollmentController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
-      if (course.ownerId !== req.body.ownerId) {
-        res.status(403).json({ error: "You are not the owner of this course" });
-        return;
-      }
+      // if (course.ownerId !== req.body.ownerId) {
+      //   res.status(403).json({ error: "You are not the owner of this course" });
+      //   return;
+      // }
       const enrollments = await this.enrollmentService.getCourseEnrollments(id);
-      const enrollmentDtos = plainToInstance(EnrollmentDto, enrollments, {
-        excludeExtraneousValues: true,
-      });
+      // const enrollmentDtos = plainToInstance(EnrollmentDto, enrollments, {
+      //   excludeExtraneousValues: true,
+      // });
+      const enrollmentDtos = await Promise.all(
+        enrollments.map(async (enrollment) => {
+          const teacher = await LruInMemoryCache.getUserDetails(
+            enrollment.teacherId ?? enrollment.course?.ownerId ?? "keynotfound"
+          );
+          const student = await LruInMemoryCache.getUserDetails(
+            enrollment.studentId ?? "keynotfound"
+          );
+          const enrollmentDto = {
+            ...enrollment,
+            teacherFullname: teacher.fullname,
+            studentFullname: student.fullname,
+            address: teacher.address,
+          };
+          return plainToInstance(EnrollmentDto, enrollmentDto, {
+            excludeExtraneousValues: true,
+          });
+        })
+      );
+
       res.status(200).json(enrollmentDtos);
     } catch (error: any) {
       if (error.message === "Error fetching user") {
@@ -156,6 +177,7 @@ export class EnrollmentController {
           .json({ error: "Some availabilities are not available" });
         return;
       }
+      console.error("Error in getCourseEnrollments:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   };

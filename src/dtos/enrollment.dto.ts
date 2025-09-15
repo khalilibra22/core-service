@@ -16,15 +16,21 @@ export class EnrollmentDto {
   courseId?: string;
 
   @Expose()
-  @Transform(() => "to be filled")
+  // @Transform(({ obj }) =>
+  // )
   studentFullname?: string;
 
   @Expose()
-  @Transform(() => "to be filled")
+  // @Transform(
+  //   async ({ obj }) =>
+  //     await LruInMemoryCache.getUserDetails(obj.studentId).then(
+  //       (user) => user.fullname
+  //     )
+  // )
   teacherFullname?: string;
 
   @Expose()
-  @Transform(() => "to be filled")
+  // @Transform(() => "to be filled")
   address?: string;
 
   @Expose()
