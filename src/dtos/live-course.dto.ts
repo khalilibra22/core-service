@@ -51,10 +51,6 @@ export class LiveCourseDto {
   startTime?: Date;
 
   @Expose()
-  @Transform(({ obj }) => obj.enrollments?.length ?? undefined)
-  enrollmentsNumber?: number;
-
-  @Expose()
   @Transform(({ obj }) => obj.instructorId ?? undefined)
   instructor?: string;
 
