@@ -318,10 +318,6 @@ export class CourseController {
       const id = req.params.id;
       const courseType = req.query.type as string;
       const courseTypeList = ["group", "live", "prerecorded"];
-      if (id !== req.body.ownerId) {
-        res.status(403).json({ error: "You are not the owner of this course" });
-        return;
-      }
       if (!courseTypeList.includes(courseType)) {
         res.status(400).json({ error: "Invalid course type" });
         return;

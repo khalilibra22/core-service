@@ -156,7 +156,7 @@ router.get(
 router.get(
   "/teachers/:id",
   AuthMiddleware.verifyToken,
-  AuthMiddleware.authorize("courses", "manage_courses"),
+  AuthMiddleware.authorize("courses", "view"),
   courseController.getCoursesByTeacherId
 );
 
