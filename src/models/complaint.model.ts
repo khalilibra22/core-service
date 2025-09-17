@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -11,6 +12,15 @@ import { SessionModel } from "./session.model";
 import { EnrollmentModel } from "./enrollment.model";
 
 @Entity("complaints")
+@Index("IDX_complaints_student_id", ["studentId"])
+@Index("IDX_complaints_type", ["type"])
+@Index("IDX_complaints_status", ["status"])
+@Index("IDX_complaints_resolved_by", ["resolvedBy"])
+@Index("IDX_complaints_created_at", ["createdAt"])
+@Index("IDX_complaints_session_id", ["session"])
+@Index("IDX_complaints_enrollment_id", ["enrollment"])
+@Index("IDX_complaints_type_status", ["type", "status"])
+@Index("IDX_complaints_student_status", ["studentId", "status"])
 export class ComplaintModel {
   @PrimaryGeneratedColumn("uuid")
   id?: string;

@@ -2,6 +2,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  Index,
   ManyToOne,
   OneToMany,
   CreateDateColumn,
@@ -14,6 +15,9 @@ import { QuizAttemptModel } from "./quiz-attempt.model";
 import { SessionModel } from "./session.model";
 
 @Entity("quizzes")
+@Index("IDX_quizzes_session_id", ["session"])
+@Index("IDX_quizzes_is_active", ["isActive"])
+@Index("IDX_quizzes_order", ["order"])
 export class QuizModel {
   @PrimaryGeneratedColumn("uuid")
   id?: string;
