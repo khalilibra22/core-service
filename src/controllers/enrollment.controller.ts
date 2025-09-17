@@ -101,12 +101,12 @@ export class EnrollmentController {
         res.status(400).json({ error: "No sessions provided" });
         return;
       }
-      const availabilities =
-        await this.externalService.checkTeacherAvailabilities(
+      const response =
+        await this.externalService.checkAvailabilities(
           availabilityIdsArray
         );
       const sessions = generateSessionsFromAvailabilities(
-        availabilities,
+        response.availabilities,
         topicId,
         sessionsNumber
       );
@@ -118,12 +118,11 @@ export class EnrollmentController {
         type: "one-on-one",
       } as any;
       await this.enrollmentService.createEnrollment(enrollmentBody);
-      await this.externalService.updateAvailabilitiesStatus(
+      await this.externalService.updateAvailabilitiesToUnavailable(
         availabilityIdsArray
       );
       res.status(201).json({ message: "Enrollment created successfully" });
     } catch (error: any) {
-      console.log("Error in createOneOnOneErollment:", error);
       if (error.message.includes("Some availabilities are not available")) {
         res.status(409).json({ error: "Some time slotes aleardy scheduled" });
         return;
@@ -141,14 +140,11 @@ export class EnrollmentController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
-      // if (course.ownerId !== req.body.ownerId) {
-      //   res.status(403).json({ error: "You are not the owner of this course" });
-      //   return;
-      // }
+      if (course.ownerId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
       const enrollments = await this.enrollmentService.getCourseEnrollments(id);
-      // const enrollmentDtos = plainToInstance(EnrollmentDto, enrollments, {
-      //   excludeExtraneousValues: true,
-      // });
       const enrollmentDtos = await Promise.all(
         enrollments.map(async (enrollment) => {
           const teacher = await LruInMemoryCache.getUserDetails(
@@ -168,7 +164,6 @@ export class EnrollmentController {
           });
         })
       );
-
       res.status(200).json(enrollmentDtos);
     } catch (error: any) {
       if (error.message === "Error fetching user") {

@@ -1,18 +1,20 @@
 // src/cache/LruCacheService.ts
 import { LRUCache } from "lru-cache";
 import { ExternalService } from "../services/external.service";
-import { UserType } from "../types/user.types";
-import { UserTopicType } from "../types/user.types";
+import { MinimalUser, UserTopic } from "../types/user.types";
+
 
 export class LruInMemoryCache {
-  private static externalService = new ExternalService();
+  private static externalService = new ExternalService({
+    apiKey: process.env.USER_SERVICE_API_KEY || 'default-api-key-for-development'
+  });
   private static cache = new LRUCache<string, any>({
     max: parseInt(process.env.CACHE_MAX_SIZE || "10000"), // max 10000 items
     ttl: parseInt(process.env.CACHE_TTL || "300000"), // 5 minutes
   });
-  private static inflight = new Map<string, Promise<UserType>>();
+  private static inflight = new Map<string, Promise<MinimalUser>>();
 
-  static async getUserDetails(userId: string): Promise<UserType> {
+  static async getUserDetails(userId: string): Promise<MinimalUser> {
     const key = `user-${userId}`;
 
     // Check memory cache
@@ -30,9 +32,9 @@ export class LruInMemoryCache {
     console.log("Cache miss for user:", userId);
 
     // Create the in-flight promise (do NOT await here)
-    const promise: Promise<UserType> = this.externalService
-      .getUserDetails(userId)
-      .then((user: UserType) => {
+    const promise: Promise<MinimalUser> = this.externalService
+      .getUser(userId)
+      .then((user: MinimalUser) => {
         this.cache.set(key, user);
         this.inflight.delete(key);
         return user;
@@ -46,7 +48,7 @@ export class LruInMemoryCache {
     return promise;
   }
 
-  static async getUserTopic(userTopicId: number): Promise<UserTopicType> {
+  static async getUserTopic(userTopicId: number): Promise<UserTopic> {
     if (this.cache.has(`topic-${userTopicId}`)) {
       return this.cache.get(`topic-${userTopicId}`);
     }

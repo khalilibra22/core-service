@@ -1,22 +1,31 @@
-import { UserRole } from "../enums/user-roles.enum";
-
-export interface UserType {
+export interface MinimalUser {
   id: string;
   fullname: string;
   email: string;
   phoneNumber: string;
-  role: UserRole;
-  address?: string;
+  address: string;
+  role: number; // UserRole enum
 }
 
-export interface UserTopicType {
-  id: number;
-  price: number;
-  topic: TopicType;
-}
-
-interface TopicType {
+export interface Topic {
   id: number;
   name: string;
-  description: string;
+}
+
+export interface UserTopic {
+  id: string;
+  topic: Topic;
+  price: number;
+}
+
+export interface GetUserTopicsRequest {
+  user_topic_id: number;
+}
+
+export interface GetUserRequest {
+  user_id: string;
+}
+
+export interface GetUserByEmailRequest {
+  email: string;
 }

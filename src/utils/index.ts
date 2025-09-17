@@ -7,7 +7,7 @@ import { PrerecordedCourseDto } from "../dtos/prerecorded-course.dto";
 import { SessionModel } from "../models/session.model";
 import { SessionDto } from "../dtos/session.dto";
 import { RecordedSessionDto } from "../dtos/recorded-session.dto";
-import { AvailabilityDto } from "../dtos/availability.dto";
+import { Availability } from "../types/availability.types";
 
 export const getCourseDto = (
   courses: CourseModel | CourseModel[],
@@ -73,7 +73,7 @@ const dayOfWeekMap: Record<string, number> = {
  * Generate sessions based on availabilities and number of sessions needed
  */
 export function generateSessionsFromAvailabilities(
-  availabilities: AvailabilityDto[],
+  availabilities: Availability[],
   topic_id: number,
   numberOfSessions: number,
   startDate: Date = new Date()
