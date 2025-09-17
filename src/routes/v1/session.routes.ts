@@ -2,7 +2,7 @@ import express from "express";
 import { ValidationMiddleware } from "../../utils/validation.middleware";
 import { AuthMiddleware } from "../../utils/auth.middleware";
 import { CourseController } from "../../controllers/course.controller";
-import { QuizController } from "../../controllers/Quiz.controller";
+import { QuizController } from "../../controllers/quiz.controller";
 import { quizValidation } from "../../validations/quiz.validation";
 import { VirtualClassroomController } from "../../controllers/virtual-classroom.controller";
 import { BigBlueButtonService } from "../../services/big-blue-button.service";
