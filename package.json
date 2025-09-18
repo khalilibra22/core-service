@@ -6,9 +6,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "nodemon index.ts",
-    "prestart": "npm run build"
-  },
+    "dev": "nodemon index.ts"
+    },
   "repository": {
     "type": "git",
     "url": "git+https://gitlab.com/e-learning-platform-project1/course-service.git"
