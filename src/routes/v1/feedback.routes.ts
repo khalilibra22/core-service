@@ -1,13 +1,13 @@
 import express from "express";
-import { FeedbackController } from "../controllers/feedback.controller";
-import { ValidationMiddleware } from "../utils/validation.middleware";
+import { FeedbackController } from "../../controllers/feedback.controller";
+import { ValidationMiddleware } from "../../utils/validation.middleware";
 import {
   complaintInitialResponseSchema,
   resolveComplaintSchema,
   reviewValdationSchema,
   studentDecisionComplaintSchema,
-} from "../validations/feedback.validation";
-import { AuthMiddleware } from "../utils/auth.middleware";
+} from "../../validations/feedback.validation";
+import { AuthMiddleware } from "../../utils/auth.middleware";
 
 const router = express.Router();
 

@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -10,6 +11,11 @@ import {
 import { CourseModel } from "./course.model";
 
 @Entity("reviews")
+@Index("IDX_reviews_course_id", ["course"])
+@Index("IDX_reviews_student_id", ["studentId"])
+@Index("IDX_reviews_teacher_id", ["teacherId"])
+@Index("IDX_reviews_rating", ["rating"])
+@Index("IDX_reviews_created_at", ["createdAt"])
 export class ReviewModel {
   @PrimaryGeneratedColumn("uuid")
   id?: string;

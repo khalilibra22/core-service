@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   OneToMany,
   OneToOne,
@@ -16,6 +17,14 @@ import { SessionModel } from "./session.model";
 import { EnrollmentModel } from "./enrollment.model";
 
 @Entity("courses")
+@Index("IDX_courses_type", ["type"])
+@Index("IDX_courses_status", ["status"])
+@Index("IDX_courses_owner_id", ["ownerId"])
+@Index("IDX_courses_instructor_id", ["instructorId"])
+@Index("IDX_courses_type_status", ["type", "status"])
+@Index("IDX_courses_price", ["price"])
+@Index("IDX_courses_language", ["language"])
+@Index("IDX_courses_created_at", ["createdAt"])
 export class CourseModel {
   @PrimaryGeneratedColumn("uuid")
   id?: string;

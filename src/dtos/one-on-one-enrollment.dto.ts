@@ -5,22 +5,18 @@ export class OneOnOneEnollmentDto {
   id?: string;
 
   @Expose()
-  @Transform(({ obj }) => "to be filled")
   studentFullname?: string;
 
   @Expose()
-  @Transform(({ obj }) => "to be filled")
   teacherFullname?: string;
 
   @Expose()
-  @Transform(() => "to be filled")
   address?: string;
 
   @Expose()
   topicId?: number;
 
   @Expose()
-  @Transform(({ obj }) => "to be filled")
   topicName?: string;
 
   @Expose()

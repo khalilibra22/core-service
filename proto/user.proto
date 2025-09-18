@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package user;
+
+// Minimal User Data for inter-service communication
+message MinimalUser {
+  string id = 1;
+  string fullname = 2;
+  string email = 3;
+  string phoneNumber = 4;
+  string address = 5;
+  int32 role = 6;
+}
+
+message Topic{
+  int32 id = 1;
+  string name = 2;
+}
+
+// User Topic Data
+message UserTopic {
+  string id = 1;
+  Topic topic = 2;
+  double price = 3;
+}
+
+// Availability Data
+message Availability {
+  string id = 1;
+  string dayOfWeek = 2;
+  string startTime = 3;
+  string endTime = 4;
+  bool isAvailable = 5;
+  bool isActive = 6;
+  bool isFree = 7;
+}
+
+// Request/Response Messages
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message GetUserByEmailRequest {
+  string email = 1;
+}
+
+message GetUserTopicsRequest {
+  int32 user_topic_id = 1;
+}
+
+// Check Availabilities Request/Response
+message CheckAvailabilitiesRequest {
+  repeated string availabilityIds = 1;
+}
+
+message CheckAvailabilitiesResponse {
+  repeated Availability availabilities = 1;
+}
+
+// Update Availabilities to Unavailable Request/Response
+message UpdateAvailabilitiesToUnavailableRequest {
+  repeated string availabilityIds = 1;
+}
+
+message UpdateAvailabilitiesToUnavailableResponse {
+  string message = 1;
+  int32 updatedCount = 2;
+  int32 requestedCount = 3;
+}
+
+// Health check
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string status = 1;
+  string service = 2;
+  string version = 3;
+}
+
+// User Service Definition
+service UserService {
+  // Basic user operations
+  rpc GetUser(GetUserRequest) returns (MinimalUser);
+  rpc GetUserByEmail(GetUserByEmailRequest) returns (MinimalUser);
+  
+  // User topic operations
+  rpc GetUserTopic(GetUserTopicsRequest) returns (UserTopic);
+  
+  // Availability operations
+  rpc CheckAvailabilities(CheckAvailabilitiesRequest) returns (CheckAvailabilitiesResponse);
+  rpc UpdateAvailabilitiesToUnavailable(UpdateAvailabilitiesToUnavailableRequest) returns (UpdateAvailabilitiesToUnavailableResponse);
+  
+  // Health check
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}

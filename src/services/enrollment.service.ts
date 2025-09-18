@@ -24,6 +24,7 @@ export class EnrollmentService {
     try {
       return await this.enrollmentRepo.find({
         where: { course: { id: courseId }, type: "course" },
+        relations: ["course"],
       });
     } catch (error) {
       throw new Error("Error fetching course enrollments");

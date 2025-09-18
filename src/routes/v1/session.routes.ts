@@ -1,20 +1,20 @@
 import express from "express";
-import { ValidationMiddleware } from "../utils/validation.middleware";
-import { AuthMiddleware } from "../utils/auth.middleware";
-import { CourseController } from "../controllers/course.controller";
-import { QuizController } from "../controllers/Quiz.controller";
-import { quizValidation } from "../validations/quiz.validation";
-import { VirtualClassroomController } from "../controllers/virtual-classroom.controller";
-import { BigBlueButtonService } from "../services/big-blue-button.service";
-import { StreamingServiceController } from "../controllers/streaming.controller";
+import { ValidationMiddleware } from "../../utils/validation.middleware";
+import { AuthMiddleware } from "../../utils/auth.middleware";
+import { CourseController } from "../../controllers/course.controller";
+import { QuizController } from "../../controllers/quiz.controller";
+import { quizValidation } from "../../validations/quiz.validation";
+import { VirtualClassroomController } from "../../controllers/virtual-classroom.controller";
+import { BigBlueButtonService } from "../../services/big-blue-button.service";
+import { StreamingServiceController } from "../../controllers/streaming.controller";
 import {
   lessonValidationSchema,
   timeChangeRequestValidationSchema,
-} from "../validations/course.validation";
-import { FeedbackController } from "../controllers/feedback.controller";
-import { complaintValdationSchema } from "../validations/feedback.validation";
-import { SessionTimeRequestController } from "../controllers/session-time-request.controller";
-import { endMeetingValidationSchema } from "../validations/virtual-classroom.validation";
+} from "../../validations/course.validation";
+import { FeedbackController } from "../../controllers/feedback.controller";
+import { complaintValdationSchema } from "../../validations/feedback.validation";
+import { SessionTimeRequestController } from "../../controllers/session-time-request.controller";
+import { endMeetingValidationSchema } from "../../validations/virtual-classroom.validation";
 
 const router = express.Router();
 
@@ -124,30 +124,29 @@ router.get(
 );
 
 router.get(
-  "/:id/launch-meeting",
+  "/:id/meeting/launch",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "launch_meeting"),
   virtualClassroomController.launchMeeting
 );
 
 router.get(
-  "/:id/join-meeting",
+  "/:id/meeting/join",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "join_meeting"),
   virtualClassroomController.joinMeeting
 );
 
-router.post(
-  "/:id/meetings/:meetingId/end",
+router.get(
+  "/:id/meeting/end",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "end_meeting"),
-  ValidationMiddleware.validate(endMeetingValidationSchema),
   virtualClassroomController.endMeeting
 );
 
 // check if a meeting is running
 router.get(
-  "/:id/meetings/:meetingId/check",
+  "/:id/meeting/check",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "join_meeting"),
   virtualClassroomController.isMeetingRunning

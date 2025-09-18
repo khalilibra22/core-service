@@ -9,6 +9,7 @@ import { ExternalService } from "../services/external.service";
 import { SessionDto } from "../dtos/session.dto";
 import { RefundDto } from "../dtos/refund.dto";
 import { FeedbackService } from "../services/feedback.service";
+import { LruInMemoryCache } from "../cache/lru-in-memory.cache";
 
 export class EnrollmentController {
   private enrollmentService: EnrollmentService;
@@ -100,12 +101,12 @@ export class EnrollmentController {
         res.status(400).json({ error: "No sessions provided" });
         return;
       }
-      const availabilities =
-        await this.externalService.checkTeacherAvailabilities(
+      const response =
+        await this.externalService.checkAvailabilities(
           availabilityIdsArray
         );
       const sessions = generateSessionsFromAvailabilities(
-        availabilities,
+        response.availabilities,
         topicId,
         sessionsNumber
       );
@@ -117,12 +118,11 @@ export class EnrollmentController {
         type: "one-on-one",
       } as any;
       await this.enrollmentService.createEnrollment(enrollmentBody);
-      await this.externalService.updateAvailabilitiesStatus(
+      await this.externalService.updateAvailabilitiesToUnavailable(
         availabilityIdsArray
       );
       res.status(201).json({ message: "Enrollment created successfully" });
     } catch (error: any) {
-      console.log("Error in createOneOnOneErollment:", error);
       if (error.message.includes("Some availabilities are not available")) {
         res.status(409).json({ error: "Some time slotes aleardy scheduled" });
         return;
@@ -145,9 +145,25 @@ export class EnrollmentController {
         return;
       }
       const enrollments = await this.enrollmentService.getCourseEnrollments(id);
-      const enrollmentDtos = plainToInstance(EnrollmentDto, enrollments, {
-        excludeExtraneousValues: true,
-      });
+      const enrollmentDtos = await Promise.all(
+        enrollments.map(async (enrollment) => {
+          const teacher = await LruInMemoryCache.getUserDetails(
+            enrollment.teacherId ?? enrollment.course?.ownerId ?? "keynotfound"
+          );
+          const student = await LruInMemoryCache.getUserDetails(
+            enrollment.studentId ?? "keynotfound"
+          );
+          const enrollmentDto = {
+            ...enrollment,
+            teacherFullname: teacher?.fullname ?? "keynotfound",
+            studentFullname: student?.fullname ?? "keynotfound",
+            address: teacher?.address ?? "keynotfound",
+          };
+          return plainToInstance(EnrollmentDto, enrollmentDto, {
+            excludeExtraneousValues: true,
+          });
+        })
+      );
       res.status(200).json(enrollmentDtos);
     } catch (error: any) {
       if (error.message === "Error fetching user") {
@@ -156,6 +172,7 @@ export class EnrollmentController {
           .json({ error: "Some availabilities are not available" });
         return;
       }
+      console.error("Error in getCourseEnrollments:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -176,12 +193,29 @@ export class EnrollmentController {
         await this.enrollmentService.getOneOnOneEnrollementByTeacherId(
           teacherId
         );
-      const enrollmentDtos = plainToInstance(
-        OneOnOneEnollmentDto,
-        enrollments,
-        {
-          excludeExtraneousValues: true,
-        }
+      const enrollmentDtos = await Promise.all(
+        enrollments.map(async (enrollment) => {
+          const student = await LruInMemoryCache.getUserDetails(
+            enrollment.studentId ?? "keynotfound"
+          );
+          const teacher = await LruInMemoryCache.getUserDetails(
+            enrollment.teacherId ?? "keynotfound"
+          );
+          const topic = await LruInMemoryCache.getUserTopic(
+            enrollment?.sessions?.[0]?.topicId ?? 0
+          );
+          console.log(topic);
+          const enrollmentDto = {
+            ...enrollment,
+            studentFullname: student?.fullname ?? "keynotfound",
+            teacherFullname: teacher?.fullname ?? "keynotfound",
+            address: teacher?.address ?? "keynotfound",
+            topicName: topic?.topic.name ?? "keynotfound",
+          };
+          return plainToInstance(OneOnOneEnollmentDto, enrollmentDto, {
+            excludeExtraneousValues: true,
+          });
+        })
       );
       res.status(200).json(enrollmentDtos);
     } catch (error) {
@@ -223,18 +257,55 @@ export class EnrollmentController {
       const studentId = req.body.ownerId;
       const coursesEnrollments =
         await this.enrollmentService.getStudentCoursesEnrollments(studentId);
+        // get courses enrollments with teacher details / student details
+      const coursesEnrollmentsWithDetails = await Promise.all(
+        coursesEnrollments.map(async (enrollment) => {
+          const teacher = await LruInMemoryCache.getUserDetails(
+            enrollment.teacherId ?? "keynotfound"
+          );
+          const student = await LruInMemoryCache.getUserDetails(
+            enrollment.studentId ?? "keynotfound"
+          );
+          return {
+            ...enrollment,
+            teacherFullname: teacher?.fullname ?? "keynotfound",
+            studentFullname: student?.fullname ?? "keynotfound",
+            address: teacher?.address ?? "keynotfound",
+          };
+        })
+      );
       const oneOnOneEnrollments =
         await this.enrollmentService.getStudentOneOnOneEnrollments(studentId);
-      const liveEnrollments = coursesEnrollments.filter(
+      const liveEnrollments = coursesEnrollmentsWithDetails.filter(
         (enrollment) => enrollment.course?.type === "live"
       );
-      const groupEnrollments = coursesEnrollments.filter(
+      // get one on one enrollments with student details / teacher details
+      const oneOnOneEnrollmentsWithDetails = await Promise.all(
+        oneOnOneEnrollments.map(async (enrollment) => {
+          if (!enrollment.studentId || !enrollment.teacherId) {
+            return null;
+          }
+          const student = await LruInMemoryCache.getUserDetails(
+            enrollment.studentId
+          );
+          const teacher = await LruInMemoryCache.getUserDetails(
+            enrollment.teacherId
+          );
+          return {
+            ...enrollment,
+            studentFullname: student?.fullname ?? "keynotfound",
+            teacherFullname: teacher?.fullname ?? "keynotfound",
+            address: teacher?.address ?? "keynotfound",
+          };
+        })
+      );
+      const groupEnrollments = coursesEnrollmentsWithDetails.filter(
         (enrollment) => enrollment.course?.type === "group"
       );
       const allEnrollmentDtos = {
         "one-on-one": plainToInstance(
           OneOnOneEnollmentDto,
-          oneOnOneEnrollments,
+          oneOnOneEnrollmentsWithDetails,
           {
             excludeExtraneousValues: true,
           }
@@ -364,7 +435,10 @@ export class EnrollmentController {
         type: "refund",
       };
       const refund = await this.feedbackService.createComplaint(refundBody);
-      const refundDto = plainToInstance(RefundDto, refund, {
+      // TODO: add logic to send email to the teacher
+        //get student details
+      const student = await LruInMemoryCache.getUserDetails(refund.studentId ?? "keynotfound");
+      const refundDto = plainToInstance(RefundDto, { ...refund, studentFullname: student?.fullname ?? "keynotfound" }, {
         excludeExtraneousValues: true,
       });
       res.status(201).json(refundDto);
@@ -411,7 +485,9 @@ export class EnrollmentController {
       const updatedRefund = await this.feedbackService.updateComplaint(
         refundBody
       );
-      const refundDto = plainToInstance(RefundDto, updatedRefund, {
+      //get student details
+      const student = await LruInMemoryCache.getUserDetails(updatedRefund?.studentId ?? "keynotfound");
+      const refundDto = plainToInstance(RefundDto, { ...updatedRefund, studentFullname: student?.fullname ?? "keynotfound" }, {
         excludeExtraneousValues: true,
       });
       res.status(200).json(refundDto);
@@ -450,7 +526,9 @@ export class EnrollmentController {
 
       const updatedRefund = await this.feedbackService.updateComplaint(refund);
       // TODO : in app refund in the case of accepted refund request
-      const refundDto = plainToInstance(RefundDto, updatedRefund, {
+      //get student details
+      const student = await LruInMemoryCache.getUserDetails(updatedRefund?.studentId ?? "keynotfound");
+      const refundDto = plainToInstance(RefundDto, { ...updatedRefund, studentFullname: student?.fullname ?? "keynotfound" }, {
         excludeExtraneousValues: true,
       });
       res.status(200).json(refundDto);
@@ -483,10 +561,12 @@ export class EnrollmentController {
       const updatedRefund = await this.feedbackService.updateComplaint(
         refundBody
       );
-      // TODO : in app refund
-      const refundDto = plainToInstance(RefundDto, updatedRefund, {
+      //get student details
+      const student = await LruInMemoryCache.getUserDetails(updatedRefund?.studentId ?? "keynotfound");
+      const refundDto = plainToInstance(RefundDto, { ...updatedRefund, studentFullname: student?.fullname ?? "keynotfound" }, {
         excludeExtraneousValues: true,
       });
+      // TODO : in app refund
       res.status(200).json(refundDto);
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });

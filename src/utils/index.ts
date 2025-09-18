@@ -7,7 +7,9 @@ import { PrerecordedCourseDto } from "../dtos/prerecorded-course.dto";
 import { SessionModel } from "../models/session.model";
 import { SessionDto } from "../dtos/session.dto";
 import { RecordedSessionDto } from "../dtos/recorded-session.dto";
-import { AvailabilityDto } from "../dtos/availability.dto";
+import { Availability } from "../types/availability.types";
+import multer from "multer";
+import { Request, Response, NextFunction } from "express";
 
 export const getCourseDto = (
   courses: CourseModel | CourseModel[],
@@ -53,12 +55,6 @@ export const getSessionDto = (
   }
 };
 
-// interface Session {
-//   date: Date;
-//   duration: number;
-//   durationUnit: 'minutes';
-// }
-
 const dayOfWeekMap: Record<string, number> = {
   sunday: 0,
   monday: 1,
@@ -73,7 +69,7 @@ const dayOfWeekMap: Record<string, number> = {
  * Generate sessions based on availabilities and number of sessions needed
  */
 export function generateSessionsFromAvailabilities(
-  availabilities: AvailabilityDto[],
+  availabilities: Availability[],
   topic_id: number,
   numberOfSessions: number,
   startDate: Date = new Date()
@@ -138,3 +134,32 @@ export function generateSessionsFromAvailabilities(
     throw new Error("Failed to generate sessions from availabilities");
   }
 }
+
+
+export const handleMulterError = (error: any, req: Request, res: Response, next: NextFunction) => {
+  if (error instanceof multer.MulterError) {
+    switch (error.code) {
+      case 'LIMIT_FILE_SIZE':
+        return res.status(400).json({
+          error: 'File too large',
+          message: 'File size exceeds the 10MB limit'
+        });
+      case 'LIMIT_FILE_COUNT':
+        return res.status(400).json({
+          error: 'Too many files',
+          message: 'Only one file is allowed per upload'
+        });
+      case 'LIMIT_UNEXPECTED_FILE':
+        return res.status(400).json({
+          error: 'Unexpected field',
+          message: 'Unexpected file field. Expected field name: "file"'
+        });
+      default:
+        return res.status(400).json({
+          error: 'Upload error',
+          message: error.message || 'Field name missing. Expected field name: "file"'
+        });
+    }
+  }
+  next(error);
+};

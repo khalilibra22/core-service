@@ -11,7 +11,10 @@ export class StorageController {
   uploadFile = async (req: Request, res: Response): Promise<void> => {
     try {
       if (!req.file) {
-        res.status(400).json({ error: "No file provided" });
+        res.status(400).json({ 
+          error: "No file provided",
+          message: "Please ensure you're sending a file with the field name 'file' in your multipart form data"
+        });
         return;
       }
 
@@ -22,8 +25,8 @@ export class StorageController {
         );
         const fileUrl = await this.storageService.uploadFile(processedFile);
         res.status(200).json({
-          message: "Image uploaded successfully with reduced resolution",
-          url: fileUrl,
+          message: "File uploaded successfully",
+          fileId: fileUrl,
         });
         return;
       }
@@ -31,7 +34,7 @@ export class StorageController {
       const fileUrl = await this.storageService.uploadFile(req.file);
       res.status(200).json({
         message: "File uploaded successfully",
-        url: fileUrl,
+        fileId: fileUrl,
       });
     } catch (error) {
       res.status(500).json({
