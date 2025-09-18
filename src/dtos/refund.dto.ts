@@ -11,7 +11,6 @@ export class RefundDto {
   status?: string;
 
   @Expose()
-  @Transform(() => "to be filled")
   studentFullname?: string;
 
   @Expose()

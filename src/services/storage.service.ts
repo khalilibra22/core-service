@@ -14,15 +14,6 @@ export class StorageService {
   private endpoint: string;
 
   constructor() {
-    //this.bucketName = process.env.WASABI_BUCKET_NAME || "your-bucket-name";
-
-    // this.s3 = new AWS.S3({
-    //   endpoint: "https://s3.wasabisys.com",
-    //   accessKeyId: process.env.WASABI_ACCESS_KEY,
-    //   secretAccessKey: process.env.WASABI_SECRET_KEY,
-    //   region: "us-east-1", // Wasabi default region
-    //   s3ForcePathStyle: true,
-    // });
     this.endpoint =
       process.env.S3_ENDPOINT || "https://s3.eu-central-2.wasabisys.com";
     this.s3 = new S3Client({
@@ -36,17 +27,6 @@ export class StorageService {
       forcePathStyle: true,
       region: process.env.S3_REGION || "us-east-1",
     });
-    // this.endpoint = "http://localhost:9000";
-    // this.s3 = new S3Client({
-    //   endpoint: this.endpoint,
-    //   credentials: {
-    //     accessKeyId: "vrpqFtqOXks6WL8rXWuF",
-    //     secretAccessKey: "F3tmmfuLa7nV4eAoIA7mAeIJMXm5owDyFCtp3wFC",
-    //   },
-    //   forcePathStyle: true,
-    //   region: "us-east-1",
-    // });
-
     this.bucketName = process.env.S3_BUCKET_NAME || "courses-dev-assets"; // Default bucket name if not set in environment variables
   }
 
@@ -127,18 +107,83 @@ export class StorageService {
     }
 
     try {
-      const reducedBuffer = await sharp(file.buffer)
-        .jpeg({ quality: 70 })
+      // Get image metadata to check current dimensions
+      const metadata = await sharp(file.buffer).metadata();
+      const { width, height } = metadata;
+
+      if (!width || !height) {
+        throw new Error("Could not read image dimensions");
+      }
+
+      // Define maximum dimensions (you can adjust these values)
+      const maxWidth = 1920;  // Full HD width
+      const maxHeight = 1080; // Full HD height
+      const quality = 80;     // JPEG quality (0-100)
+
+      // Calculate new dimensions while maintaining aspect ratio
+      let newWidth = width;
+      let newHeight = height;
+
+      if (width > maxWidth || height > maxHeight) {
+        const aspectRatio = width / height;
+        
+        if (width > height) {
+          // Landscape image
+          newWidth = Math.min(width, maxWidth);
+          newHeight = Math.round(newWidth / aspectRatio);
+          
+          // If height is still too large, adjust again
+          if (newHeight > maxHeight) {
+            newHeight = maxHeight;
+            newWidth = Math.round(newHeight * aspectRatio);
+          }
+        } else {
+          // Portrait or square image
+          newHeight = Math.min(height, maxHeight);
+          newWidth = Math.round(newHeight * aspectRatio);
+          
+          // If width is still too large, adjust again
+          if (newWidth > maxWidth) {
+            newWidth = maxWidth;
+            newHeight = Math.round(newWidth / aspectRatio);
+          }
+        }
+      }
+
+      // Only process if dimensions need to be reduced or if it's not already JPEG
+      const needsProcessing = 
+        newWidth < width || 
+        newHeight < height || 
+        !file.mimetype.includes('jpeg');
+
+      if (!needsProcessing) {
+        // Return original file if no processing needed
+        return file;
+      }
+
+      // Process the image with Sharp
+      const processedBuffer = await sharp(file.buffer)
+        .resize(newWidth, newHeight, {
+          fit: 'inside',
+          withoutEnlargement: true
+        })
+        .jpeg({ 
+          quality: quality,
+          progressive: true,
+          mozjpeg: true // Use mozjpeg encoder for better compression
+        })
         .toBuffer();
 
-      // Check if reduced size is actually smaller, otherwise use original
-      const finalBuffer =
-        reducedBuffer.length < file.buffer.length ? reducedBuffer : file.buffer;
+      // Check if processed size is actually smaller, otherwise use original
+      const finalBuffer = processedBuffer.length < file.buffer.length 
+        ? processedBuffer 
+        : file.buffer;
 
       return {
         ...file,
         buffer: finalBuffer,
         size: finalBuffer.length,
+        mimetype: 'image/jpeg', // Always convert to JPEG for consistency
       };
     } catch (error) {
       throw new Error(`Failed to reduce image resolution: ${error}`);

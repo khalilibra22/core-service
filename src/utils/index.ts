@@ -55,12 +55,6 @@ export const getSessionDto = (
   }
 };
 
-// interface Session {
-//   date: Date;
-//   duration: number;
-//   durationUnit: 'minutes';
-// }
-
 const dayOfWeekMap: Record<string, number> = {
   sunday: 0,
   monday: 1,

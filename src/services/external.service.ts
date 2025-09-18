@@ -33,8 +33,8 @@ export class ExternalService {
 
   constructor(options: GrpcClientOptions = {}) {
     const {
-      //serverAddress = process.env.USER_SERVICE_URL || 'localhost:50051',
-      serverAddress = 'localhost:50051',
+      serverAddress = process.env.USER_SERVICE_URL || 'localhost:50051',
+      //serverAddress = 'localhost:50051',
       apiKey = process.env.USER_SERVICE_API_KEY,
       deadline = 30000,
       useSecureCredentials = process.env.NODE_ENV === 'production'
