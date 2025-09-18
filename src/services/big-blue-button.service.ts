@@ -37,15 +37,23 @@ export class BigBlueButtonService implements VirtualClassroomService {
 
   async joinMeeting(
     meetingID: string,
-    { fullName, password }: { fullName: string; password: string }
+    { fullName, password, mobile }: { fullName: string; password: string; mobile?: boolean }
   ): Promise<string> {
     try {
       const params = new URLSearchParams({
         fullName,
         meetingID,
         password,
+        redirect: 'true'
       });
       const checksum = this.generateChecksum("join", params.toString());
+      
+      if (mobile) {
+        // Generate mobile app URL using bigbluebutton:// scheme
+        const baseUrl = this.bbbApiUrl.replace('https://', '').replace('http://', '');
+        return `bigbluebutton://${baseUrl}/join?${params.toString()}&checksum=${checksum}`;
+      }
+      
       return `${this.bbbApiUrl}/join?${params.toString()}&checksum=${checksum}`;
     } catch (error) {
       throw new Error(`Failed to join meeting: ${error}`);

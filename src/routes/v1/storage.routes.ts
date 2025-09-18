@@ -1,17 +1,26 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { StorageController } from "../../controllers/storage.controller";
 import { upload } from "../../config/multer";
 import { AuthMiddleware } from "../../utils/auth.middleware";
+import { handleMulterError } from "../../utils";
 
 const router = Router();
 const storageController = new StorageController();
+
 
 // Upload file
 router.post(
   "/",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "upload_materials"),
-  upload.single("file"),
+  (req: Request, res: Response, next: NextFunction) => {
+    upload.single("file")(req, res, (err: any) => {
+      if (err) {
+        return handleMulterError(err, req, res, next);
+      }
+      next();
+    });
+  },
   storageController.uploadFile
 );
 

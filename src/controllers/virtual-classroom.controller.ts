@@ -13,9 +13,9 @@ export class VirtualClassroomController {
 
   launchMeeting = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { fullName } = req.query;
-      if (!fullName) {
-        res.status(400).json({ error: "Full name is required" });
+      const { fullname } = req.query;
+      if (!fullname || typeof fullname !== 'string') {
+        res.status(400).json({ error: "Fullname is required" });
         return;
       }
       const session = await this.courseService.getSessionById(req.params.id);
@@ -40,11 +40,18 @@ export class VirtualClassroomController {
         attendeePW: "password_",
       };
       await this.virtualClassroomService.createMeeting(meetingData);
-      const moderatorJoinUrl = await this.virtualClassroomService.joinMeeting(
+      const desktopJoinUrl = await this.virtualClassroomService.joinMeeting(
         session.id ?? "",
-        { fullName, password: "password" }
+        { fullName:fullname, password: "password" }
       );
-      res.status(201).json({ moderatorJoinUrl });
+      const mobileJoinUrl = await this.virtualClassroomService.joinMeeting(
+        session.id ?? "",
+        { fullName:fullname, password: "password", mobile: true }
+      );
+      res.status(201).json({ 
+        desktopJoinUrl,
+        mobileJoinUrl 
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -52,7 +59,7 @@ export class VirtualClassroomController {
 
   endMeeting = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id, meetingId } = req.params;
+      const { id } = req.params;
       const session = await this.courseService.getSessionById(id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
@@ -69,7 +76,7 @@ export class VirtualClassroomController {
         return;
       }
       const deleted = await this.virtualClassroomService.endMeeting(
-        meetingId,
+        id,
         req.body.moderatorPassword
       );
       if (!deleted) {
@@ -84,9 +91,9 @@ export class VirtualClassroomController {
 
   isMeetingRunning = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { meetingId } = req.params;
+      const { id } = req.params;
       const isRunning = await this.virtualClassroomService.isMeetingRunning(
-        meetingId
+        id
       );
       res.status(200).json({ isRunning });
     } catch (error: any) {
@@ -97,33 +104,23 @@ export class VirtualClassroomController {
   joinMeeting = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const { fullName } = req.query;
-      if (!fullName) {
-        res.status(400).json({ error: "Full name is required" });
+      const { fullname } = req.query;
+      if (!fullname || typeof fullname !== 'string') {
+        res.status(400).json({ error: "Fullname is required" });
         return;
       }
-      // const session = await this.courseService.getSessionById(id);
-      // if (!session) {
-      //   res.status(404).json({ error: "Session not found" });
-      //   return;
-      // }
-      // if (
-      //   session.course?.ownerId !== req.body.ownerId &&
-      //   session.enrollment?.teacherId !== req.body.ownerId &&
-      //   session.enrollment?.studentId !== req.body.ownerId
-      // ) {
-      //   res
-      //     .status(403)
-      //     .json({ error: "You are not authorized to join this session" });
-      //   return;
-      // }
 
       // TODO: check if users enrolled in the course // live / group
-      const joinUrl = await this.virtualClassroomService.joinMeeting(id, {
-        fullName,
+      const desktopJoinUrl = await this.virtualClassroomService.joinMeeting(id, {
+        fullName: fullname,
         password: "password_",
       });
-      res.status(200).json({ joinUrl });
+      const mobileJoinUrl = await this.virtualClassroomService.joinMeeting(id, {
+        fullName: fullname,
+        password: "password_",
+        mobile: true
+      });
+      res.status(200).json({ desktopJoinUrl, mobileJoinUrl });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

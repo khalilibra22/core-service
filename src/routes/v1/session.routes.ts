@@ -124,30 +124,29 @@ router.get(
 );
 
 router.get(
-  "/:id/launch-meeting",
+  "/:id/meeting/launch",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "launch_meeting"),
   virtualClassroomController.launchMeeting
 );
 
 router.get(
-  "/:id/join-meeting",
+  "/:id/meeting/join",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "join_meeting"),
   virtualClassroomController.joinMeeting
 );
 
-router.post(
-  "/:id/meetings/:meetingId/end",
+router.get(
+  "/:id/meeting/end",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "end_meeting"),
-  ValidationMiddleware.validate(endMeetingValidationSchema),
   virtualClassroomController.endMeeting
 );
 
 // check if a meeting is running
 router.get(
-  "/:id/meetings/:meetingId/check",
+  "/:id/meeting/check",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "join_meeting"),
   virtualClassroomController.isMeetingRunning
