@@ -5,22 +5,22 @@ import { EnrollmentDto } from "../dtos/enrollment.dto";
 import { plainToInstance } from "class-transformer";
 import { OneOnOneEnollmentDto } from "../dtos/one-on-one-enrollment.dto";
 import { generateSessionsFromAvailabilities } from "../utils";
-import { ExternalService } from "../services/external.service";
 import { SessionDto } from "../dtos/session.dto";
 import { RefundDto } from "../dtos/refund.dto";
 import { FeedbackService } from "../services/feedback.service";
 import { LruInMemoryCache } from "../cache/lru-in-memory.cache";
+import { HttpService } from "../services/http.service";
 
 export class EnrollmentController {
   private enrollmentService: EnrollmentService;
   private courseService: CourseService;
-  private externalService: ExternalService;
+  private externalService: HttpService;
   private feedbackService: FeedbackService;
 
   constructor() {
     this.enrollmentService = new EnrollmentService();
     this.courseService = new CourseService();
-    this.externalService = new ExternalService();
+    this.externalService = new HttpService();
     this.feedbackService = new FeedbackService();
   }
 

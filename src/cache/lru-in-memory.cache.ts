@@ -1,13 +1,14 @@
 // src/cache/LruCacheService.ts
 import { LRUCache } from "lru-cache";
-import { ExternalService } from "../services/external.service";
 import { MinimalUser, UserTopic } from "../types/user.types";
+import { HttpService } from "../services/http.service";
 
 
 export class LruInMemoryCache {
-  private static externalService = new ExternalService({
-    apiKey: process.env.USER_SERVICE_API_KEY || 'default-api-key-for-development'
-  });
+  // private static externalService = new GrpcExternalService({
+  //   apiKey: process.env.USER_SERVICE_API_KEY || 'default-api-key-for-development'
+  // });
+  private static externalService = new HttpService();
   private static cache = new LRUCache<string, any>({
     max: parseInt(process.env.CACHE_MAX_SIZE || "10000"), // max 10000 items
     ttl: parseInt(process.env.CACHE_TTL || "300000"), // 5 minutes

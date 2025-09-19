@@ -3,6 +3,7 @@ import { LoadProto } from '../config/grpc-setup';
 import { GrpcClientOptions, HealthCheckRequest, HealthCheckResponse } from '../types';
 import { GetUserByEmailRequest, GetUserRequest, GetUserTopicsRequest, MinimalUser, UserTopic } from '../types/user.types';
 import { CheckAvailabilitiesRequest, CheckAvailabilitiesResponse, UpdateAvailabilitiesToUnavailableRequest, UpdateAvailabilitiesToUnavailableResponse } from '../types/availability.types';
+import { ExternalService } from '../interfaces/external-service.interface';
 
 export class ExternalServiceError extends Error {
   constructor(
@@ -25,7 +26,7 @@ export class ValidationError extends Error {
 // Proto loading with lazy initialization
 
 
-export class ExternalService {
+export class GrpcExternalService implements ExternalService {
   private client: any;
   private deadline: number;
   private apiKey: string;
