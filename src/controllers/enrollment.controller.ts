@@ -101,12 +101,13 @@ export class EnrollmentController {
         res.status(400).json({ error: "No sessions provided" });
         return;
       }
-      const response =
+      const availabilities =
         await this.externalService.checkAvailabilities(
           availabilityIdsArray
         );
+      console.log(availabilities);
       const sessions = generateSessionsFromAvailabilities(
-        response.availabilities,
+        availabilities,
         topicId,
         sessionsNumber
       );
@@ -123,7 +124,8 @@ export class EnrollmentController {
       );
       res.status(201).json({ message: "Enrollment created successfully" });
     } catch (error: any) {
-      if (error.message.includes("Some availabilities are not available")) {
+      console.error("Error in createOneOnOneErollment:", error.message);
+      if (error.message.includes("400")) {
         res.status(409).json({ error: "Some time slotes aleardy scheduled" });
         return;
       }

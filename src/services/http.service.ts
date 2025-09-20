@@ -21,7 +21,9 @@ export class HttpService implements ExternalService {
             if (!userId || typeof userId !== 'string') {
                 throw new Error('Invalid userId provided');
             }
-            return await this.httpClient.get(`/users/${userId.trim()}`);
+            const response = await this.httpClient.get(`http://localhost:5000/v1/inbounds/users/${userId}/minimal`);
+            console.log(response.data);
+            return response.data;
         } catch (error: any) {
             console.error(`Failed to get user ${userId}:`, error);
             if (error?.response?.status === 404) {
@@ -61,7 +63,7 @@ export class HttpService implements ExternalService {
             if (!userTopicId || typeof userTopicId !== 'number' || userTopicId <= 0) {
                 throw new Error('Invalid userTopicId provided');
             }
-            return await this.httpClient.get(`/users/topics/${userTopicId}`);
+            return await this.httpClient.get(`http://localhost:5000/v1/inbounds/users/topics/${userTopicId}`);
         } catch (error: any) {
             console.error(`Failed to get user topic ${userTopicId}:`, error);
             if (error?.response?.status === 404) {
@@ -83,7 +85,8 @@ export class HttpService implements ExternalService {
             if (invalidIds.length > 0) {
                 throw new Error('Invalid availability IDs found in array');
             }
-            return await this.httpClient.post(`/availabilities`, { availabilityIds: availabilityIds.map(id => id.trim()) });
+            const response = await this.httpClient.post(`http://localhost:5000/v1/inbounds/availabilities/check`, { availabilityIds: availabilityIds.map(id => id.trim()) });
+            return response.data;
         } catch (error: any) {
             console.error(`Failed to check availabilities:`, error);
             if (error?.response?.status >= 500) {
@@ -102,7 +105,7 @@ export class HttpService implements ExternalService {
             if (invalidIds.length > 0) {
                 throw new Error('Invalid availability IDs found in array');
             }
-            return await this.httpClient.put(`/availabilities`, { availabilityIds: availabilityIds.map(id => id.trim()) });
+            return await this.httpClient.put(`http://localhost:5000/v1/inbounds/availabilities/update-to-unavailable`, { availabilityIds: availabilityIds.map(id => id.trim()) });
         } catch (error: any) {
             console.error(`Failed to update availabilities to unavailable:`, error);
             if (error?.response?.status >= 500) {
