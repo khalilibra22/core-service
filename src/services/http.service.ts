@@ -7,11 +7,11 @@ export class HttpService implements ExternalService {
     
     constructor() {
         try {
-            this.baseURL = process.env.USER_SERVICE_URL || 'http://localhost:5000/v1';
-            this.httpClient = new RestApiSetup(`${this.baseURL}/inbounds`);
+            this.baseURL = (process.env.USER_SERVICE_URL || 'http://localhost:5000/v1')+'/inbounds';
+            this.httpClient = new RestApiSetup(`${this.baseURL}`);
             //this.httpClient.setAuthToken(process.env.USER_SERVICE_API_KEY || 'default-api-key-for-development');
         } catch (error) {
-            console.error('Failed to initialize HttpService:', error);
+            //console.error('Failed to initialize HttpService:', error);
             throw new Error(`HttpService initialization failed: ${error}`);
         }
     }
@@ -21,11 +21,10 @@ export class HttpService implements ExternalService {
             if (!userId || typeof userId !== 'string') {
                 throw new Error('Invalid userId provided');
             }
-            const response = await this.httpClient.get(`http://localhost:5000/v1/inbounds/users/${userId}/minimal`);
-            console.log(response.data);
+            const response = await this.httpClient.get(`${this.baseURL}/users/${userId}/minimal`);
             return response.data;
         } catch (error: any) {
-            console.error(`Failed to get user ${userId}:`, error);
+            //console.error(`Failed to get user ${userId}:`, error);
             if (error?.response?.status === 404) {
                 throw new Error(`User with ID ${userId} not found`);
             }
@@ -45,9 +44,9 @@ export class HttpService implements ExternalService {
             if (!emailRegex.test(email)) {
                 throw new Error('Invalid email format');
             }
-            return await this.httpClient.get(`/users/email/${email.trim()}`);
+            return await this.httpClient.get(`${this.baseURL}/users/email/${email.trim()}`);
         } catch (error: any) {
-            console.error(`Failed to get user by email ${email}:`, error);
+            //console.error(`Failed to get user by email ${email}:`, error);
             if (error?.response?.status === 404) {
                 throw new Error(`User with email ${email} not found`);
             }
@@ -63,9 +62,9 @@ export class HttpService implements ExternalService {
             if (!userTopicId || typeof userTopicId !== 'number' || userTopicId <= 0) {
                 throw new Error('Invalid userTopicId provided');
             }
-            return await this.httpClient.get(`http://localhost:5000/v1/inbounds/users/topics/${userTopicId}`);
+            return await this.httpClient.get(`${this.baseURL}/users/topics/${userTopicId}`);
         } catch (error: any) {
-            console.error(`Failed to get user topic ${userTopicId}:`, error);
+            //console.error(`Failed to get user topic ${userTopicId}:`, error);
             if (error?.response?.status === 404) {
                 throw new Error(`User topic with ID ${userTopicId} not found`);
             }
@@ -78,17 +77,10 @@ export class HttpService implements ExternalService {
 
     async checkAvailabilities(availabilityIds: string[]): Promise<any> {
         try {
-            if (!Array.isArray(availabilityIds) || availabilityIds.length === 0) {
-                throw new Error('Invalid availabilityIds provided - must be a non-empty array');
-            }
-            const invalidIds = availabilityIds.filter(id => !id || typeof id !== 'string');
-            if (invalidIds.length > 0) {
-                throw new Error('Invalid availability IDs found in array');
-            }
-            const response = await this.httpClient.post(`http://localhost:5000/v1/inbounds/availabilities/check`, { availabilityIds: availabilityIds.map(id => id.trim()) });
+            const response = await this.httpClient.post(`${this.baseURL}/availabilities/check`, { availabilityIds: availabilityIds });
             return response.data;
         } catch (error: any) {
-            console.error(`Failed to check availabilities:`, error);
+            //console.error(`Failed to check availabilities:`, error);
             if (error?.response?.status >= 500) {
                 throw new Error(`User service is currently unavailable`);
             }
@@ -105,9 +97,9 @@ export class HttpService implements ExternalService {
             if (invalidIds.length > 0) {
                 throw new Error('Invalid availability IDs found in array');
             }
-            return await this.httpClient.put(`http://localhost:5000/v1/inbounds/availabilities/update-to-unavailable`, { availabilityIds: availabilityIds.map(id => id.trim()) });
+            return await this.httpClient.put(`${this.baseURL}/availabilities/update-to-unavailable`, { availabilityIds: availabilityIds.map(id => id.trim()) });
         } catch (error: any) {
-            console.error(`Failed to update availabilities to unavailable:`, error);
+            //console.error(`Failed to update availabilities to unavailable:`, error);
             if (error?.response?.status >= 500) {
                 throw new Error(`User service is currently unavailable`);
             }
@@ -119,7 +111,7 @@ export class HttpService implements ExternalService {
         try {
             return await this.httpClient.get(`/health`);
         } catch (error: any) {
-            console.error('Health check failed:', error);
+            //console.error('Health check failed:', error);
             if (error?.response?.status >= 500) {
                 throw new Error(`User service is currently unavailable`);
             }
