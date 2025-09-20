@@ -1,13 +1,14 @@
 // src/cache/LruCacheService.ts
 import { LRUCache } from "lru-cache";
-import { ExternalService } from "../services/external.service";
 import { MinimalUser, UserTopic } from "../types/user.types";
+import { HttpService } from "../services/http.service";
 
 
 export class LruInMemoryCache {
-  private static externalService = new ExternalService({
-    apiKey: process.env.USER_SERVICE_API_KEY || 'default-api-key-for-development'
-  });
+  // private static externalService = new GrpcExternalService({
+  //   apiKey: process.env.USER_SERVICE_API_KEY || 'default-api-key-for-development'
+  // });
+  private static externalService = new HttpService();
   private static cache = new LRUCache<string, any>({
     max: parseInt(process.env.CACHE_MAX_SIZE || "10000"), // max 10000 items
     ttl: parseInt(process.env.CACHE_TTL || "300000"), // 5 minutes
@@ -31,19 +32,19 @@ export class LruInMemoryCache {
         const inflightPromise = this.inflight.get(key)!;
         // Add a catch to handle any errors in the inflight promise
         return inflightPromise.catch((err) => {
-          console.error("Error in inflight promise for user:", userId, err);
+          //console.error("Error in inflight promise for user:", userId, err);
           this.inflight.delete(key);
           return null;
         });
       }
 
-      console.log("Cache miss for user:", userId);
+      //console.log("Cache miss for user:", userId);
 
       // Create the in-flight promise with timeout (do NOT await here)
       const timeoutPromise = new Promise<null>((resolve) => {
         setTimeout(() => {
           this.inflight.delete(key);
-          console.log(`Request timeout for user: ${userId}`);
+          //console.log(`Request timeout for user: ${userId}`);
           resolve(null);
         }, 5000); // 5 second timeout
       });
@@ -59,13 +60,13 @@ export class LruInMemoryCache {
           this.inflight.delete(key);
           // Handle gRPC "not found" errors gracefully
           if (err?.code === 5 || err?.details?.includes('not found')) {
-            console.log(`User not found in promise: ${userId}`);
+            //console.log(`User not found in promise: ${userId}`);
             // Cache the null result to prevent repeated requests
             this.cache.set(key, null);
             return null;
           }
           // For other errors, also return null to prevent service disruption
-          console.error(`Error fetching user ${userId}:`, err);
+          //console.error(`Error fetching user ${userId}:`, err);
           this.cache.set(key, null);
           return null;
         });
@@ -77,7 +78,7 @@ export class LruInMemoryCache {
     } catch (error: any) {
       // Handle gRPC "not found" errors gracefully
       if (error?.code === 5 || error?.details?.includes('not found')) {
-        console.log(`User not found: ${userId}`);
+        //console.log(`User not found: ${userId}`);
         // Cache the null result to prevent repeated requests
         const key = `user-${userId}`;
         this.cache.set(key, null);
@@ -85,7 +86,7 @@ export class LruInMemoryCache {
       }
       
       // Log other errors but still return null to prevent service disruption
-      console.error("Error in getUserDetails:", error);
+      //console.error("Error in getUserDetails:", error);
       return null;
     }
   }
@@ -96,29 +97,29 @@ export class LruInMemoryCache {
 
       // Check memory cache
       if (this.cache.has(key)) {
-        console.log("Cache hit for topic:", userTopicId);
+        //console.log("Cache hit for topic:", userTopicId);
         return this.cache.get(key);
       }
 
       // Reuse in-flight request for topics
       if (this.topicInflight.has(key)) {
-        console.log("Waiting for inflight fetch for topic:", userTopicId);
+        //console.log("Waiting for inflight fetch for topic:", userTopicId);
         const inflightPromise = this.topicInflight.get(key)!;
         // Add a catch to handle any errors in the inflight promise
         return inflightPromise.catch((err) => {
-          console.error("Error in inflight promise for topic:", userTopicId, err);
+          //console.error("Error in inflight promise for topic:", userTopicId, err);
           this.topicInflight.delete(key);
           return null;
         });
       }
 
-      console.log("Cache miss for topic:", userTopicId);
+      //console.log("Cache miss for topic:", userTopicId);
 
       // Create the in-flight promise with timeout (do NOT await here)
       const timeoutPromise = new Promise<null>((resolve) => {
         setTimeout(() => {
           this.topicInflight.delete(key);
-          console.log(`Request timeout for topic: ${userTopicId}`);
+          //console.log(`Request timeout for topic: ${userTopicId}`);
           resolve(null);
         }, 5000); // 5 second timeout
       });
@@ -134,13 +135,13 @@ export class LruInMemoryCache {
           this.topicInflight.delete(key);
           // Handle gRPC "not found" errors gracefully
           if (err?.code === 5 || err?.details?.includes('not found')) {
-            console.log(`User topic not found in promise: ${userTopicId}`);
+            //console.log(`User topic not found in promise: ${userTopicId}`);
             // Cache the null result to prevent repeated requests
             this.cache.set(key, null);
             return null;
           }
           // For other errors, also return null to prevent service disruption
-          console.error(`Error fetching topic ${userTopicId}:`, err);
+          //console.error(`Error fetching topic ${userTopicId}:`, err);
           this.cache.set(key, null);
           return null;
         });
@@ -152,7 +153,7 @@ export class LruInMemoryCache {
     } catch (error: any) {
       // Handle gRPC "not found" errors gracefully
       if (error?.code === 5 || error?.details?.includes('not found')) {
-        console.log(`User topic not found: ${userTopicId}`);
+        //console.log(`User topic not found: ${userTopicId}`);
         // Cache the null result to prevent repeated requests
         const key = `topic-${userTopicId}`;
         this.cache.set(key, null);
@@ -160,7 +161,7 @@ export class LruInMemoryCache {
       }
       
       // Log other errors but still return null to prevent service disruption
-      console.error("Error in getUserTopic:", error);
+      //console.error("Error in getUserTopic:", error);
       return null;
     }
   }
@@ -171,9 +172,9 @@ export class LruInMemoryCache {
       this.cache.clear();
       this.inflight.clear();
       this.topicInflight.clear();
-      console.log("Cache cleared successfully");
+      //console.log("Cache cleared successfully");
     } catch (error) {
-      console.error("Error clearing cache:", error);
+      //console.error("Error clearing cache:", error);
       throw new Error(`Failed to clear cache: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -192,7 +193,7 @@ export class LruInMemoryCache {
         topicInflight: this.topicInflight.size
       };
     } catch (error) {
-      console.error("Error getting cache stats:", error);
+      //console.error("Error getting cache stats:", error);
       throw new Error(`Failed to get cache stats: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -202,9 +203,9 @@ export class LruInMemoryCache {
       const key = `user-${userId}`;
       this.cache.delete(key);
       this.inflight.delete(key);
-      console.log(`Cache invalidated for user: ${userId}`);
+      //console.log(`Cache invalidated for user: ${userId}`);
     } catch (error) {
-      console.error("Error invalidating user cache:", error);
+      //console.error("Error invalidating user cache:", error);
       throw new Error(`Failed to invalidate user cache for ${userId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -214,9 +215,9 @@ export class LruInMemoryCache {
       const key = `topic-${userTopicId}`;
       this.cache.delete(key);
       this.topicInflight.delete(key);
-      console.log(`Cache invalidated for topic: ${userTopicId}`);
+      //console.log(`Cache invalidated for topic: ${userTopicId}`);
     } catch (error) {
-      console.error("Error invalidating topic cache:", error);
+      //console.error("Error invalidating topic cache:", error);
       throw new Error(`Failed to invalidate topic cache for ${userTopicId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
