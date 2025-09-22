@@ -59,7 +59,7 @@ router.post(
 router.get(
   "/one-on-one/:id/sessions",
   AuthMiddleware.verifyToken,
-  AuthMiddleware.authorize("enrollments", "manage_enrollments"),
+  AuthMiddleware.authorize("enrollments", "view"),
   enrollmentController.getOneOnOneEnrollmentSessions
 );
 

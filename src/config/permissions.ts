@@ -11,7 +11,7 @@ export const permissions: Record<UserRole, Record<Resource, Action[]>> = {
     payments: ["mqanage_all_payments"],
   },
   [UserRole.TEACHER]: {
-    enrollments: ["manage_enrollments", "cancel_enrollment"],
+    enrollments: ["manage_enrollments", "cancel_enrollment", "view"],
     courses: ["manage_courses", "cancel_course", "view"],
     sessions: [
       "manage_sessions",
