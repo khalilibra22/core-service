@@ -65,6 +65,15 @@ export class CourseModel {
   @Column({ nullable: true })
   language?: string;
 
+  @Column({ name: "intro_video", nullable: true })
+  introVideo?: string;
+
+  @Column({ nullable: true })
+  thumbnail?: string;
+
+  @Column({ type: "simple-array", nullable: true })
+  materials?: string[];
+
   @OneToOne(
     () => CourseSettingsModel,
     (courseSettings) => courseSettings.course,
