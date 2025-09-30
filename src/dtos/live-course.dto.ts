@@ -87,8 +87,8 @@ export class LiveCourseDto {
   @Expose({ name: "thumbnail" })
   thumbnailId?: string;
 
-  @Expose()
-  materials?: string[];
+  // @Expose()
+  // materials?: string[];
 
   @Expose()
   @Transform(() => "to be filled")

@@ -131,6 +131,14 @@ router.patch(
   courseController.addCourseMaterials
 );
 
+// get course materials
+router.get(
+  "/:id/materials",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "view"),
+  courseController.getCourseMaterials
+);
+
 // Get all course sessions
 router.get(
   "/:id/sessions",
