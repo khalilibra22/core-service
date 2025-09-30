@@ -25,6 +25,10 @@ export class EnrollmentService {
       return await this.enrollmentRepo.find({
         where: { course: { id: courseId }, type: "course" },
         relations: ["course"],
+        cache: {
+          id: `course-enrollments-${courseId}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       throw new Error("Error fetching course enrollments");
@@ -41,6 +45,10 @@ export class EnrollmentService {
           type: "one-on-one",
         },
         relations: ["sessions"],
+        cache: {
+          id: `teacher-one-on-one-enrollments-${teacherId}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       throw new Error("Error fetching session enrollments");
@@ -63,6 +71,11 @@ export class EnrollmentService {
     try {
       return await this.enrollmentRepo.findOneBy({
         id: enrollmentId,
+      }, {
+        cache: {
+          id: `enrollment-${enrollmentId}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       throw new Error("Error fetching course enrollment by ID");
@@ -82,6 +95,10 @@ export class EnrollmentService {
         },
         relations: ["course", "course.couresSettings", "course.sessions"], //group by createdAt , newest first
         order: { createdAt: "DESC" },
+        cache: {
+          id: `student-course-enrollments-${studentId}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       throw new Error("Error fetching student enrollments");
@@ -96,6 +113,10 @@ export class EnrollmentService {
         where: { studentId: studentId, type: "one-on-one" },
         relations: ["sessions"],
         order: { createdAt: "DESC" },
+        cache: {
+          id: `student-one-on-one-enrollments-${studentId}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       throw new Error("Error fetching student one-on-one enrollments");

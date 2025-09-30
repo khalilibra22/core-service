@@ -8,7 +8,7 @@
     "start": "node dist/index.js",
     "dev": "nodemon index.ts",
     "prestart": "npm run build"
-    },
+  },
   "repository": {
     "type": "git",
     "url": "git+https://gitlab.com/e-learning-platform-project1/course-service.git"
@@ -32,6 +32,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "ioredis": "^5.8.0",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "lru-cache": "^11.2.1",

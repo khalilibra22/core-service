@@ -30,7 +30,12 @@ export class FeedbackService {
 
   async getAllReviews(): Promise<ReviewModel[]> {
     try {
-      return await this.reviewRepo.find();
+      return await this.reviewRepo.find({
+        cache: {
+          id: "all-reviews",
+          milliseconds: 300000, // 5 minutes
+        },
+      });
     } catch (error) {
       throw new Error("Error fetching reviews");
     }
@@ -38,7 +43,12 @@ export class FeedbackService {
 
   async getAllComplaints(): Promise<ComplaintModel[]> {
     try {
-      return await this.complaintRepo.find();
+      return await this.complaintRepo.find({
+        cache: {
+          id: "all-complaints",
+          milliseconds: 300000, // 5 minutes
+        },
+      });
     } catch (error) {
       throw new Error("Error fetching complaints");
     }
@@ -49,6 +59,10 @@ export class FeedbackService {
       return await this.reviewRepo.findOne({
         where: {
           id: id,
+        },
+        cache: {
+          id: `review-${id}`,
+          milliseconds: 300000, // 5 minutes
         },
       });
     } catch (error) {
@@ -61,6 +75,10 @@ export class FeedbackService {
       return await this.complaintRepo.findOne({
         where: {
           id: id,
+        },
+        cache: {
+          id: `complaint-${id}`,
+          milliseconds: 300000, // 5 minutes
         },
       });
     } catch (error) {
@@ -86,6 +104,10 @@ export class FeedbackService {
             id: courseId,
           },
         },
+        cache: {
+          id: `course-reviews-${courseId}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       throw new Error("Error fetching reviews by course ID");
@@ -98,6 +120,10 @@ export class FeedbackService {
         where: {
           studentId: studentId,
         },
+        cache: {
+          id: `student-complaints-${studentId}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       throw new Error("Error fetching complaints by student ID");
@@ -109,6 +135,10 @@ export class FeedbackService {
       return await this.complaintRepo.find({
         where: {
           status: status,
+        },
+        cache: {
+          id: `complaints-status-${status}`,
+          milliseconds: 300000, // 5 minutes
         },
       });
     } catch (error) {
@@ -139,6 +169,10 @@ export class FeedbackService {
         },
         skip: (page - 1) * limit,
         take: limit,
+        cache: {
+          id: `prerecorded-reviews-${page}-${limit}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       throw new Error("Error fetching reviews of prerecorded courses");
@@ -153,6 +187,10 @@ export class FeedbackService {
           course: {
             ownerId: teacherId,
           },
+        },
+        cache: {
+          id: `teacher-reviews-${teacherId}`,
+          milliseconds: 300000, // 5 minutes
         },
       });
     } catch (error) {
@@ -169,6 +207,10 @@ export class FeedbackService {
         where: {
           teacherId: teacherId,
         },
+        cache: {
+          id: `one-on-one-teacher-reviews-${teacherId}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       throw new Error("Error fetching reviews by one-on-one teacher ID");
@@ -183,6 +225,10 @@ export class FeedbackService {
           { course: { ownerId: teacherId } }, // courses
           { teacherId }, // one-on-one
         ],
+        cache: {
+          id: `all-teacher-reviews-${teacherId}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       // Preserve error context
@@ -203,6 +249,7 @@ export class FeedbackService {
         .leftJoinAndSelect("session.enrollment", "enrollment")
         .where("course.ownerId = :teacherId", { teacherId })
         .orWhere("enrollment.teacherId = :teacherId", { teacherId })
+        .cache(`teacher-complaints-${teacherId}`, 300000) // 5 minutes in milliseconds
         .getMany();
     } catch (error) {
       console.log(error);
@@ -215,6 +262,10 @@ export class FeedbackService {
       const complaint = await this.complaintRepo.findOne({
         where: { id: complaintId },
         relations: ["session", "session.course"],
+        cache: {
+          id: `complaint-teacher-${complaintId}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
       return complaint?.session?.course?.ownerId ?? null;
     } catch (error) {
@@ -230,6 +281,10 @@ export class FeedbackService {
           type: "refund",
         },
         relations: ["enrollment", "enrollment.course"],
+        cache: {
+          id: `refund-complaint-${id}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       throw new Error("Error fetching complaint by ID");

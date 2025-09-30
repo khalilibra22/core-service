@@ -296,7 +296,7 @@ export class CourseController {
   getCourseById = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
-      const course = await this.courseService.getCourseById(id);
+      const course = await this.courseService.getCourseByIdNoCache(id);
       if (!course) {
         res.status(404).json({ error: "Course not found" });
         return;

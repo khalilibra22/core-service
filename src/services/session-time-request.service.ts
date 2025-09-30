@@ -31,6 +31,10 @@ export class SessionTimeRequestService {
           id: id,
         },
         relations: ["session", "session.enrollment"],
+        cache: {
+          id: `session-time-request-${id}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       throw new Error("Error fetching session time change request by ID");
@@ -42,6 +46,10 @@ export class SessionTimeRequestService {
     try {
       return await this.sessionTimeRequestRepo.find({
         relations: ["session"],
+        cache: {
+          id: "all-session-time-requests",
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       throw new Error("Error fetching session time change requests");
