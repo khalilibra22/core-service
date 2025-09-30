@@ -151,10 +151,11 @@ export class CourseService {
           id: id,
         },
         relations: ["enrollments", "couresSettings"],
-        cache: {
-          id: `course-enrollments-${id}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
+        // cache: {
+        //   id: `course-enrollments-${id}`,
+        //   milliseconds: 300000, // 5 minutes
+        // },
       });
     } catch (error) {
       throw new Error("Error fetching course by ID with enrollments");
