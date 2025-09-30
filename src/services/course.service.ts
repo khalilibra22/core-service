@@ -46,6 +46,25 @@ export class CourseService {
           id: id,
         },
         relations: ["couresSettings"],
+        cache: {
+          id: `course-${id}`,
+          milliseconds: 300000, // 5 minutes
+        },
+      });
+    } catch (error: any) {
+      console.log(error);
+      throw new Error("Error fetching course by ID : " + error.message);
+    }
+  }
+
+  async getCourseByIdNoCache(id: string): Promise<CourseModel | null> {
+    try {
+      return await this.courseRepo.findOne({
+        where: {
+          id: id,
+        },
+        relations: ["couresSettings"],
+        cache: false,
       });
     } catch (error: any) {
       console.log(error);
@@ -68,6 +87,10 @@ export class CourseService {
           id: id,
         },
         relations: ["course", "enrollment"],
+        cache: {
+          id: `session-${id}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       throw new Error("Error fetching session by ID");
@@ -101,6 +124,10 @@ export class CourseService {
             id: courseId,
           },
         },
+        cache: {
+          id: `course-sessions-${courseId}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       throw new Error("Error fetching course sessions");
@@ -124,6 +151,11 @@ export class CourseService {
           id: id,
         },
         relations: ["enrollments", "couresSettings"],
+        cache: false,
+        // cache: {
+        //   id: `course-enrollments-${id}`,
+        //   milliseconds: 300000, // 5 minutes
+        // },
       });
     } catch (error) {
       throw new Error("Error fetching course by ID with enrollments");
@@ -142,6 +174,10 @@ export class CourseService {
           type: type,
         },
         relations: ["couresSettings", "enrollments", "sessions"],
+        cache: {
+          id: `teacher-courses-${teacherId}-${type}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       throw new Error("Error fetching courses by teacher ID");
@@ -158,6 +194,10 @@ export class CourseService {
         relations: ["couresSettings", "enrollments"],
         skip: (page - 1) * limit,
         take: limit,
+        cache: {
+          id: `live-courses-${page}-${limit}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       console.log(error);
@@ -177,6 +217,10 @@ export class CourseService {
         relations: ["couresSettings", "enrollments"],
         skip: (page - 1) * limit,
         take: limit,
+        cache: {
+          id: `group-courses-${page}-${limit}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       console.log(error);
@@ -197,6 +241,10 @@ export class CourseService {
         relations: ["couresSettings", "enrollments", "sessions"],
         skip: (page - 1) * limit,
         take: limit,
+        cache: {
+          id: `prerecorded-courses-${page}-${limit}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       console.log(error);
@@ -236,6 +284,10 @@ export class CourseService {
         where: {
           id: id,
         },
+        cache: {
+          id: `lesson-${id}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error: any) {
       throw new Error("Error fetching lesson by ID: " + error.message);
@@ -250,6 +302,10 @@ export class CourseService {
           session: {
             id: sessionId,
           },
+        },
+        cache: {
+          id: `session-lessons-${sessionId}`,
+          milliseconds: 300000, // 5 minutes
         },
       });
     } catch (error: any) {
@@ -283,6 +339,10 @@ export class CourseService {
           id: id,
         },
         relations: ["lessons", "quizzes", "course"],
+        cache: {
+          id: `prerecorded-session-${id}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error: any) {
       throw new Error(
@@ -301,6 +361,10 @@ export class CourseService {
           },
         },
         relations: ["lessons", "quizzes"],
+        cache: {
+          id: `prerecorded-course-sections-${id}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error: any) {
       throw new Error(
@@ -322,6 +386,10 @@ export class CourseService {
         relations: ["couresSettings", "enrollments"],
         skip: (page - 1) * limit,
         take: limit,
+        cache: {
+          id: `courses-${type}-${page}-${limit}`,
+          duration: 60000,
+        },
       });
     } catch (error) {
       console.log(error);
@@ -336,6 +404,10 @@ export class CourseService {
           enrollment: {
             teacherId: teacherId,
           },
+        },
+        cache: {
+          id: `teacher-one-on-one-sessions-${teacherId}`,
+          milliseconds: 300000, // 5 minutes
         },
       });
     } catch (error) {
@@ -352,6 +424,10 @@ export class CourseService {
           enrollment: {
             id: enrollmentId,
           },
+        },
+        cache: {
+          id: `enrollment-sessions-${enrollmentId}`,
+          milliseconds: 300000, // 5 minutes
         },
       });
     } catch (error) {

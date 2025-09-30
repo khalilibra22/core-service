@@ -58,8 +58,8 @@ export class StreamingServiceController {
         });
         return;
       }
-      const playerUrl = await this.streamingService.getVideoById(videoId);
-      res.status(200).json({ playerUrl });
+      const videoStreamUrl = await this.streamingService.getVideoById(videoId);
+      res.status(200).json({ videoStreamUrl });
     } catch (error: any) {
       if (error.message === "Video not found") {
         res.status(404).json({ error: error.message });

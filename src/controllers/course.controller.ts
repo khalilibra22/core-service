@@ -296,7 +296,7 @@ export class CourseController {
   getCourseById = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
-      const course = await this.courseService.getCourseById(id);
+      const course = await this.courseService.getCourseByIdNoCache(id);
       if (!course) {
         res.status(404).json({ error: "Course not found" });
         return;
@@ -622,6 +622,39 @@ export class CourseController {
       });
       res.status(200).json(sessionDtos);
     } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  addCourseMaterials = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const courseId = req.params.id;
+      const course = await this.courseService.getCourseById(courseId);
+
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+      course.materials = req.body.materials;
+      await this.courseService.updateCourse(course);
+      res.status(200).json({ message: "Materials added successfully" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  getCourseMaterials = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const courseId = req.params.id;
+      const course = await this.courseService.getCourseById(courseId);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+      res.status(200).json({ materials: course.materials });
+    } catch (error) {
+      console.log(error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   };

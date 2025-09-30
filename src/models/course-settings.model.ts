@@ -20,14 +20,14 @@ export class CourseSettingsModel {
   @Column({ nullable: true })
   address?: string;
 
-  @Column({ nullable: true, name: "intro_video_url" })
-  introVideo?: string;
+  // @Column({ nullable: true, name: "intro_video_url" })
+  // introVideo?: string;
 
   @Column({ nullable: true })
   syllabus?: string;
 
-  @Column({ nullable: true, name: "thumbnail_url" })
-  thumbnail?: string;
+  // @Column({ nullable: true, name: "thumbnail_url" })
+  // thumbnail?: string;
 
   @Column({ nullable: true })
   topicId?: number;

@@ -34,8 +34,8 @@ const liveSchema = Joi.object({
   maxParticipants: Joi.number().integer().min(1).required(),
   address: Joi.string().required(),
   grade: Joi.string().required(),
-  introVideo: Joi.string().uri().optional(),
-  thumbnail: Joi.string().uri().optional(),
+  introVideo: Joi.string().optional(),
+  thumbnail: Joi.string().optional(),
   objectives: Joi.array().items(Joi.string()).optional(),
   prerequisites: Joi.array().items(Joi.string()).optional(),
   targetAudience: Joi.array().items(Joi.string()).optional(),
@@ -131,7 +131,7 @@ export const certificateValidationSchema = Joi.object({
 });
 
 export const timeChangeRequestValidationSchema = Joi.object({
-  requestedTime: Joi.date().greater("now").required(),
+  requestedTime: Joi.date().greater("now").optional(),
   ownerId: Joi.string().uuid().optional(),
   reason: Joi.string().required(),
 });
@@ -169,3 +169,8 @@ export const lessonValidationSchema = Joi.alternatives()
     "alternatives.match":
       "Lesson data is invalid or does not match any allowed lesson type (video, documents).",
   });
+
+export const courseMaterialsSchema = Joi.object({
+  materials: Joi.array().items(Joi.string().required()).required(),
+  ownerId: Joi.string().uuid().optional(),
+});

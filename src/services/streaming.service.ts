@@ -6,6 +6,7 @@ export class StreamingService {
   private bunnySecret: string;
   private libraryId: string;
   private iframeUrl: string;
+  private cdnUrl: string;
 
   constructor() {
     this.bunnyApiUrl =
@@ -16,6 +17,8 @@ export class StreamingService {
     this.iframeUrl =
       process.env.BUNNY_IFRAME_URL ||
       `https://iframe.mediadelivery.net/embed/${this.libraryId}`;
+    this.cdnUrl =
+      process.env.BUNNY_CDN_URL || "https://vz-9344fef6-fe5.b-cdn.net";
   }
 
   async createVideoEntry(title: string): Promise<any> {
@@ -39,7 +42,8 @@ export class StreamingService {
         `${this.bunnyApiUrl}/library/${this.libraryId}/videos/${videoId}`,
         { headers: { AccessKey: this.bunnySecret } }
       );
-      return `${this.iframeUrl}/${videoId}`;
+
+      return `${this.cdnUrl}/${videoId}/playlist.m3u8`;
     } catch (error: any) {
       if (error.response && error.response.status === 404) {
         throw new Error("Video not found");

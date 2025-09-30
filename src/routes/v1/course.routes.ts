@@ -6,6 +6,7 @@ import { ValidationMiddleware } from "../../utils/validation.middleware";
 import {
   certificateValidationSchema,
   courseCancellationValidationSchema,
+  courseMaterialsSchema,
   courseValidationSchema,
   createCourseValidationSchema,
   sessionValidationSchema,
@@ -119,6 +120,23 @@ router.post(
   AuthMiddleware.authorize("enrollments", "enroll_course"),
   ValidationMiddleware.validate(enrollmentValidationsSchema),
   enrollmentController.createEnrollment
+);
+
+// get course by id
+router.patch(
+  "/:id/materials",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "manage_courses"),
+  ValidationMiddleware.validate(courseMaterialsSchema),
+  courseController.addCourseMaterials
+);
+
+// get course materials
+router.get(
+  "/:id/materials",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "view"),
+  courseController.getCourseMaterials
 );
 
 // Get all course sessions

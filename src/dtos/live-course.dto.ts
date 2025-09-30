@@ -77,17 +77,18 @@ export class LiveCourseDto {
   @Transform(({ obj }) => obj.couresSettings?.address)
   address?: string;
 
-  @Expose()
-  @Transform(({ obj }) => obj.couresSettings?.introVideo)
-  introVideoUrl?: string;
+  @Expose({ name: "introVideo" })
+  introVideoId?: string;
 
   @Expose()
   @Transform(({ obj }) => obj.couresSettings?.syllabus)
   syllabus?: string;
 
-  @Expose()
-  @Transform(({ obj }) => obj.couresSettings?.thumbnail)
-  thumbnailUrl?: string;
+  @Expose({ name: "thumbnail" })
+  thumbnailId?: string;
+
+  // @Expose()
+  // materials?: string[];
 
   @Expose()
   @Transform(() => "to be filled")

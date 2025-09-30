@@ -84,7 +84,12 @@ export class QuizService {
 
   async getQuizById(quizId: string): Promise<QuizModel | null> {
     try {
-      return await this.quizRepo.findOneBy({ id: quizId });
+      return await this.quizRepo.findOneBy({ id: quizId }, {
+        cache: {
+          id: `quiz-${quizId}`,
+          milliseconds: 300000, // 5 minutes
+        },
+      });
     } catch (error) {
       console.error(error);
       throw new Error("Error fetching quiz by ID");
@@ -96,6 +101,10 @@ export class QuizService {
       return await this.quizRepo.findOne({
         where: { id: quizId },
         relations: ["questions"],
+        cache: {
+          id: `quiz-details-${quizId}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       console.error(error);
@@ -114,7 +123,12 @@ export class QuizService {
 
   async getQuestionById(questionId: string): Promise<QuestionModel | null> {
     try {
-      return await this.questionRepo.findOneBy({ id: questionId });
+      return await this.questionRepo.findOneBy({ id: questionId }, {
+        cache: {
+          id: `question-${questionId}`,
+          milliseconds: 300000, // 5 minutes
+        },
+      });
     } catch (error) {
       console.error(error);
       throw new Error("Error fetching question by ID");
@@ -127,6 +141,10 @@ export class QuizService {
         where: { session: { id: sessionId } },
         relations: ["questions"],
         order: { order: "ASC" },
+        cache: {
+          id: `session-quizzes-${sessionId}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
     } catch (error) {
       console.error(error);
@@ -139,6 +157,10 @@ export class QuizService {
       const quiz = await this.quizRepo.findOne({
         where: { id: quizId },
         relations: ["session", "session.course"],
+        cache: {
+          id: `quiz-owner-${quizId}`,
+          milliseconds: 300000, // 5 minutes
+        },
       });
       return quiz?.session?.course?.ownerId ?? null;
     } catch (error) {
