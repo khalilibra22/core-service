@@ -53,16 +53,15 @@ export class PrerecordedCourseDto {
   address?: string;
 
   @Expose()
-  @Transform(({ obj }) => obj.couresSettings?.introVideo)
-  introVideoUrl?: string;
+  @Expose({ name: "introVideo" })
+  introVideo?: string;
 
   @Expose()
   @Transform(({ obj }) => obj.couresSettings?.syllabus)
   syllabus?: string;
 
-  @Expose()
-  @Transform(({ obj }) => obj.couresSettings?.thumbnail)
-  thumbnailUrl?: string;
+  @Expose({ name: "thumbnail" })
+  thumbnail?: string;
 
   @Expose()
   @Transform(({ obj }) => obj.couresSettings?.topicId)
