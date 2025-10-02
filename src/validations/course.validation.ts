@@ -171,6 +171,12 @@ export const lessonValidationSchema = Joi.alternatives()
   });
 
 export const courseMaterialsSchema = Joi.object({
-  materials: Joi.array().items(Joi.string().required()).required(),
+  materials: Joi.array()
+    .items(
+      Joi.object({
+        id: Joi.string().uuid().required(),
+      })
+    )
+    .required(),
   ownerId: Joi.string().uuid().optional(),
 });

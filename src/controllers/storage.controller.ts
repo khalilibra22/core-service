@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { StorageService } from "../services/storage.service";
+import { MaterialDto } from "../dtos/material.dto";
+import { plainToInstance } from "class-transformer";
 
 export class StorageController {
   private storageService: StorageService;
@@ -11,31 +13,26 @@ export class StorageController {
   uploadFile = async (req: Request, res: Response): Promise<void> => {
     try {
       if (!req.file) {
-        res.status(400).json({ 
+        res.status(400).json({
           error: "No file provided",
-          message: "Please ensure you're sending a file with the field name 'file' in your multipart form data"
+          message:
+            "Please ensure you're sending a file with the field name 'file' in your multipart form data",
         });
         return;
       }
 
       // Check if the file is an image and reduce resolution if needed
-      if (req.file.mimetype.startsWith("image/")) {
-        const processedFile = await this.storageService.reduceImageResolution(
-          req.file
-        );
-        const fileUrl = await this.storageService.uploadFile(processedFile);
-        res.status(200).json({
-          message: "File uploaded successfully",
-          fileId: fileUrl,
-        });
-        return;
+      let file = req.file;
+      if (file.mimetype.startsWith("image/")) {
+        file = await this.storageService.reduceImageResolution(file);
       }
 
-      const fileUrl = await this.storageService.uploadFile(req.file);
-      res.status(200).json({
-        message: "File uploaded successfully",
-        fileId: fileUrl,
+      const material = await this.storageService.uploadFile(file);
+      const materialDto = plainToInstance(MaterialDto, material, {
+        excludeExtraneousValues: true,
       });
+
+      res.status(200).json(materialDto);
     } catch (error) {
       res.status(500).json({
         error: "Failed to upload file",

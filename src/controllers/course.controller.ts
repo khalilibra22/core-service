@@ -9,6 +9,7 @@ import { CertificateDto } from "../dtos/certificate.dto";
 import { LessonDto } from "../dtos/lesson.dto";
 import { RecordedSessionDto } from "../dtos/recorded-session.dto";
 import { SessionDto } from "../dtos/session.dto";
+import { MaterialDto } from "../dtos/material.dto";
 
 export class CourseController {
   private courseService: CourseService;
@@ -647,12 +648,16 @@ export class CourseController {
   getCourseMaterials = async (req: Request, res: Response): Promise<void> => {
     try {
       const courseId = req.params.id;
-      const course = await this.courseService.getCourseById(courseId);
-      if (!course) {
-        res.status(404).json({ error: "Course not found" });
-        return;
-      }
-      res.status(200).json({ materials: course.materials });
+      const materials = await this.courseService.getCourseMaterials(courseId);
+      const materialDtos = materials.map((material) => {
+        if (material.storageId) {
+          return plainToInstance(MaterialDto, material, {
+            excludeExtraneousValues: true,
+          });
+        }
+      });
+
+      res.status(200).json(materialDtos);
     } catch (error) {
       console.log(error);
       res.status(500).json({ error: "Internal Server Error" });

@@ -7,11 +7,14 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v4 as uuidv4 } from "uuid";
 import sharp from "sharp";
+import { MaterialModel } from "../models/material.model";
+import { AppDataSource } from "../config/database";
 
 export class StorageService {
   private s3: S3Client;
   private bucketName: string;
   private endpoint: string;
+  private materialRepo: any;
 
   constructor() {
     this.endpoint =
@@ -28,9 +31,10 @@ export class StorageService {
       region: process.env.S3_REGION || "us-east-1",
     });
     this.bucketName = process.env.S3_BUCKET_NAME || "courses-dev-assets"; // Default bucket name if not set in environment variables
+    this.materialRepo = AppDataSource.getRepository(MaterialModel);
   }
 
-  async uploadFile(file: Express.Multer.File): Promise<string> {
+  async uploadFile(file: Express.Multer.File): Promise<string | MaterialModel> {
     try {
       const key = `${uuidv4()}-${file.originalname
         .toLowerCase()
@@ -43,9 +47,14 @@ export class StorageService {
         ContentType: file.mimetype,
         ACL: "public-read", // or omit for private access
       });
-
       await this.s3.send(command);
-      return key;
+      const material = await this.materialRepo.save({
+        title: file.originalname,
+        type: file.mimetype,
+        size: file.size,
+        storageId: key,
+      });
+      return material;
     } catch (error) {
       throw new Error(`Failed to upload file: ${error}`);
     }
@@ -116,9 +125,9 @@ export class StorageService {
       }
 
       // Define maximum dimensions (you can adjust these values)
-      const maxWidth = 1920;  // Full HD width
+      const maxWidth = 1920; // Full HD width
       const maxHeight = 1080; // Full HD height
-      const quality = 80;     // JPEG quality (0-100)
+      const quality = 80; // JPEG quality (0-100)
 
       // Calculate new dimensions while maintaining aspect ratio
       let newWidth = width;
@@ -126,12 +135,12 @@ export class StorageService {
 
       if (width > maxWidth || height > maxHeight) {
         const aspectRatio = width / height;
-        
+
         if (width > height) {
           // Landscape image
           newWidth = Math.min(width, maxWidth);
           newHeight = Math.round(newWidth / aspectRatio);
-          
+
           // If height is still too large, adjust again
           if (newHeight > maxHeight) {
             newHeight = maxHeight;
@@ -141,7 +150,7 @@ export class StorageService {
           // Portrait or square image
           newHeight = Math.min(height, maxHeight);
           newWidth = Math.round(newHeight * aspectRatio);
-          
+
           // If width is still too large, adjust again
           if (newWidth > maxWidth) {
             newWidth = maxWidth;
@@ -151,10 +160,10 @@ export class StorageService {
       }
 
       // Only process if dimensions need to be reduced or if it's not already JPEG
-      const needsProcessing = 
-        newWidth < width || 
-        newHeight < height || 
-        !file.mimetype.includes('jpeg');
+      const needsProcessing =
+        newWidth < width ||
+        newHeight < height ||
+        !file.mimetype.includes("jpeg");
 
       if (!needsProcessing) {
         // Return original file if no processing needed
@@ -164,26 +173,27 @@ export class StorageService {
       // Process the image with Sharp
       const processedBuffer = await sharp(file.buffer)
         .resize(newWidth, newHeight, {
-          fit: 'inside',
-          withoutEnlargement: true
+          fit: "inside",
+          withoutEnlargement: true,
         })
-        .jpeg({ 
+        .jpeg({
           quality: quality,
           progressive: true,
-          mozjpeg: true // Use mozjpeg encoder for better compression
+          mozjpeg: true, // Use mozjpeg encoder for better compression
         })
         .toBuffer();
 
       // Check if processed size is actually smaller, otherwise use original
-      const finalBuffer = processedBuffer.length < file.buffer.length 
-        ? processedBuffer 
-        : file.buffer;
+      const finalBuffer =
+        processedBuffer.length < file.buffer.length
+          ? processedBuffer
+          : file.buffer;
 
       return {
         ...file,
         buffer: finalBuffer,
         size: finalBuffer.length,
-        mimetype: 'image/jpeg', // Always convert to JPEG for consistency
+        mimetype: "image/jpeg", // Always convert to JPEG for consistency
       };
     } catch (error) {
       throw new Error(`Failed to reduce image resolution: ${error}`);
