@@ -304,6 +304,7 @@ export class CourseService {
             id: sessionId,
           },
         },
+        relations: ["materials"],
         cache: {
           id: `session-lessons-${sessionId}`,
           milliseconds: 300000, // 5 minutes

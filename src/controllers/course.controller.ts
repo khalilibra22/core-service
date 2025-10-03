@@ -416,7 +416,6 @@ export class CourseController {
         res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
-
       delete req.body.ownerId;
       const lessonBody = {
         ...req.body,
@@ -427,6 +426,7 @@ export class CourseController {
       const lessonDto = plainToInstance(LessonDto, lesson, {
         excludeExtraneousValues: true,
       });
+      lessonDto.materials = undefined;
       res.status(201).json(lessonDto);
     } catch (error) {
       console.log(error);
