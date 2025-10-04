@@ -13,6 +13,7 @@ import { QuestionModel } from "../models/question.model";
 import { QuizAttemptModel } from "../models/quiz-attempt.model";
 import { LessonModel } from "../models/lesson.model";
 import { EnrollmentModel } from "../models/enrollment.model";
+import { MaterialModel } from "../models/material.model";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -38,14 +39,18 @@ export const AppDataSource = new DataSource({
     AnswerModel,
     LessonModel,
     EnrollmentModel,
+    MaterialModel,
   ],
   synchronize: true,
   cache: {
     type: "ioredis",
     options: {
-      host: process.env.REDIS_HOST || "redis-13699.c135.eu-central-1-1.ec2.redns.redis-cloud.com", // Your Redis host
+      host:
+        process.env.REDIS_HOST ||
+        "redis-13699.c135.eu-central-1-1.ec2.redns.redis-cloud.com", // Your Redis host
       port: Number(process.env.REDIS_PORT) || 13699, // Your Redis port
-      password: process.env.REDIS_PASSWORD || "ttpcXXzePDYevUgWEQ7lxgNCrZWb5Oao", // Redis password if any
+      password:
+        process.env.REDIS_PASSWORD || "ttpcXXzePDYevUgWEQ7lxgNCrZWb5Oao", // Redis password if any
     },
     duration: 60000, // Cache duration in milliseconds (1 minute)
   },

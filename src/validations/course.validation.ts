@@ -160,7 +160,14 @@ export const lessonValidationSchema = Joi.alternatives()
       title: Joi.string().required(),
       description: Joi.string().optional(),
       type: Joi.string().valid("documents").required(),
-      attachmentUrls: Joi.array().items(Joi.string()).required(),
+      materials: Joi.array()
+        .items(
+          Joi.object({
+            id: Joi.string().uuid().required(),
+          })
+        )
+        .min(1)
+        .required(),
       order: Joi.number().integer().min(0).required(),
       ownerId: Joi.string().uuid().optional(),
     })
@@ -171,6 +178,13 @@ export const lessonValidationSchema = Joi.alternatives()
   });
 
 export const courseMaterialsSchema = Joi.object({
-  materials: Joi.array().items(Joi.string().required()).required(),
+  materials: Joi.array()
+    .items(
+      Joi.object({
+        id: Joi.string().uuid().required(),
+      })
+    )
+    .min(1)
+    .required(),
   ownerId: Joi.string().uuid().optional(),
 });

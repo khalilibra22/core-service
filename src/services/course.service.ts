@@ -4,6 +4,7 @@ import { CourseModel } from "../models/course.model";
 import { CourseSettingsModel } from "../models/course-settings.model";
 import { LessonModel } from "../models/lesson.model";
 import { SessionModel } from "../models/session.model";
+import { MaterialModel } from "../models/material.model";
 
 export class CourseService {
   courseRepo: any;
@@ -303,6 +304,7 @@ export class CourseService {
             id: sessionId,
           },
         },
+        relations: ["materials"],
         cache: {
           id: `session-lessons-${sessionId}`,
           milliseconds: 300000, // 5 minutes
@@ -432,6 +434,27 @@ export class CourseService {
       });
     } catch (error) {
       throw new Error("Error fetching one on one sessions by teacher ID");
+    }
+  }
+
+  async getCourseMaterials(id: string): Promise<MaterialModel[]> {
+    try {
+      const course = await this.courseRepo.findOne({
+        where: {
+          id: id,
+        },
+        relations: ["materials"],
+        cache: {
+          id: `course-materials-${id}`,
+          milliseconds: 300000, // 5 minutes
+        },
+      });
+      return course.materials;
+    } catch (error: any) {
+      console.log(error);
+      throw new Error(
+        "Error fetching course materials by ID : " + error.message
+      );
     }
   }
 }
