@@ -1,5 +1,6 @@
 import { Expose, Transform, Type } from "class-transformer";
 import { MaterialDto } from "./material.dto";
+import { getVideoThumbnail } from "../utils";
 
 export class LessonDto {
   @Expose()
@@ -17,6 +18,10 @@ export class LessonDto {
   @Expose()
   @Transform(({ value }) => (value ? value : undefined))
   videoUrl?: string; // URL for video, file path for documents
+
+  @Expose()
+  @Transform(({ value }) => (value ? getVideoThumbnail(value) : undefined))
+  videoThumbnail?: string;
 
   @Expose()
   @Type(() => MaterialDto)
