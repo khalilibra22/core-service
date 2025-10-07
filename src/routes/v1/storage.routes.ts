@@ -32,11 +32,11 @@ router.get(
   storageController.getFileUrl
 );
 
-// // Delete file
+// Delete file
 router.delete(
   "/:id",
   AuthMiddleware.verifyToken,
-  AuthMiddleware.authorize("sessions", "download_materials"),
+  AuthMiddleware.authorize("sessions", "delete_materials"),
   storageController.deleteFile
 );
 

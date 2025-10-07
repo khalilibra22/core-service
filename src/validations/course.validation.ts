@@ -162,9 +162,7 @@ export const lessonValidationSchema = Joi.alternatives()
       type: Joi.string().valid("documents").required(),
       materials: Joi.array()
         .items(
-          Joi.object({
-            id: Joi.string().uuid().required(),
-          })
+          Joi.string().uuid().required()
         )
         .min(1)
         .required(),

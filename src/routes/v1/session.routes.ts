@@ -172,4 +172,45 @@ router.delete(
   streamingServiceController.deleteVideoById
 );
 
+// get lesson materials
+router.get(
+  "/:id/lessons/:lessonId/materials",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "view"),
+  courseController.getLessonMaterials
+);
+
+// remove lesson materials
+router.delete(
+  "/:id/lessons/:lessonId/materials",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "delete_materials"),
+  courseController.removeLessonMaterials
+);
+
+// toggle share/unshare all lesson materials
+router.patch(
+  "/:id/lessons/:lessonId/materials/share",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "manage_sessions"),
+  courseController.toggleLessonMaterialsShare
+);
+
+// toggle share/unshare one lesson material
+router.patch(
+  "/:id/lessons/:lessonId/materials/:materialId/share",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "manage_sessions"),
+  courseController.toggleLessonMaterialShare
+);
+
+// remove course materials
+router.delete(
+  "/:id/materials",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "delete_materials"),
+  courseController.removeCourseMaterials
+);
+
+
 export { router as sessionRouter };

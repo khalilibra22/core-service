@@ -9,7 +9,7 @@ import {
   OneToMany,
 } from "typeorm";
 import { SessionModel } from "./session.model";
-import { MaterialModel } from "./material.model";
+import { MaterialLinkModel } from "./material-link.model";
 
 @Entity("lessons")
 export class LessonModel {
@@ -42,10 +42,10 @@ export class LessonModel {
   })
   session?: SessionModel;
 
-  @OneToMany(() => MaterialModel, (material) => material.lesson, {
+  @OneToMany(() => MaterialLinkModel, (link) => link.lesson, {
     cascade: true,
   })
-  materials?: MaterialModel[];
+  materialLinks?: MaterialLinkModel[];
 
   @CreateDateColumn({
     name: "created_at",
