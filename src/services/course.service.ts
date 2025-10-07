@@ -5,6 +5,8 @@ import { CourseSettingsModel } from "../models/course-settings.model";
 import { LessonModel } from "../models/lesson.model";
 import { SessionModel } from "../models/session.model";
 import { MaterialModel } from "../models/material.model";
+import { MaterialLinkModel } from "../models/material-link.model";
+import { In } from "typeorm";
 
 export class CourseService {
   courseRepo: any;
@@ -12,12 +14,16 @@ export class CourseService {
   sessionRepo: any;
   certificateRepo: any;
   lessonRepo: any;
+  materialRepo: any;
+  materialLinkRepo: any;
   constructor() {
     this.courseRepo = AppDataSource.getRepository(CourseModel);
     this.courseSettingsRepo = AppDataSource.getRepository(CourseSettingsModel);
     this.sessionRepo = AppDataSource.getRepository(SessionModel);
     this.certificateRepo = AppDataSource.getRepository(CertificateModel);
     this.lessonRepo = AppDataSource.getRepository(LessonModel);
+    this.materialRepo = AppDataSource.getRepository(MaterialModel);
+    this.materialLinkRepo = AppDataSource.getRepository(MaterialLinkModel);
   }
 
   async createCourse(course: CourseModel): Promise<CourseModel> {
@@ -304,7 +310,7 @@ export class CourseService {
             id: sessionId,
           },
         },
-        relations: ["materials"],
+        relations: ["materialLinks", "materialLinks.material"],
         cache: {
           id: `session-lessons-${sessionId}`,
           milliseconds: 300000, // 5 minutes
@@ -437,19 +443,18 @@ export class CourseService {
     }
   }
 
-  async getCourseMaterials(id: string): Promise<MaterialModel[]> {
+  async getCourseMaterials(id: string): Promise<MaterialLinkModel[]> {
     try {
-      const course = await this.courseRepo.findOne({
-        where: {
-          id: id,
-        },
-        relations: ["materials"],
-        cache: {
-          id: `course-materials-${id}`,
-          milliseconds: 300000, // 5 minutes
-        },
+      const links = await this.materialLinkRepo.find({
+        where: { course: { id } },
+        relations: ["material"],
+        cache: false,
+        // cache: {
+        //   id: `course-materials-${id}`,
+        //   milliseconds: 300000,
+        // },
       });
-      return course.materials;
+      return links;
     } catch (error: any) {
       console.log(error);
       throw new Error(
@@ -457,4 +462,252 @@ export class CourseService {
       );
     }
   }
+
+  async getLessonMaterials(id: string): Promise<MaterialLinkModel[]> {
+    try {
+      const links = await this.materialLinkRepo.find({
+        where: { lesson: { id } },
+        relations: ["material"],
+        cache: false,
+        // cache: {
+        //   id: `course-materials-${id}`,
+        //   milliseconds: 300000,
+        // },
+      });
+      return links;
+    } catch (error: any) {
+      console.log(error);
+      throw new Error(
+        "Error fetching course materials by ID : " + error.message
+      );
+    }
+  }
+
+  async findMaterialsByIds(ids: string[]): Promise<MaterialModel[]> {
+    try {
+      if (!ids?.length) return [];
+      return await this.materialRepo.find({
+        where: { id: In(ids) },
+      });
+    } catch (error: any) {
+      throw new Error("Error fetching materials: " + error.message);
+    }
+  }
+
+  async addMaterialsToCourse(
+    courseId: string,
+    materialIds: string[]
+  ): Promise<void> {
+    try {
+      if (!materialIds?.length) return;
+
+      // Check for existing links (including soft-deleted ones)
+      const existingLinks = await this.materialLinkRepo.find({
+        where: {
+          course: { id: courseId },
+          material: { id: In(materialIds) },
+        },
+        relations: ["material"],
+        //withDeleted: true, // Include soft-deleted records
+      });
+
+      // Filter out materials that are already linked (not soft-deleted)
+      const activeLinkIds = existingLinks
+        .filter((link: any) => !link.deletedAt)
+        .map((link: any) => link.material?.id)
+        .filter(Boolean);
+
+      const newMaterialIds = materialIds.filter(
+        (id) => !activeLinkIds.includes(id)
+      );
+
+      if (newMaterialIds.length === 0) return; // All materials already linked
+
+      const materials = await this.materialRepo.find({
+        where: { id: In(newMaterialIds) },
+      });
+      const course = await this.courseRepo.findOne({
+        where: { id: courseId },
+      });
+
+      const links = materials.map((m: any) =>
+        this.materialLinkRepo.create({ course, material: m })
+      );
+      await this.materialLinkRepo.save(links);
+    } catch (error: any) {
+      throw new Error("Error adding materials to course: " + error.message);
+    }
+  }
+
+  async addMaterialsToLesson(
+    lessonId: string,
+    materialIds: string[]
+  ): Promise<void> {
+    try {
+      if (!materialIds?.length) return;
+
+      // Check for existing links (including soft-deleted ones)
+      const existingLinks = await this.materialLinkRepo.find({
+        where: {
+          lesson: { id: lessonId },
+          material: { id: In(materialIds) },
+        },
+        relations: ["material"],
+        //withDeleted: true, // Include soft-deleted records
+      });
+
+      // Filter out materials that are already linked (not soft-deleted)
+      const activeLinkIds = existingLinks
+        .filter((link: any) => !link.deletedAt)
+        .map((link: any) => link.material?.id)
+        .filter(Boolean);
+
+      const newMaterialIds = materialIds.filter(
+        (id) => !activeLinkIds.includes(id)
+      );
+
+      if (newMaterialIds.length === 0) return; // All materials already linked
+
+      const materials = await this.materialRepo.find({
+        where: { id: In(newMaterialIds) },
+      });
+      const lesson = await this.lessonRepo.findOne({
+        where: { id: lessonId },
+      });
+
+      const links = materials.map((m: any) =>
+        this.materialLinkRepo.create({ lesson, material: m })
+      );
+      await this.materialLinkRepo.save(links);
+    } catch (error: any) {
+      throw new Error("Error adding materials to lesson: " + error.message);
+    }
+  }
+
+  //removeMaterialsFromLesson(lessonId, materialIds)
+  async removeMaterialsFromLesson(lessonId: string, materialIds: string[]): Promise<void> {
+    try {
+      // Directly soft delete the material links by updating deletedAt in a single query
+      await this.materialLinkRepo
+        .createQueryBuilder()
+        .update()
+        .set({ deletedAt: () => "CURRENT_TIMESTAMP" })
+        .where("lessonId = :lessonId", { lessonId })
+        .andWhere("materialId IN (:...materialIds)", { materialIds })
+        .andWhere("deletedAt IS NULL")
+        .execute();
+    } catch (error: any) {
+      throw new Error("Error removing materials from lesson: " + error.message);
+    }
+  }
+    //removeMaterialsFromCourse(courseId, materialIds); soft delete the material links by updating deletedAt in a single query
+    async removeMaterialsFromCourse(courseId: string, materialIds: string[]): Promise<void> {
+      try {
+        await this.materialLinkRepo
+          .createQueryBuilder()
+          .update()
+          .set({ deletedAt: () => "CURRENT_TIMESTAMP" })
+          .where("courseId = :courseId", { courseId })
+          .andWhere("materialId IN (:...materialIds)", { materialIds })
+          .andWhere("deletedAt IS NULL")
+          .execute();
+      } catch (error: any) {
+        throw new Error("Error removing materials from course: " + error.message);
+      }
+    }
+
+  // Toggle share/unshare all course materials
+  async setCourseMaterialsSharable(courseId: string, isSharable: boolean): Promise<void> {
+    try {
+      await this.materialLinkRepo
+        .createQueryBuilder()
+        .update()
+        .set({ isSharable })
+        .where("courseId = :courseId", { courseId })
+        .andWhere("deletedAt IS NULL")
+        .execute();
+    } catch (error: any) {
+      throw new Error("Error toggling course materials share: " + error.message);
+    }
+  }
+
+  // Toggle share/unshare one course material (auto-toggle current value)
+  async toggleCourseMaterialSharable(courseId: string, materialId: string): Promise<boolean> {
+    try {
+      // Find the current link
+      const link = await this.materialLinkRepo.findOne({
+        where: {
+          course: { id: courseId },
+          material: { id: materialId },
+        },
+      });
+
+      if (!link) {
+        throw new Error("Material link not found");
+      }
+
+      const newValue = !link.isSharable;
+
+      await this.materialLinkRepo
+        .createQueryBuilder()
+        .update()
+        .set({ isSharable: newValue })
+        .where("courseId = :courseId", { courseId })
+        .andWhere("materialId = :materialId", { materialId })
+        .andWhere("deletedAt IS NULL")
+        .execute();
+
+      return newValue;
+    } catch (error: any) {
+      throw new Error("Error toggling course material share: " + error.message);
+    }
+  }
+
+  // Toggle share/unshare all lesson materials
+  async setLessonMaterialsSharable(lessonId: string, isSharable: boolean): Promise<void> {
+    try {
+      await this.materialLinkRepo
+        .createQueryBuilder()
+        .update()
+        .set({ isSharable })
+        .where("lessonId = :lessonId", { lessonId })
+        .andWhere("deletedAt IS NULL")
+        .execute();
+    } catch (error: any) {
+      throw new Error("Error toggling lesson materials share: " + error.message);
+    }
+  }
+
+  // Toggle share/unshare one lesson material (auto-toggle current value)
+  async toggleLessonMaterialSharable(lessonId: string, materialId: string): Promise<boolean> {
+    try {
+      // Find the current link
+      const link = await this.materialLinkRepo.findOne({
+        where: {
+          lesson: { id: lessonId },
+          material: { id: materialId },
+        },
+      });
+
+      if (!link) {
+        throw new Error("Material link not found");
+      }
+
+      const newValue = !link.isSharable;
+
+      await this.materialLinkRepo
+        .createQueryBuilder()
+        .update()
+        .set({ isSharable: newValue })
+        .where("lessonId = :lessonId", { lessonId })
+        .andWhere("materialId = :materialId", { materialId })
+        .andWhere("deletedAt IS NULL")
+        .execute();
+
+      return newValue;
+    } catch (error: any) {
+      throw new Error("Error toggling lesson material share: " + error.message);
+    }
+  }
+
 }

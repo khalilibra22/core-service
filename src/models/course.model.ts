@@ -15,7 +15,7 @@ import { ReviewModel } from "./review.model";
 import { CertificateModel } from "./certificate.model";
 import { SessionModel } from "./session.model";
 import { EnrollmentModel } from "./enrollment.model";
-import { MaterialModel } from "./material.model";
+import { MaterialLinkModel } from "./material-link.model";
 
 @Entity("courses")
 @Index("IDX_courses_type", ["type"])
@@ -72,9 +72,6 @@ export class CourseModel {
   @Column({ nullable: true })
   thumbnail?: string;
 
-  // @Column({ type: "simple-array", nullable: true })
-  // materials?: string[];
-
   @OneToOne(
     () => CourseSettingsModel,
     (courseSettings) => courseSettings.course,
@@ -95,10 +92,10 @@ export class CourseModel {
   @OneToMany(() => CertificateModel, (certificate) => certificate.course)
   certificates?: CertificateModel[];
 
-  @OneToMany(() => MaterialModel, (material) => material.course, {
+  @OneToMany(() => MaterialLinkModel, (link) => link.course, {
     cascade: true,
   })
-  materials?: MaterialModel[];
+  materialLinks?: MaterialLinkModel[];
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;

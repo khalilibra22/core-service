@@ -127,7 +127,7 @@ router.patch(
   "/:id/materials",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
-  ValidationMiddleware.validate(courseMaterialsSchema),
+  //ValidationMiddleware.validate(courseMaterialsSchema),
   courseController.addCourseMaterials
 );
 
@@ -137,6 +137,22 @@ router.get(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "view"),
   courseController.getCourseMaterials
+);
+
+// toggle share/unshare all course materials
+router.patch(
+  "/:id/materials/share",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "manage_courses"),
+  courseController.toggleCourseMaterialsShare
+);
+
+// toggle share/unshare one course material
+router.patch(
+  "/:id/materials/:materialId/share",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "manage_courses"),
+  courseController.toggleCourseMaterialShare
 );
 
 // Get all course sessions

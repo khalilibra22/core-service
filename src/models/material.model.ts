@@ -5,10 +5,9 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
-  ManyToOne,
+  OneToMany,
 } from "typeorm";
-import { CourseModel } from "./course.model";
-import { LessonModel } from "./lesson.model";
+import { MaterialLinkModel } from "./material-link.model";
 
 @Entity("materials")
 export class MaterialModel {
@@ -30,26 +29,14 @@ export class MaterialModel {
   @Column({ type: "uuid", nullable: true, name: "uploaded_by" })
   uploadedBy?: string; // userId
 
-  @Column({ type: "text", nullable: true, name: "related_type" })
-  relatedType?: string; // e.g. 'course', 'message', 'quiz'
-
-  @Column({ type: "uuid", nullable: true, name: "related_id" })
-  relatedId?: string;
-
-  @Column({ default: true, name: "is_sharable" })
-  isSharable?: boolean;
-
-  @Column({ default: true, name: "is_visible" })
-  isVisible?: boolean;
+  @Column({ type: "uuid", nullable: true, name: "teacher_id" })
+  teacherId?: string;
 
   @Column({ nullable: true })
   description?: string;
 
-  @ManyToOne(() => CourseModel, (course) => course.materials)
-  course?: CourseModel;
-
-  @ManyToOne(() => LessonModel, (lesson) => lesson.materials)
-  lesson?: LessonModel;
+  @OneToMany(() => MaterialLinkModel, (link) => link.material)
+  links?: MaterialLinkModel[];
 
   @CreateDateColumn({
     name: "created_at",

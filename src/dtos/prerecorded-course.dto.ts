@@ -1,4 +1,5 @@
 import { Expose, Transform } from "class-transformer";
+import { getPermanentUrl } from "../utils";
 
 export class PrerecordedCourseDto {
   @Expose()
@@ -53,7 +54,7 @@ export class PrerecordedCourseDto {
   address?: string;
 
   @Expose()
-  @Expose({ name: "introVideo" })
+  @Transform(({ obj }) => getPermanentUrl(obj.introVideo))
   introVideo?: string;
 
   @Expose()
@@ -61,6 +62,7 @@ export class PrerecordedCourseDto {
   syllabus?: string;
 
   @Expose({ name: "thumbnail" })
+  @Transform(({ obj }) => getPermanentUrl(obj.thumbnail))
   thumbnail?: string;
 
   @Expose()

@@ -34,7 +34,10 @@ export class StorageService {
     this.materialRepo = AppDataSource.getRepository(MaterialModel);
   }
 
-  async uploadFile(file: Express.Multer.File): Promise<string | MaterialModel> {
+  async uploadFile(
+    file: Express.Multer.File,
+    options?: { ownerId?: string }
+  ): Promise<MaterialModel> {
     try {
       const key = `${uuidv4()}-${file.originalname
         .toLowerCase()
@@ -48,11 +51,13 @@ export class StorageService {
         ACL: "public-read", // or omit for private access
       });
       await this.s3.send(command);
+      console.log(options?.ownerId);
       const material = await this.materialRepo.save({
         title: file.originalname,
         type: file.mimetype,
         size: file.size,
         storageId: key,
+        teacherId: options?.ownerId,
       });
       return material;
     } catch (error) {
@@ -60,18 +65,43 @@ export class StorageService {
     }
   }
 
-  async deleteFile(fileUrl: string): Promise<void> {
+  async getMaterialById(materialId: string): Promise<MaterialModel | null> {
     try {
-      const key = fileUrl.split("/").pop();
-
-      if (!key) {
-        throw new Error("File key is required for deletion");
-      }
-      const command = new DeleteObjectCommand({
-        Bucket: this.bucketName,
-        Key: key!,
+      return await this.materialRepo.findOne({
+        where: { id: materialId },
       });
-      await this.s3.send(command);
+    } catch (error) {
+      throw new Error(`Failed to get material: ${error}`);
+    }
+  }
+
+  getPermanentUrl(storageId: string): string {
+    // Generate permanent URL for public-read files
+    return `${this.endpoint}/${this.bucketName}/${storageId}`;
+  }
+
+  async deleteFile(materialId: string): Promise<void> {
+    try {
+      // Find the material record
+      const material = await this.materialRepo.findOne({
+        where: { id: materialId },
+      });
+
+      if (!material) {
+        throw new Error("Material not found");
+      }
+
+      // Delete from S3 if storageId exists
+      if (material.storageId) {
+        const command = new DeleteObjectCommand({
+          Bucket: this.bucketName,
+          Key: material.storageId,
+        });
+        await this.s3.send(command);
+      }
+
+      // Soft delete from database
+      await this.materialRepo.softDelete(materialId);
     } catch (error) {
       throw new Error(`Failed to delete file: ${error}`);
     }

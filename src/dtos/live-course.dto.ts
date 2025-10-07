@@ -1,4 +1,5 @@
 import { Expose, Transform } from "class-transformer";
+import { getPermanentUrl } from "../utils";
 
 export class LiveCourseDto {
   @Expose()
@@ -78,17 +79,16 @@ export class LiveCourseDto {
   address?: string;
 
   @Expose({ name: "introVideo" })
-  introVideoId?: string;
+  @Transform(({ obj }) => getPermanentUrl(obj.introVideo))
+  introVideo?: string;
 
   @Expose()
   @Transform(({ obj }) => obj.couresSettings?.syllabus)
   syllabus?: string;
 
   @Expose({ name: "thumbnail" })
-  thumbnailId?: string;
-
-  // @Expose()
-  // materials?: string[];
+  @Transform(({ obj }) => getPermanentUrl(obj.thumbnail))
+  thumbnail?: string;
 
   @Expose()
   @Transform(() => "to be filled")

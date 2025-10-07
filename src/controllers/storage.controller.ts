@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { StorageService } from "../services/storage.service";
-import { MaterialDto } from "../dtos/material.dto";
 import { plainToInstance } from "class-transformer";
+import { MinimalMaterialDto } from "../dtos/minimal-material.dto";
 
 export class StorageController {
   private storageService: StorageService;
@@ -27,8 +27,10 @@ export class StorageController {
         file = await this.storageService.reduceImageResolution(file);
       }
 
-      const material = await this.storageService.uploadFile(file);
-      const materialDto = plainToInstance(MaterialDto, material, {
+      const material = await this.storageService.uploadFile(file, {
+        ownerId: req.body.ownerId,
+      });
+      const materialDto = plainToInstance(MinimalMaterialDto, material, {
         excludeExtraneousValues: true,
       });
 
@@ -49,6 +51,21 @@ export class StorageController {
         res.status(400).json({ error: "File ID is required" });
         return;
       }
+
+      // Get material to check ownership
+      const material = await this.storageService.getMaterialById(id);
+      if (!material) {
+        res.status(404).json({ error: "Material not found" });
+        return;
+      }
+
+      // Check if user is the owner (teacherId or uploadedBy)
+      const userId = req.body.ownerId;
+      // console.log(material.teacherId, material.uploadedBy, userId);
+      // if (material.teacherId !== userId && material.uploadedBy !== userId) {
+      //   res.status(403).json({ error: "You are not authorized to delete this file" });
+      //   return;
+      // }
 
       await this.storageService.deleteFile(id);
       res.status(200).json({ message: "File deleted successfully" });
