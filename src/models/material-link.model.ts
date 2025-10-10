@@ -6,11 +6,22 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   Column,
+  Index,
 } from "typeorm";
 import { MaterialModel } from "./material.model";
 import { CourseModel } from "./course.model";
 import { LessonModel } from "./lesson.model";
 
+@Index("IDX_material_links_course_active", ["course"], { where: "deleted_at IS NULL" })
+@Index("IDX_material_links_lesson_active", ["lesson"], { where: "deleted_at IS NULL" })
+@Index("UQ_material_links_course_material_active", ["course", "material"], {
+  unique: true,
+  where: "deleted_at IS NULL",
+})
+@Index("UQ_material_links_lesson_material_active", ["lesson", "material"], {
+  unique: true,
+  where: "deleted_at IS NULL",
+})
 @Entity("material_links")
 export class MaterialLinkModel {
   @PrimaryGeneratedColumn("uuid")
@@ -22,7 +33,7 @@ export class MaterialLinkModel {
   @Column({ default: true, name: "is_visible" })
   isVisible?: boolean;
 
-  
+  @Index("IDX_material_links_student_id")
   @Column({ type: "uuid", nullable: true, name: "student_id" })
   studentId?: string; // for one on one materials
 

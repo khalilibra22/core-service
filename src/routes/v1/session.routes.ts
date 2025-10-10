@@ -204,13 +204,4 @@ router.patch(
   courseController.toggleLessonMaterialShare
 );
 
-// remove course materials
-router.delete(
-  "/:id/materials",
-  AuthMiddleware.verifyToken,
-  AuthMiddleware.authorize("sessions", "delete_materials"),
-  courseController.removeCourseMaterials
-);
-
-
 export { router as sessionRouter };

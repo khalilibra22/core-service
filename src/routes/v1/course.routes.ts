@@ -139,6 +139,14 @@ router.get(
   courseController.getCourseMaterials
 );
 
+// remove course materials
+router.delete(
+  "/:id/materials",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "manage_courses"),
+  courseController.removeCourseMaterials
+);
+
 // toggle share/unshare all course materials
 router.patch(
   "/:id/materials/share",
