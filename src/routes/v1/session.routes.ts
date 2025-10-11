@@ -10,6 +10,7 @@ import { StreamingServiceController } from "../../controllers/streaming.controll
 import {
   lessonValidationSchema,
   timeChangeRequestValidationSchema,
+  removeMaterialsSchema,
 } from "../../validations/course.validation";
 import { FeedbackController } from "../../controllers/feedback.controller";
 import { complaintValdationSchema } from "../../validations/feedback.validation";
@@ -185,6 +186,7 @@ router.delete(
   "/:id/lessons/:lessonId/materials",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "delete_materials"),
+  ValidationMiddleware.validate(removeMaterialsSchema),
   courseController.removeLessonMaterials
 );
 

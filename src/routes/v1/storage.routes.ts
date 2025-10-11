@@ -42,7 +42,7 @@ router.delete(
 
 // Get materials by teacher
 router.get(
-  "/teacher/:teacherId?",
+  "/teacher/all",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "download_materials"),
   storageController.getMaterialsByTeacher

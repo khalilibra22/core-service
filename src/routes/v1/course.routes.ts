@@ -10,6 +10,7 @@ import {
   courseValidationSchema,
   createCourseValidationSchema,
   sessionValidationSchema,
+  removeMaterialsSchema,
 } from "../../validations/course.validation";
 import { reviewValdationSchema } from "../../validations/feedback.validation";
 import { enrollmentValidationsSchema } from "../../validations/enrollment.validation";
@@ -144,6 +145,7 @@ router.delete(
   "/:id/materials",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
+  ValidationMiddleware.validate(removeMaterialsSchema),
   courseController.removeCourseMaterials
 );
 

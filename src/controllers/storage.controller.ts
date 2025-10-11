@@ -108,7 +108,6 @@ export class StorageController {
   getMaterialsByTeacher = async (req: Request, res: Response): Promise<void> => {
     try {
       const teacherId =
-        req.params.teacherId ||
         req.body.ownerId ||
         (res.locals as any)?.ownerId;
 
@@ -130,14 +129,7 @@ export class StorageController {
         excludeExtraneousValues: true,
       });
 
-      res.status(200).json({
-        data: materialDtos,
-        pagination: {
-          page,
-          limit,
-          count: materialDtos.length,
-        },
-      });
+      res.status(200).json(materialDtos);
     } catch (error) {
       res.status(500).json({
         error: "Failed to get materials by teacher",

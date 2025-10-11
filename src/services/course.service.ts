@@ -587,30 +587,74 @@ export class CourseService {
   //removeMaterialsFromLesson(lessonId, materialIds)
   async removeMaterialsFromLesson(lessonId: string, materialIds: string[]): Promise<void> {
     try {
-      // Directly soft delete the material links by updating deletedAt in a single query
-      await this.materialLinkRepo
-        .createQueryBuilder()
-        .update()
-        .set({ deletedAt: () => "CURRENT_TIMESTAMP" })
-        .where("lessonId = :lessonId", { lessonId })
-        .andWhere("materialId IN (:...materialIds)", { materialIds })
-        .andWhere("deletedAt IS NULL")
-        .execute();
+      // Use softDelete with find for better reliability
+      const linksToDelete = await this.materialLinkRepo.find({
+        where: {
+          lesson: { id: lessonId },
+          material: { id: In(materialIds) },
+        },
+      });
+      
+      if (linksToDelete.length > 0) {
+        const linkIds = linksToDelete.map((link: any) => link.id);
+        await this.materialLinkRepo.softDelete(linkIds);
+      }
     } catch (error: any) {
       throw new Error("Error removing materials from lesson: " + error.message);
+    }
+  }
+
+  // Update lesson materials (replaces all materials)
+  async updateLessonMaterials(lessonId: string, materialIds: string[]): Promise<void> {
+    try {
+      // Get all current material links for this lesson
+      const currentLinks = await this.materialLinkRepo.find({
+        where: { lesson: { id: lessonId } },
+        relations: ["material"],
+      });
+
+      const currentMaterialIds = currentLinks
+        .map((link: any) => link.material?.id)
+        .filter(Boolean);
+
+      // Find materials to remove (in current but not in new list)
+      const toRemove = currentMaterialIds.filter(
+        (id: string) => !materialIds.includes(id)
+      );
+
+      // Find materials to add (in new list but not in current)
+      const toAdd = materialIds.filter(
+        (id: string) => !currentMaterialIds.includes(id)
+      );
+
+      // Remove materials that should no longer be linked
+      if (toRemove.length > 0) {
+        await this.removeMaterialsFromLesson(lessonId, toRemove);
+      }
+
+      // Add new materials
+      if (toAdd.length > 0) {
+        await this.addMaterialsToLesson(lessonId, toAdd);
+      }
+    } catch (error: any) {
+      throw new Error("Error updating lesson materials: " + error.message);
     }
   }
     //removeMaterialsFromCourse(courseId, materialIds); soft delete the material links by updating deletedAt in a single query
     async removeMaterialsFromCourse(courseId: string, materialIds: string[]): Promise<void> {
       try {
-        await this.materialLinkRepo
-          .createQueryBuilder()
-          .update()
-          .set({ deletedAt: () => "CURRENT_TIMESTAMP" })
-          .where("courseId = :courseId", { courseId })
-          .andWhere("materialId IN (:...materialIds)", { materialIds })
-          .andWhere("deletedAt IS NULL")
-          .execute();
+        // Use softDelete with find for better reliability
+        const linksToDelete = await this.materialLinkRepo.find({
+          where: {
+            course: { id: courseId },
+            material: { id: In(materialIds) },
+          },
+        });
+        
+        if (linksToDelete.length > 0) {
+          const linkIds = linksToDelete.map((link: any) => link.id);
+          await this.materialLinkRepo.softDelete(linkIds);
+        }
       } catch (error: any) {
         throw new Error("Error removing materials from course: " + error.message);
       }
@@ -624,7 +668,7 @@ export class CourseService {
         .update()
         .set({ isSharable })
         .where("courseId = :courseId", { courseId })
-        .andWhere("deletedAt IS NULL")
+        .andWhere("deleted_at IS NULL")
         .execute();
     } catch (error: any) {
       throw new Error("Error toggling course materials share: " + error.message);
@@ -654,7 +698,7 @@ export class CourseService {
         .set({ isSharable: newValue })
         .where("courseId = :courseId", { courseId })
         .andWhere("materialId = :materialId", { materialId })
-        .andWhere("deletedAt IS NULL")
+        .andWhere("deleted_at IS NULL")
         .execute();
 
       return newValue;
@@ -671,7 +715,7 @@ export class CourseService {
         .update()
         .set({ isSharable })
         .where("lessonId = :lessonId", { lessonId })
-        .andWhere("deletedAt IS NULL")
+        .andWhere("deleted_at IS NULL")
         .execute();
     } catch (error: any) {
       throw new Error("Error toggling lesson materials share: " + error.message);
@@ -701,7 +745,7 @@ export class CourseService {
         .set({ isSharable: newValue })
         .where("lessonId = :lessonId", { lessonId })
         .andWhere("materialId = :materialId", { materialId })
-        .andWhere("deletedAt IS NULL")
+        .andWhere("deleted_at IS NULL")
         .execute();
 
       return newValue;

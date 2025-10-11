@@ -479,7 +479,7 @@ export class CourseController {
       delete lessonBody.materials;
       await this.courseService.updateLesson(lessonBody);
       if (ids && lesson.id) {
-        await this.courseService.addMaterialsToLesson(lesson.id, ids);
+        await this.courseService.updateLessonMaterials(lesson.id, ids);
       }
 
       res.status(200).json({ message: "Lesson updated successfully" });
@@ -544,6 +544,7 @@ export class CourseController {
       const lessonDtos = plainToInstance(LessonDto, shapedLessons, {
         excludeExtraneousValues: true,
       });
+      console.log(shapedLessons);
       res.status(200).json(lessonDtos);
     } catch (error) {
       console.log(error);
@@ -732,9 +733,9 @@ export class CourseController {
   // remove course materials
   removeCourseMaterials = async (req: Request, res: Response): Promise<void> => {
     try {
-      const {courseId} = req.params;
+      const {id} = req.params;
       const {materialIds} = req.body;
-      const course = await this.courseService.getCourseById(courseId);
+      const course = await this.courseService.getCourseById(id);
       if (!course) {
         res.status(404).json({ error: "Course not found" });
         return;
@@ -743,7 +744,7 @@ export class CourseController {
         res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
-      await this.courseService.removeMaterialsFromCourse(courseId, materialIds);
+      await this.courseService.removeMaterialsFromCourse(id, materialIds);
       res.status(200).json({ message: "Materials removed successfully" });
     }
     catch (error) {
@@ -792,7 +793,11 @@ export class CourseController {
         message: `Course material ${newValue ? "shared" : "unshared"} successfully`,
         isSharable: newValue
       });
-    } catch (error) {
+    } catch (error: any) {
+      if (error.message.includes("Material link not found")) {
+        res.status(404).json({ error: "Material link not found" });
+        return;
+      }
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -840,7 +845,11 @@ export class CourseController {
         message: `Lesson material ${newValue ? "shared" : "unshared"} successfully`,
         isSharable: newValue
       });
-    } catch (error) {
+    } catch (error: any) {
+      if (error.message.includes("Material link not found")) {
+        res.status(404).json({ error: "Material link not found" });
+        return;
+      }
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
