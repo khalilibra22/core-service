@@ -536,15 +536,13 @@ export class CourseController {
       // Transform materialLinks to materials for DTO
       const shapedLessons = lessons.map((l: any) => ({
         ...l,
-        materials: (l.materialLinks ?? [])
-          .map((link: any) => link.material)
-          .filter(Boolean),
+        // Keep MaterialLink objects so MaterialDto can read obj.material.* and flags
+        materials: (l.materialLinks ?? []).filter((link: any) => link?.material),
       }));
 
       const lessonDtos = plainToInstance(LessonDto, shapedLessons, {
         excludeExtraneousValues: true,
       });
-      console.log(shapedLessons);
       res.status(200).json(lessonDtos);
     } catch (error) {
       console.log(error);
@@ -831,6 +829,7 @@ export class CourseController {
       const sessionId = req.params.id;
       const lessonId = req.params.lessonId;
       const materialId = req.params.materialId;
+      
       const session = await this.courseService.getSessionById(sessionId);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
@@ -840,16 +839,19 @@ export class CourseController {
         res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
-      const newValue = await this.courseService.toggleLessonMaterialSharable(lessonId, materialId);
+      const materialLink = await this.courseService.getMaterialLinkByMaterialIdAndLessonId(materialId, lessonId);
+      if (!materialLink) {
+        res.status(404).json({ error: "Material link not found" });
+        return;
+      }
+      materialLink.isSharable = !materialLink.isSharable;
+      await this.courseService.updateMaterialLinkById(materialLink);
+      const newValue = materialLink.isSharable;
       res.status(200).json({ 
         message: `Lesson material ${newValue ? "shared" : "unshared"} successfully`,
         isSharable: newValue
       });
-    } catch (error: any) {
-      if (error.message.includes("Material link not found")) {
-        res.status(404).json({ error: "Material link not found" });
-        return;
-      }
+    } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
   };

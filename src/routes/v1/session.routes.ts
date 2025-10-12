@@ -11,6 +11,7 @@ import {
   lessonValidationSchema,
   timeChangeRequestValidationSchema,
   removeMaterialsSchema,
+  toggleLessonMaterialShareValidationSchema,
 } from "../../validations/course.validation";
 import { FeedbackController } from "../../controllers/feedback.controller";
 import { complaintValdationSchema } from "../../validations/feedback.validation";
@@ -195,6 +196,7 @@ router.patch(
   "/:id/lessons/:lessonId/materials/share",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "manage_sessions"),
+  ValidationMiddleware.validate(toggleLessonMaterialShareValidationSchema),
   courseController.toggleLessonMaterialsShare
 );
 

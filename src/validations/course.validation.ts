@@ -200,3 +200,9 @@ export const removeMaterialsSchema = Joi.object({
   ownerId: Joi.string().uuid().optional(),
 });
 
+// toggle lesson material share
+export const toggleLessonMaterialShareValidationSchema = Joi.object({
+  isSharable: Joi.boolean().required(),
+  ownerId: Joi.string().uuid().optional(),
+});
+
