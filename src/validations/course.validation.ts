@@ -186,3 +186,23 @@ export const courseMaterialsSchema = Joi.object({
     .required(),
   ownerId: Joi.string().uuid().optional(),
 });
+
+export const removeMaterialsSchema = Joi.object({
+  materialIds: Joi.array()
+    .items(Joi.string().uuid().required())
+    .min(1)
+    .required()
+    .messages({
+      'array.min': 'At least one material ID is required',
+      'array.base': 'materialIds must be an array',
+      'any.required': 'materialIds is required',
+    }),
+  ownerId: Joi.string().uuid().optional(),
+});
+
+// toggle lesson material share
+export const toggleLessonMaterialShareValidationSchema = Joi.object({
+  isSharable: Joi.boolean().required(),
+  ownerId: Joi.string().uuid().optional(),
+});
+

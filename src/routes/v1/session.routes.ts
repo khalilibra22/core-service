@@ -10,6 +10,8 @@ import { StreamingServiceController } from "../../controllers/streaming.controll
 import {
   lessonValidationSchema,
   timeChangeRequestValidationSchema,
+  removeMaterialsSchema,
+  toggleLessonMaterialShareValidationSchema,
 } from "../../validations/course.validation";
 import { FeedbackController } from "../../controllers/feedback.controller";
 import { complaintValdationSchema } from "../../validations/feedback.validation";
@@ -185,6 +187,7 @@ router.delete(
   "/:id/lessons/:lessonId/materials",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "delete_materials"),
+  ValidationMiddleware.validate(removeMaterialsSchema),
   courseController.removeLessonMaterials
 );
 
@@ -193,6 +196,7 @@ router.patch(
   "/:id/lessons/:lessonId/materials/share",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "manage_sessions"),
+  ValidationMiddleware.validate(toggleLessonMaterialShareValidationSchema),
   courseController.toggleLessonMaterialsShare
 );
 
@@ -203,14 +207,5 @@ router.patch(
   AuthMiddleware.authorize("sessions", "manage_sessions"),
   courseController.toggleLessonMaterialShare
 );
-
-// remove course materials
-router.delete(
-  "/:id/materials",
-  AuthMiddleware.verifyToken,
-  AuthMiddleware.authorize("sessions", "delete_materials"),
-  courseController.removeCourseMaterials
-);
-
 
 export { router as sessionRouter };

@@ -6,10 +6,11 @@ import { ValidationMiddleware } from "../../utils/validation.middleware";
 import {
   certificateValidationSchema,
   courseCancellationValidationSchema,
-  courseMaterialsSchema,
   courseValidationSchema,
   createCourseValidationSchema,
   sessionValidationSchema,
+  removeMaterialsSchema,
+  toggleLessonMaterialShareValidationSchema,
 } from "../../validations/course.validation";
 import { reviewValdationSchema } from "../../validations/feedback.validation";
 import { enrollmentValidationsSchema } from "../../validations/enrollment.validation";
@@ -139,11 +140,21 @@ router.get(
   courseController.getCourseMaterials
 );
 
+// remove course materials
+router.delete(
+  "/:id/materials",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "manage_courses"),
+  ValidationMiddleware.validate(removeMaterialsSchema),
+  courseController.removeCourseMaterials
+);
+
 // toggle share/unshare all course materials
 router.patch(
   "/:id/materials/share",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
+  ValidationMiddleware.validate(toggleLessonMaterialShareValidationSchema),
   courseController.toggleCourseMaterialsShare
 );
 

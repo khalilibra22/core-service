@@ -31,6 +31,7 @@ export class AuthMiddleware {
       const decoded = await AuthMiddleware.decodeToken(token);
       req.body.ownerId = decoded.id; // Assuming the token contains an 'id' field
       req.body.user = decoded;
+      res.locals.ownerId = decoded.id;
       next();
     } catch (error) {
       res.status(401).json({ message: "Invalid or expired token" });

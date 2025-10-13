@@ -75,6 +75,24 @@ export class StorageService {
     }
   }
 
+  async getMaterialsByTeacher(
+    teacherId: string,
+    page = 1,
+    limit = 20
+  ): Promise<MaterialModel[]> {
+    try {
+      const skip = (page - 1) * limit;
+      return await this.materialRepo.find({
+        where: { teacherId },
+        order: { createdAt: "DESC" },
+        skip,
+        take: limit,
+      });
+    } catch (error) {
+      throw new Error(`Failed to get materials by teacher: ${error}`);
+    }
+  }
+
   getPermanentUrl(storageId: string): string {
     // Generate permanent URL for public-read files
     return `${this.endpoint}/${this.bucketName}/${storageId}`;

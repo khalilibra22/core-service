@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   OneToMany,
+  Index,
 } from "typeorm";
 import { MaterialLinkModel } from "./material-link.model";
 
@@ -26,9 +27,11 @@ export class MaterialModel {
   @Column({ nullable: true, name: "storage_id" })
   storageId?: string;
 
+  @Index("IDX_materials_uploaded_by")
   @Column({ type: "uuid", nullable: true, name: "uploaded_by" })
   uploadedBy?: string; // userId
 
+  @Index("IDX_materials_teacher_id")
   @Column({ type: "uuid", nullable: true, name: "teacher_id" })
   teacherId?: string;
 

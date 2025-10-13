@@ -28,7 +28,7 @@ export class StorageController {
       }
 
       const material = await this.storageService.uploadFile(file, {
-        ownerId: req.body.ownerId,
+        ownerId: req.body.ownerId ?? res.locals.ownerId,
       });
       const materialDto = plainToInstance(MinimalMaterialDto, material, {
         excludeExtraneousValues: true,
@@ -100,6 +100,39 @@ export class StorageController {
     } catch (error) {
       res.status(500).json({
         error: "Failed to get file URL",
+        details: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  };
+
+  getMaterialsByTeacher = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const teacherId =
+        req.body.ownerId ||
+        (res.locals as any)?.ownerId;
+
+      if (!teacherId) {
+        res.status(400).json({ error: "Teacher ID is required" });
+        return;
+      }
+
+      const page = Math.max(1, Number(req.query.page) || 1);
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+
+      const materials = await this.storageService.getMaterialsByTeacher(
+        teacherId,
+        page,
+        limit
+      );
+
+      const materialDtos = plainToInstance(MinimalMaterialDto, materials, {
+        excludeExtraneousValues: true,
+      });
+
+      res.status(200).json(materialDtos);
+    } catch (error) {
+      res.status(500).json({
+        error: "Failed to get materials by teacher",
         details: error instanceof Error ? error.message : "Unknown error",
       });
     }

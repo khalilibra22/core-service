@@ -6,7 +6,7 @@ import { LessonModel } from "../models/lesson.model";
 import { SessionModel } from "../models/session.model";
 import { MaterialModel } from "../models/material.model";
 import { MaterialLinkModel } from "../models/material-link.model";
-import { In } from "typeorm";
+import { In, IsNull } from "typeorm";
 
 export class CourseService {
   courseRepo: any;
@@ -546,39 +546,20 @@ export class CourseService {
     try {
       if (!materialIds?.length) return;
 
-      // Check for existing links (including soft-deleted ones)
-      const existingLinks = await this.materialLinkRepo.find({
-        where: {
-          lesson: { id: lessonId },
-          material: { id: In(materialIds) },
-        },
-        relations: ["material"],
-        //withDeleted: true, // Include soft-deleted records
-      });
-
-      // Filter out materials that are already linked (not soft-deleted)
-      const activeLinkIds = existingLinks
-        .filter((link: any) => !link.deletedAt)
-        .map((link: any) => link.material?.id)
-        .filter(Boolean);
-
-      const newMaterialIds = materialIds.filter(
-        (id) => !activeLinkIds.includes(id)
-      );
-
-      if (newMaterialIds.length === 0) return; // All materials already linked
-
-      const materials = await this.materialRepo.find({
-        where: { id: In(newMaterialIds) },
-      });
-      const lesson = await this.lessonRepo.findOne({
-        where: { id: lessonId },
-      });
-
-      const links = materials.map((m: any) =>
-        this.materialLinkRepo.create({ lesson, material: m })
-      );
-      await this.materialLinkRepo.save(links);
+      // Bulk insert with ON CONFLICT DO NOTHING - efficient, no pre-read needed
+      // The partial unique index ensures no duplicate active links
+      await this.materialLinkRepo
+        .createQueryBuilder()
+        .insert()
+        .into(MaterialLinkModel)
+        .values(
+          materialIds.map((materialId) => ({
+            lesson: { id: lessonId },
+            material: { id: materialId },
+          }))
+        )
+        .orIgnore() // ON CONFLICT DO NOTHING
+        .execute();
     } catch (error: any) {
       throw new Error("Error adding materials to lesson: " + error.message);
     }
@@ -587,30 +568,86 @@ export class CourseService {
   //removeMaterialsFromLesson(lessonId, materialIds)
   async removeMaterialsFromLesson(lessonId: string, materialIds: string[]): Promise<void> {
     try {
-      // Directly soft delete the material links by updating deletedAt in a single query
-      await this.materialLinkRepo
-        .createQueryBuilder()
-        .update()
-        .set({ deletedAt: () => "CURRENT_TIMESTAMP" })
-        .where("lessonId = :lessonId", { lessonId })
-        .andWhere("materialId IN (:...materialIds)", { materialIds })
-        .andWhere("deletedAt IS NULL")
-        .execute();
+      // Use softDelete with find for better reliability
+      const linksToDelete = await this.materialLinkRepo.find({
+        where: {
+          lesson: { id: lessonId },
+          material: { id: In(materialIds) },
+        },
+      });
+      
+      if (linksToDelete.length > 0) {
+        const linkIds = linksToDelete.map((link: any) => link.id);
+        await this.materialLinkRepo.softDelete(linkIds);
+      }
     } catch (error: any) {
       throw new Error("Error removing materials from lesson: " + error.message);
+    }
+  }
+
+  // Update lesson materials (replaces all materials)
+  async updateLessonMaterials(lessonId: string, materialIds: string[]): Promise<void> {
+    try {
+      // Efficient set-based approach: single lightweight query for current IDs
+      const rows = await this.materialLinkRepo
+        .createQueryBuilder("ml")
+        .select("ml.materialId", "materialId")
+        .where("ml.lessonId = :lessonId", { lessonId })
+        .andWhere("ml.deleted_at IS NULL")
+        .getRawMany();
+
+      const current = new Set<string>(rows.map((r: any) => r.materialId as string));
+      const desired = new Set<string>(materialIds ?? []);
+
+      // Compute diff in memory
+      const toRemove = Array.from(current).filter((id) => !desired.has(id));
+      const toAdd = Array.from(desired).filter((id) => !current.has(id));
+
+      // Bulk soft-delete removals
+      if (toRemove.length > 0) {
+        await this.materialLinkRepo
+          .createQueryBuilder()
+          .softDelete()
+          .where("lessonId = :lessonId", { lessonId })
+          .andWhere("materialId IN (:...ids)", { ids: toRemove })
+          .andWhere("deleted_at IS NULL")
+          .execute();
+      }
+
+      // Bulk insert additions with orIgnore
+      if (toAdd.length > 0) {
+        await this.materialLinkRepo
+          .createQueryBuilder()
+          .insert()
+          .into(MaterialLinkModel)
+          .values(
+            toAdd.map((materialId) => ({
+              lesson: { id: lessonId },
+              material: { id: materialId },
+            }))
+          )
+          .orIgnore()
+          .execute();
+      }
+    } catch (error: any) {
+      throw new Error("Error updating lesson materials: " + error.message);
     }
   }
     //removeMaterialsFromCourse(courseId, materialIds); soft delete the material links by updating deletedAt in a single query
     async removeMaterialsFromCourse(courseId: string, materialIds: string[]): Promise<void> {
       try {
-        await this.materialLinkRepo
-          .createQueryBuilder()
-          .update()
-          .set({ deletedAt: () => "CURRENT_TIMESTAMP" })
-          .where("courseId = :courseId", { courseId })
-          .andWhere("materialId IN (:...materialIds)", { materialIds })
-          .andWhere("deletedAt IS NULL")
-          .execute();
+        // Use softDelete with find for better reliability
+        const linksToDelete = await this.materialLinkRepo.find({
+          where: {
+            course: { id: courseId },
+            material: { id: In(materialIds) },
+          },
+        });
+        
+        if (linksToDelete.length > 0) {
+          const linkIds = linksToDelete.map((link: any) => link.id);
+          await this.materialLinkRepo.softDelete(linkIds);
+        }
       } catch (error: any) {
         throw new Error("Error removing materials from course: " + error.message);
       }
@@ -624,7 +661,7 @@ export class CourseService {
         .update()
         .set({ isSharable })
         .where("courseId = :courseId", { courseId })
-        .andWhere("deletedAt IS NULL")
+        .andWhere("deleted_at IS NULL")
         .execute();
     } catch (error: any) {
       throw new Error("Error toggling course materials share: " + error.message);
@@ -639,6 +676,7 @@ export class CourseService {
         where: {
           course: { id: courseId },
           material: { id: materialId },
+          deletedAt: IsNull(),
         },
       });
 
@@ -654,7 +692,7 @@ export class CourseService {
         .set({ isSharable: newValue })
         .where("courseId = :courseId", { courseId })
         .andWhere("materialId = :materialId", { materialId })
-        .andWhere("deletedAt IS NULL")
+        .andWhere("deleted_at IS NULL")
         .execute();
 
       return newValue;
@@ -671,7 +709,7 @@ export class CourseService {
         .update()
         .set({ isSharable })
         .where("lessonId = :lessonId", { lessonId })
-        .andWhere("deletedAt IS NULL")
+        .andWhere("deleted_at IS NULL")
         .execute();
     } catch (error: any) {
       throw new Error("Error toggling lesson materials share: " + error.message);
@@ -686,6 +724,7 @@ export class CourseService {
         where: {
           lesson: { id: lessonId },
           material: { id: materialId },
+          deletedAt: IsNull(),
         },
       });
 
@@ -701,12 +740,38 @@ export class CourseService {
         .set({ isSharable: newValue })
         .where("lessonId = :lessonId", { lessonId })
         .andWhere("materialId = :materialId", { materialId })
-        .andWhere("deletedAt IS NULL")
+        .andWhere("deleted_at IS NULL")
         .execute();
 
       return newValue;
     } catch (error: any) {
       throw new Error("Error toggling lesson material share: " + error.message);
+    }
+  }
+
+  // get material link by material id and lesson id
+  async getMaterialLinkByMaterialIdAndLessonId(materialId: string, lessonId: string): Promise<MaterialLinkModel | null> {
+    try {
+      // Query using direct FK columns - this is the correct approach for TypeORM
+      const materialLink = await this.materialLinkRepo
+        .createQueryBuilder("ml")
+        .where("ml.materialId = :materialId", { materialId })
+        .andWhere("ml.lessonId = :lessonId", { lessonId })
+        .andWhere("ml.deleted_at IS NULL")
+        .getOne();
+      
+      return materialLink;
+    } catch (error: any) {
+      throw new Error("Error fetching material link by material id and lesson id: " + error.message);
+    }
+  }
+
+  // update material link by id
+  async updateMaterialLinkById(materialLink: MaterialLinkModel): Promise<MaterialLinkModel> {
+    try {
+      return await this.materialLinkRepo.save(materialLink);
+    } catch (error: any) {
+      throw new Error("Error updating material link by id: " + error.message);
     }
   }
 
