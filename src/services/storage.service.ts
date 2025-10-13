@@ -51,7 +51,6 @@ export class StorageService {
         ACL: "public-read", // or omit for private access
       });
       await this.s3.send(command);
-      console.log(options?.ownerId);
       const material = await this.materialRepo.save({
         title: file.originalname,
         type: file.mimetype,
@@ -158,6 +157,21 @@ export class StorageService {
     }
   }
 
+  // generate persigned upload url
+  async generatePresignedUploadUrl(fileName: string,type: string): Promise<string> {
+    try {
+      const command = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: fileName,
+        ACL: "public-read",
+        ContentType: type,
+      });
+      return getSignedUrl(this.s3, command, { expiresIn: 60 * 5 }); // 5 minutes
+    } catch (error) {
+      throw new Error(`Failed to generate presigned upload URL: ${error}`);
+    }
+  }
+
   async reduceImageResolution(file: Express.Multer.File) {
     if (!file.mimetype.startsWith("image/")) {
       throw new Error("File is not an image");
@@ -245,6 +259,15 @@ export class StorageService {
       };
     } catch (error) {
       throw new Error(`Failed to reduce image resolution: ${error}`);
+    }
+  }
+
+  // store upload metadata in database
+  async storeUploadMetadata(material: MaterialModel): Promise<MaterialModel> {
+    try {
+       return await this.materialRepo.save(material);
+    } catch (error) {
+      throw new Error(`Failed to store upload metadata: ${error}`);
     }
   }
 }

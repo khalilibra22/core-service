@@ -48,4 +48,12 @@ router.get(
   storageController.getMaterialsByTeacher
 );
 
+// Generate presigned upload url
+// router.post(
+//   "/direct-upload",
+//   AuthMiddleware.verifyToken,
+//   AuthMiddleware.authorize("sessions", "upload_materials"),
+//   storageController.generatePresignedUploadUrl
+// );
+
 export { router as storageRouter };

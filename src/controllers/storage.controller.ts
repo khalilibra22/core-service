@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { StorageService } from "../services/storage.service";
 import { plainToInstance } from "class-transformer";
 import { MinimalMaterialDto } from "../dtos/minimal-material.dto";
+import { v4 as uuidv4 } from "uuid";
 
 export class StorageController {
   private storageService: StorageService;
@@ -133,6 +134,31 @@ export class StorageController {
     } catch (error) {
       res.status(500).json({
         error: "Failed to get materials by teacher",
+        details: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  };
+
+  generatePresignedUploadUrl = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { title } = req.body;
+      const key = `${uuidv4()}-${title
+        .toLowerCase()
+        .replace(/\s+/g, "-")}`;
+      const url = await this.storageService.generatePresignedUploadUrl(key,req.body.type);
+      // store metadata in database
+      const material = {
+        ...req.body,
+        storageId: key,
+      };
+      const storedMaterial = await this.storageService.storeUploadMetadata(material);
+      const materialDto = plainToInstance(MinimalMaterialDto, storedMaterial, {
+        excludeExtraneousValues: true,
+      });
+      res.status(200).json({ uploadUrl: url, material: materialDto });
+    } catch (error) {
+      res.status(500).json({
+        error: "Failed to generate presigned upload URL",
         details: error instanceof Error ? error.message : "Unknown error",
       });
     }
