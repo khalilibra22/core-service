@@ -159,6 +159,8 @@ export class EnrollmentController {
             ...enrollment,
             teacherFullname: teacher?.fullname ?? "keynotfound",
             studentFullname: student?.fullname ?? "keynotfound",
+            studentEmail: student?.email ?? "keynotfound",
+            studentPhone: student?.phoneNumber ?? "keynotfound",
             address: teacher?.address ?? "keynotfound",
           };
           return plainToInstance(EnrollmentDto, enrollmentDto, {

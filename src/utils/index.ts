@@ -174,5 +174,5 @@ export const getVideoThumbnail = (videoId: string) =>
 
 export const getPermanentUrl = (storageId: string): string => {
   // Generate permanent URL for public-read files
-  return `${process.env.S3_ENDPOINT || "https://s3.eu-central-2.wasabisys.com"}/${process.env.S3_BUCKET_NAME || "courses-dev-assets"}/${storageId}`;
+  return `${process.env.S3_READ_URL}/${storageId}`;
 }

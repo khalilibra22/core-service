@@ -5,7 +5,7 @@ export const enrollmentValidationsSchema = Joi.object({
 });
 
 export const enrollmentStatusSchema = Joi.object({
-  status: Joi.string().valid("approved", "rejected").required(),
+  status: Joi.string().valid("approved", "rejected", "pending").required(),
   ownerId: Joi.string().uuid().required(),
 });
 
