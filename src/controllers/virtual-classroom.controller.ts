@@ -53,6 +53,7 @@ export class VirtualClassroomController {
         mobileJoinUrl 
       });
     } catch (error: any) {
+      req.log.error({ err: error, sessionId: req.params.id }, "launchMeeting failed");
       res.status(500).json({ error: error.message });
     }
   };
@@ -85,6 +86,7 @@ export class VirtualClassroomController {
       }
       res.status(200).json({ message: "Virtual classroom ended successfully" });
     } catch (error: any) {
+      req.log.error({ err: error, sessionId: req.params.id }, "endMeeting failed");
       res.status(500).json({ error: error.message });
     }
   };
@@ -97,6 +99,7 @@ export class VirtualClassroomController {
       );
       res.status(200).json({ isRunning });
     } catch (error: any) {
+      req.log.error({ err: error, sessionId: req.params.id }, "isMeetingRunning failed");
       res.status(500).json({ error: error.message });
     }
   };
@@ -122,6 +125,7 @@ export class VirtualClassroomController {
       });
       res.status(200).json({ desktopJoinUrl, mobileJoinUrl });
     } catch (error: any) {
+      req.log.error({ err: error, sessionId: req.params.id }, "joinMeeting failed");
       res.status(500).json({ error: error.message });
     }
   };

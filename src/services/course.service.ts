@@ -1,4 +1,5 @@
 import { AppDataSource } from "../config/database";
+import { logger } from "../utils/logger";
 import { CertificateModel } from "../models/certificate.model";
 import { CourseModel } from "../models/course.model";
 import { CourseSettingsModel } from "../models/course-settings.model";
@@ -30,6 +31,7 @@ export class CourseService {
     try {
       return await this.courseRepo.save(course);
     } catch (error) {
+      logger.error({ err: error }, "createCourse failed");
       throw new Error("Error creating course");
     }
   }
@@ -41,6 +43,7 @@ export class CourseService {
     try {
       return await this.courseSettingsRepo.save(courseSettings);
     } catch (error) {
+      logger.error({ err: error }, "createCourseSettings failed");
       throw new Error("Error creating course settings");
     }
   }
@@ -59,7 +62,7 @@ export class CourseService {
         },
       });
     } catch (error: any) {
-      console.log(error);
+      logger.error({ err: error, id }, "getCourseById failed");
       throw new Error("Error fetching course by ID : " + error.message);
     }
   }
@@ -74,7 +77,7 @@ export class CourseService {
         cache: false,
       });
     } catch (error: any) {
-      console.log(error);
+      logger.error({ err: error, id }, "getCourseByIdNoCache failed");
       throw new Error("Error fetching course by ID : " + error.message);
     }
   }
@@ -83,6 +86,7 @@ export class CourseService {
     try {
       return await this.sessionRepo.save(session);
     } catch (error: any) {
+      logger.error({ err: error }, "createCourseSession failed");
       throw new Error("Error creating course session: " + error.message);
     }
   }
@@ -100,6 +104,7 @@ export class CourseService {
         },
       });
     } catch (error) {
+      logger.error({ err: error, id }, "getSessionById failed");
       throw new Error("Error fetching session by ID");
     }
   }
@@ -108,6 +113,7 @@ export class CourseService {
     try {
       return await this.sessionRepo.save(session);
     } catch (error: any) {
+      logger.error({ err: error }, "updateSession failed");
       throw new Error("Error updating session: " + error.message);
     }
   }
@@ -137,6 +143,7 @@ export class CourseService {
         },
       });
     } catch (error) {
+      logger.error({ err: error, courseId }, "getCourseSessions failed");
       throw new Error("Error fetching course sessions");
     }
   }
@@ -146,6 +153,7 @@ export class CourseService {
     try {
       return await this.courseRepo.save(course);
     } catch (error) {
+      logger.error({ err: error }, "updateCourse failed");
       throw new Error("Error updating course");
     }
   }
@@ -165,6 +173,7 @@ export class CourseService {
         // },
       });
     } catch (error) {
+      logger.error({ err: error, id }, "getCourseByIdWithEnrollments failed");
       throw new Error("Error fetching course by ID with enrollments");
     }
   }
@@ -187,6 +196,7 @@ export class CourseService {
         },
       });
     } catch (error) {
+      logger.error({ err: error, teacherId, type }, "getCoursesByTeacherId failed");
       throw new Error("Error fetching courses by teacher ID");
     }
   }
@@ -207,7 +217,7 @@ export class CourseService {
         },
       });
     } catch (error) {
-      console.log(error);
+      logger.error({ err: error, page, limit }, "getAllLiveCourses failed");
       throw new Error("Error fetching all courses of type live");
     }
   }
@@ -230,7 +240,7 @@ export class CourseService {
         },
       });
     } catch (error) {
-      console.log(error);
+      logger.error({ err: error, page, limit }, "getAllGroupCourses failed");
       throw new Error("Error fetching all courses of type group");
     }
   }
@@ -254,7 +264,7 @@ export class CourseService {
         },
       });
     } catch (error) {
-      console.log(error);
+      logger.error({ err: error, page, limit }, "getAllPrerecordedCourses failed");
       throw new Error("Error fetching all courses of type prerecorded");
     }
   }
@@ -263,6 +273,7 @@ export class CourseService {
     try {
       await this.sessionRepo.softDelete(id);
     } catch (error: any) {
+      logger.error({ err: error, id }, "deleteSession failed");
       throw new Error("Error deleting session");
     }
   }
@@ -271,6 +282,7 @@ export class CourseService {
     try {
       await this.courseRepo.softDelete(id);
     } catch (error: any) {
+      logger.error({ err: error, id }, "deleteCourse failed");
       throw new Error("Error deleting course");
     }
   }
@@ -280,6 +292,7 @@ export class CourseService {
     try {
       return await this.lessonRepo.save(lesson);
     } catch (error: any) {
+      logger.error({ err: error }, "createLesson failed");
       throw new Error("Error creating lesson: " + error.message);
     }
   }
@@ -297,6 +310,7 @@ export class CourseService {
         },
       });
     } catch (error: any) {
+      logger.error({ err: error, id }, "getLessonById failed");
       throw new Error("Error fetching lesson by ID: " + error.message);
     }
   }
@@ -317,6 +331,7 @@ export class CourseService {
         },
       });
     } catch (error: any) {
+      logger.error({ err: error, sessionId }, "getLessonsBySessionId failed");
       throw new Error("Error fetching lessons by session ID: " + error.message);
     }
   }
@@ -326,6 +341,7 @@ export class CourseService {
     try {
       return await this.lessonRepo.save(lesson);
     } catch (error: any) {
+      logger.error({ err: error }, "updateLesson failed");
       throw new Error("Error updating lesson: " + error.message);
     }
   }
@@ -335,6 +351,7 @@ export class CourseService {
     try {
       await this.lessonRepo.softDelete(id);
     } catch (error: any) {
+      logger.error({ err: error, id }, "deleteLesson failed");
       throw new Error("Error deleting lesson: " + error.message);
     }
   }
@@ -353,6 +370,7 @@ export class CourseService {
         },
       });
     } catch (error: any) {
+      logger.error({ err: error, id }, "getPrerecordedSessionDetails failed");
       throw new Error(
         "Error fetching prerecorded session details: " + error.message
       );
@@ -375,6 +393,7 @@ export class CourseService {
         },
       });
     } catch (error: any) {
+      logger.error({ err: error, id }, "getPrerecordedCourseSections failed");
       throw new Error(
         "Error fetching prerecorded course sections: " + error.message
       );
@@ -400,7 +419,7 @@ export class CourseService {
         },
       });
     } catch (error) {
-      console.log(error);
+      logger.error({ err: error, type, page, limit }, "searchCourses failed");
       throw new Error("Error fetching all courses of type live");
     }
   }
@@ -456,7 +475,7 @@ export class CourseService {
       });
       return links;
     } catch (error: any) {
-      console.log(error);
+      logger.error({ err: error, id }, "getCourseMaterials failed");
       throw new Error(
         "Error fetching course materials by ID : " + error.message
       );
@@ -476,7 +495,7 @@ export class CourseService {
       });
       return links;
     } catch (error: any) {
-      console.log(error);
+      logger.error({ err: error, id }, "getLessonMaterials failed");
       throw new Error(
         "Error fetching course materials by ID : " + error.message
       );

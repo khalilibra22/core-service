@@ -33,10 +33,11 @@ export class RestApiSetup {
     this.httpClient.interceptors.response.use(
       (response) => response,
       (error) => {
-        console.error(
-          "External API Error:",
-          error.response?.data || error.message
-        );
+        // use global logger to keep consistency
+        try {
+          const { logger } = require("../utils/logger");
+          logger.error({ err: error, data: error.response?.data }, "External API Error");
+        } catch (_) {}
         return Promise.reject(error);
       }
     );

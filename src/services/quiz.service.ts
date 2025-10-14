@@ -1,4 +1,5 @@
 import { AppDataSource } from "../config/database";
+import { logger } from "../utils/logger";
 import { AnswerModel } from "../models/answer.model";
 import { QuestionModel } from "../models/question.model";
 import { QuizModel } from "../models/quiz.model";
@@ -21,7 +22,7 @@ export class QuizService {
     try {
       return await this.quizRepo.save(quiz);
     } catch (error) {
-      console.error(error);
+      logger.error({ err: error }, "createQuiz failed");
       throw new Error("Error creating quiz");
     }
   }
@@ -30,7 +31,7 @@ export class QuizService {
     try {
       await this.quizRepo.save(quiz);
     } catch (error) {
-      console.error(error);
+      logger.error({ err: error }, "updateQuiz failed");
       throw new Error("Error updating quiz");
     }
   }
@@ -39,7 +40,7 @@ export class QuizService {
     try {
       return await this.questionRepo.save(question);
     } catch (error) {
-      console.error(error);
+      logger.error({ err: error }, "createQuestion failed");
       throw new Error("Error creating question");
     }
   }
@@ -48,7 +49,7 @@ export class QuizService {
     try {
       await this.questionRepo.save(question);
     } catch (error) {
-      console.error(error);
+      logger.error({ err: error }, "updateQuestion failed");
       throw new Error("Error updating question");
     }
   }
@@ -57,7 +58,7 @@ export class QuizService {
     try {
       await this.questionRepo.softDelete(questionId);
     } catch (error) {
-      console.error(error);
+      logger.error({ err: error, questionId }, "deleteQuestion failed");
       throw new Error("Error deleting question");
     }
   }
@@ -66,7 +67,7 @@ export class QuizService {
     try {
       return await this.answerRepo.save(answer);
     } catch (error) {
-      console.error(error);
+      logger.error({ err: error }, "createAnswer failed");
       throw new Error("Error creating answer");
     }
   }
@@ -77,7 +78,7 @@ export class QuizService {
     try {
       return await this.quizAttemptRepo.save(quizAttempt);
     } catch (error) {
-      console.error(error);
+      logger.error({ err: error }, "createQuizAttempt failed");
       throw new Error("Error creating quiz attempt");
     }
   }
@@ -91,7 +92,7 @@ export class QuizService {
         },
       });
     } catch (error) {
-      console.error(error);
+      logger.error({ err: error, quizId }, "getQuizById failed");
       throw new Error("Error fetching quiz by ID");
     }
   }
@@ -107,7 +108,7 @@ export class QuizService {
         },
       });
     } catch (error) {
-      console.error(error);
+      logger.error({ err: error, quizId }, "getQuizDetails failed");
       throw new Error("Error fetching quiz details");
     }
   }
@@ -116,7 +117,7 @@ export class QuizService {
     try {
       await this.quizRepo.softDelete(quizId);
     } catch (error) {
-      console.error(error);
+      logger.error({ err: error, quizId }, "deleteQuiz failed");
       throw new Error("Error deleting quiz");
     }
   }
@@ -130,7 +131,7 @@ export class QuizService {
         },
       });
     } catch (error) {
-      console.error(error);
+      logger.error({ err: error, questionId }, "getQuestionById failed");
       throw new Error("Error fetching question by ID");
     }
   }
@@ -147,7 +148,7 @@ export class QuizService {
         },
       });
     } catch (error) {
-      console.error(error);
+      logger.error({ err: error, sessionId }, "getSessionQuizzes failed");
       throw new Error("Error fetching course quizzes");
     }
   }
@@ -164,7 +165,7 @@ export class QuizService {
       });
       return quiz?.session?.course?.ownerId ?? null;
     } catch (error) {
-      console.error(error);
+      logger.error({ err: error, quizId }, "getQuizOwner failed");
       throw new Error("Error fetching quiz owner");
     }
   }

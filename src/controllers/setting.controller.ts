@@ -20,7 +20,7 @@ export class SettingController {
       await this.settingService.createOrUpdateSettings(settingsBody);
       res.status(200).json({ message: "Settings updated successfully" });
     } catch (error) {
-      console.error(error);
+      req.log.error({ err: error }, "createOrUpdateSettings failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -35,7 +35,7 @@ export class SettingController {
       delete settings.id;
       res.status(200).json(settings);
     } catch (error) {
-      console.error(error);
+      req.log.error({ err: error }, "getSettings failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };

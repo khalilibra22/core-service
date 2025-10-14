@@ -130,7 +130,10 @@ export function generateSessionsFromAvailabilities(
 
     return sessions.slice(0, numberOfSessions); // In case we overshoot
   } catch (error) {
-    console.error("Error generating sessions:", error);
+    try {
+      const { logger } = require("./logger");
+      logger.error({ err: error }, "Error generating sessions");
+    } catch (_) {}
     throw new Error("Failed to generate sessions from availabilities");
   }
 }

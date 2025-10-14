@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from "uuid";
 import sharp from "sharp";
 import { MaterialModel } from "../models/material.model";
 import { AppDataSource } from "../config/database";
+import { logger } from "../utils/logger";
 
 export class StorageService {
   private s3: S3Client;
@@ -60,6 +61,7 @@ export class StorageService {
       });
       return material;
     } catch (error) {
+      logger.error({ err: error }, "uploadFile failed");
       throw new Error(`Failed to upload file: ${error}`);
     }
   }
@@ -70,6 +72,7 @@ export class StorageService {
         where: { id: materialId },
       });
     } catch (error) {
+      logger.error({ err: error, materialId }, "getMaterialById failed");
       throw new Error(`Failed to get material: ${error}`);
     }
   }
@@ -88,6 +91,7 @@ export class StorageService {
         take: limit,
       });
     } catch (error) {
+      logger.error({ err: error, teacherId, page, limit }, "getMaterialsByTeacher failed");
       throw new Error(`Failed to get materials by teacher: ${error}`);
     }
   }
@@ -120,6 +124,7 @@ export class StorageService {
       // Soft delete from database
       await this.materialRepo.softDelete(materialId);
     } catch (error) {
+      logger.error({ err: error, materialId }, "deleteFile failed");
       throw new Error(`Failed to delete file: ${error}`);
     }
   }
@@ -134,6 +139,7 @@ export class StorageService {
       await this.s3.send(command);
       return true;
     } catch (error: any) {
+      logger.error({ err: error, fileName }, "fileExists failed");
       if (
         error.name === "NoSuchKey" ||
         error.$metadata?.httpStatusCode === 404
@@ -153,6 +159,7 @@ export class StorageService {
 
       return getSignedUrl(this.s3, command, { expiresIn: 60 * 5 }); // 5 minutes
     } catch (error) {
+      logger.error({ err: error, fileName }, "getFileUrl failed");
       throw new Error(`Failed to get file URL: ${error}`);
     }
   }
@@ -168,6 +175,7 @@ export class StorageService {
       });
       return getSignedUrl(this.s3, command, { expiresIn: 60 * 5 }); // 5 minutes
     } catch (error) {
+      logger.error({ err: error, fileName, type }, "generatePresignedUploadUrl failed");
       throw new Error(`Failed to generate presigned upload URL: ${error}`);
     }
   }
@@ -258,6 +266,7 @@ export class StorageService {
         mimetype: "image/jpeg", // Always convert to JPEG for consistency
       };
     } catch (error) {
+      logger.error({ err: error }, "reduceImageResolution failed");
       throw new Error(`Failed to reduce image resolution: ${error}`);
     }
   }
@@ -267,6 +276,7 @@ export class StorageService {
     try {
        return await this.materialRepo.save(material);
     } catch (error) {
+      logger.error({ err: error, material }, "storeUploadMetadata failed");
       throw new Error(`Failed to store upload metadata: ${error}`);
     }
   }

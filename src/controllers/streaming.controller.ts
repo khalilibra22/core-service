@@ -31,6 +31,7 @@ export class StreamingServiceController {
 
       res.status(201).json(presignedHeaders);
     } catch (error: any) {
+      req.log.error({ err: error, sessionId: req.params.id }, "createVideoEntry failed");
       res.status(500).json({ error: error.message });
     }
   };
@@ -65,6 +66,7 @@ export class StreamingServiceController {
         res.status(404).json({ error: error.message });
         return;
       }
+      req.log.error({ err: error, sessionId: req.params.id, videoId: req.params.videoId }, "getVideoById failed");
       res.status(500).json({ error: error.message });
     }
   };
@@ -90,6 +92,7 @@ export class StreamingServiceController {
         res.status(404).json({ error: error.message });
         return;
       }
+      req.log.error({ err: error, sessionId: req.params.id, videoId: req.params.videoId }, "deleteVideoById failed");
       res.status(500).json({ error: error.message });
     }
   };

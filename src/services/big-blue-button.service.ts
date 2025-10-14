@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import axios from "axios";
+import { logger } from "../utils/logger";
 import { VirtualClassroomService } from "../interfaces/virtual-classroom-service.interface";
 
 export class BigBlueButtonService implements VirtualClassroomService {
@@ -31,6 +32,7 @@ export class BigBlueButtonService implements VirtualClassroomService {
       const response = await axios.get(url);
       return response.data;
     } catch (error) {
+      logger.error({ err: error, meeting }, "createMeeting failed");
       throw new Error(`Failed to create meeting: ${error}`);
     }
   }
@@ -56,6 +58,7 @@ export class BigBlueButtonService implements VirtualClassroomService {
       
       return `${this.bbbApiUrl}/join?${params.toString()}&checksum=${checksum}`;
     } catch (error) {
+      logger.error({ err: error, meetingID }, "joinMeeting failed");
       throw new Error(`Failed to join meeting: ${error}`);
     }
   }
@@ -75,6 +78,7 @@ export class BigBlueButtonService implements VirtualClassroomService {
       const response = await axios.get(url);
       return response.data;
     } catch (error) {
+      logger.error({ err: error, meetingID }, "endMeeting failed");
       throw new Error(`Failed to end meeting: ${error}`);
     }
   }
@@ -97,6 +101,7 @@ export class BigBlueButtonService implements VirtualClassroomService {
       // BBB returns XML, check if running is "true"
       return response.data.includes("<running>true</running>");
     } catch (error) {
+      logger.error({ err: error, meetingID }, "isMeetingRunning failed");
       throw new Error(`Failed to check if meeting is running: ${error}`);
     }
   }
@@ -106,6 +111,7 @@ export class BigBlueButtonService implements VirtualClassroomService {
       const data = apiCall + queryString + this.bbbSecret;
       return crypto.createHash("sha1").update(data).digest("hex");
     } catch (error) {
+      logger.error({ err: error, apiCall, queryString }, "generateChecksum failed");
       throw new Error(`Failed to generate checksum: ${error}`);
     }
   }

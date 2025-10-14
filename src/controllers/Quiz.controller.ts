@@ -39,7 +39,7 @@ export class QuizController {
 
       res.status(201).json(quizDto);
     } catch (error) {
-      console.error(error);
+      req.log.error({ err: error, sessionId: req.params.id }, "createQuiz failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -70,7 +70,7 @@ export class QuizController {
       await this.quizService.updateQuiz({ ...quiz, ...updates });
       res.status(200).json({ message: "Quiz updated successfully" });
     } catch (error) {
-      console.error(error);
+      req.log.error({ err: error, sessionId: req.params.id, quizId: req.params.quizId }, "updateQuiz failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -98,7 +98,7 @@ export class QuizController {
       await this.quizService.deleteQuiz(quizId);
       res.status(204).send();
     } catch (error) {
-      console.error(error);
+      req.log.error({ err: error, sessionId: req.params.id, quizId: req.params.quizId }, "deleteQuiz failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -128,7 +128,7 @@ export class QuizController {
       });
       res.status(201).json(questionDto);
     } catch (error) {
-      console.error(error);
+      req.log.error({ err: error, quizId: req.params.id }, "createQuestion failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -157,7 +157,7 @@ export class QuizController {
       await this.quizService.updateQuestion({ ...question, ...updates });
       res.status(200).json({ message: "Question updated successfully" });
     } catch (error) {
-      console.error(error);
+      req.log.error({ err: error, quizId: req.params.id, questionId: req.params.questionId }, "updateQuestion failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -183,7 +183,7 @@ export class QuizController {
       await this.quizService.deleteQuestion(questionId);
       res.status(204).send();
     } catch (error) {
-      console.error(error);
+      req.log.error({ err: error, quizId: req.params.id, questionId: req.params.questionId }, "deleteQuestion failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -202,7 +202,7 @@ export class QuizController {
       });
       res.status(200).json(quizDtos);
     } catch (error) {
-      console.error(error);
+      req.log.error({ err: error, sessionId: req.params.id }, "getSessionQuizzes failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -220,7 +220,7 @@ export class QuizController {
       });
       res.status(200).json(quizDto);
     } catch (error) {
-      console.error(error);
+      req.log.error({ err: error, quizId: req.params.id }, "getQuizDetails failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };

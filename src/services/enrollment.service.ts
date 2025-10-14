@@ -1,6 +1,7 @@
 import { In } from "typeorm";
 import { AppDataSource } from "../config/database";
 import { EnrollmentModel } from "../models/enrollment.model";
+import { logger } from "../utils/logger";
 
 export class EnrollmentService {
   enrollmentRepo: any;
@@ -15,7 +16,7 @@ export class EnrollmentService {
     try {
       return await this.enrollmentRepo.save(enrollment);
     } catch (error) {
-      console.log(error);
+      logger.error({ err: error }, "createEnrollment failed");
       throw new Error("Error creating course enrollment");
     }
   }
@@ -31,6 +32,7 @@ export class EnrollmentService {
         },
       });
     } catch (error) {
+      logger.error({ err: error, courseId }, "getCourseEnrollments failed");
       throw new Error("Error fetching course enrollments");
     }
   }
@@ -51,6 +53,7 @@ export class EnrollmentService {
         },
       });
     } catch (error) {
+      logger.error({ err: error, teacherId }, "getOneOnOneEnrollementByTeacherId failed");
       throw new Error("Error fetching session enrollments");
     }
   }
@@ -61,6 +64,7 @@ export class EnrollmentService {
     try {
       return await this.enrollmentRepo.save(enrollment);
     } catch (error) {
+      logger.error({ err: error }, "updateEnrollment failed");
       throw new Error("Error creating course enrollment");
     }
   }
@@ -78,6 +82,7 @@ export class EnrollmentService {
         },
       });
     } catch (error) {
+      logger.error({ err: error, enrollmentId }, "getEnrollmentById failed");
       throw new Error("Error fetching course enrollment by ID");
     }
   }
@@ -101,6 +106,7 @@ export class EnrollmentService {
         },
       });
     } catch (error) {
+      logger.error({ err: error, studentId }, "getStudentCoursesEnrollments failed");
       throw new Error("Error fetching student enrollments");
     }
   }
@@ -119,6 +125,7 @@ export class EnrollmentService {
         },
       });
     } catch (error) {
+      logger.error({ err: error, studentId }, "getStudentOneOnOneEnrollments failed");
       throw new Error("Error fetching student one-on-one enrollments");
     }
   }

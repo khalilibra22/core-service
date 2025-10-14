@@ -50,7 +50,7 @@ export class SessionTimeRequestController {
       );
       res.status(201).json(sessionTimeRequestDto);
     } catch (error) {
-      console.error(error);
+      req.log.error({ err: error, sessionId: req.params.id }, "createSessionTimeRequest failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -99,7 +99,7 @@ export class SessionTimeRequestController {
         .status(200)
         .json({ message: "Session time request status updated successfully" });
     } catch (error) {
-      console.error(error);
+      req.log.error({ err: error, requestId: req.params.id }, "changeSessionTimeRequestStatus failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };

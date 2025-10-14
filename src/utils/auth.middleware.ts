@@ -34,6 +34,7 @@ export class AuthMiddleware {
       res.locals.ownerId = decoded.id;
       next();
     } catch (error) {
+      req.log?.error({ err: error }, "verifyToken failed");
       res.status(401).json({ message: "Invalid or expired token" });
       return;
     }
@@ -53,7 +54,7 @@ export class AuthMiddleware {
         }
         res.status(403).json({ message: "Forbidden" });
       } catch (error) {
-        console.log(error);
+        req.log?.error({ err: error }, "authorize middleware failed");
         res.status(500).json({ message: "Server error" });
       }
     };

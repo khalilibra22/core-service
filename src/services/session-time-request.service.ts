@@ -1,4 +1,5 @@
 import { AppDataSource } from "../config/database";
+import { logger } from "../utils/logger";
 import { SessionTimeChangeRequestModel } from "../models/session-time-change-request.model";
 
 export class SessionTimeRequestService {
@@ -17,6 +18,7 @@ export class SessionTimeRequestService {
     try {
       return await this.sessionTimeRequestRepo.save(sessionTimeRequest);
     } catch (error) {
+      logger.error({ err: error }, "createSessionTimeRequest failed");
       throw new Error("Error creating session time change request");
     }
   }
@@ -37,6 +39,7 @@ export class SessionTimeRequestService {
         },
       });
     } catch (error) {
+      logger.error({ err: error, id }, "getSessionTimeRequestById failed");
       throw new Error("Error fetching session time change request by ID");
     }
   }
@@ -52,6 +55,7 @@ export class SessionTimeRequestService {
         },
       });
     } catch (error) {
+      logger.error({ err: error }, "getAllSessionTimeRequests failed");
       throw new Error("Error fetching session time change requests");
     }
   }
@@ -63,6 +67,7 @@ export class SessionTimeRequestService {
     try {
       return await this.sessionTimeRequestRepo.save(sessionTimeRequest);
     } catch (error) {
+      logger.error({ err: error }, "updateSessionTimeRequest failed");
       throw new Error("Error updating session time change request");
     }
   }
