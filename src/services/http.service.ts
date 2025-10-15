@@ -1,4 +1,5 @@
 import { RestApiSetup } from "../config/rest-api-setup";
+import { logger } from "../utils/logger";
 import { ExternalService } from "../interfaces/external-service.interface";
 
 export class HttpService implements ExternalService {
@@ -11,7 +12,7 @@ export class HttpService implements ExternalService {
             this.httpClient = new RestApiSetup(`${this.baseURL}`);
             //this.httpClient.setAuthToken(process.env.USER_SERVICE_API_KEY || 'default-api-key-for-development');
         } catch (error) {
-            //console.error('Failed to initialize HttpService:', error);
+            logger.error({ err: error }, 'HttpService initialization failed');
             throw new Error(`HttpService initialization failed: ${error}`);
         }
     }
@@ -24,7 +25,7 @@ export class HttpService implements ExternalService {
             const response = await this.httpClient.get(`${this.baseURL}/users/${userId}/minimal`);
             return response.data;
         } catch (error: any) {
-            //console.error(`Failed to get user ${userId}:`, error);
+            logger.error({ err: error, userId }, 'Failed to get user');
             if (error?.response?.status === 404) {
                 throw new Error(`User with ID ${userId} not found`);
             }
@@ -46,7 +47,7 @@ export class HttpService implements ExternalService {
             }
             return await this.httpClient.get(`${this.baseURL}/users/email/${email.trim()}`);
         } catch (error: any) {
-            //console.error(`Failed to get user by email ${email}:`, error);
+            logger.error({ err: error, email }, 'Failed to get user by email');
             if (error?.response?.status === 404) {
                 throw new Error(`User with email ${email} not found`);
             }
@@ -64,7 +65,7 @@ export class HttpService implements ExternalService {
             }
             return await this.httpClient.get(`${this.baseURL}/users/topics/${userTopicId}`);
         } catch (error: any) {
-            //console.error(`Failed to get user topic ${userTopicId}:`, error);
+            logger.error({ err: error, userTopicId }, 'Failed to get user topic');
             if (error?.response?.status === 404) {
                 throw new Error(`User topic with ID ${userTopicId} not found`);
             }
@@ -80,7 +81,7 @@ export class HttpService implements ExternalService {
             const response = await this.httpClient.post(`${this.baseURL}/availabilities/check`, { availabilityIds: availabilityIds });
             return response.data;
         } catch (error: any) {
-            //console.error(`Failed to check availabilities:`, error);
+            logger.error({ err: error }, 'Failed to check availabilities');
             if (error?.response?.status >= 500) {
                 throw new Error(`User service is currently unavailable`);
             }
@@ -99,7 +100,7 @@ export class HttpService implements ExternalService {
             }
             return await this.httpClient.put(`${this.baseURL}/availabilities/update-to-unavailable`, { availabilityIds: availabilityIds.map(id => id.trim()) });
         } catch (error: any) {
-            //console.error(`Failed to update availabilities to unavailable:`, error);
+            logger.error({ err: error }, 'Failed to update availabilities to unavailable');
             if (error?.response?.status >= 500) {
                 throw new Error(`User service is currently unavailable`);
             }
@@ -111,7 +112,7 @@ export class HttpService implements ExternalService {
         try {
             return await this.httpClient.get(`/health`);
         } catch (error: any) {
-            //console.error('Health check failed:', error);
+            logger.error({ err: error }, 'Health check failed');
             if (error?.response?.status >= 500) {
                 throw new Error(`User service is currently unavailable`);
             }

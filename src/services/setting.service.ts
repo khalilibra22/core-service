@@ -1,4 +1,5 @@
 import { AppDataSource } from "../config/database";
+import { logger } from "../utils/logger";
 import { SettingsModel } from "../models/settings.model";
 
 export class SettingService {
@@ -14,6 +15,7 @@ export class SettingService {
     try {
       return await this.settingRepo.save(settings);
     } catch (error) {
+      logger.error({ err: error }, "createOrUpdateSettings failed");
       throw new Error("Error creating or updating settings");
     }
   }
@@ -30,7 +32,7 @@ export class SettingService {
         },
       });
     } catch (error) {
-      console.error(error);
+      logger.error({ err: error, id }, "getSettingsById failed");
       throw new Error("Error fetching settings by ID");
     }
   }

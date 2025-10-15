@@ -18,5 +18,8 @@ export class MinimalMaterialDto {
 
   @Expose()
   teacherId?: string;
+
+  @Expose()
+  createdAt?: Date;
 }
 

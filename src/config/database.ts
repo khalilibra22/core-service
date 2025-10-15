@@ -61,8 +61,10 @@ export const AppDataSource = new DataSource({
 
 AppDataSource.initialize()
   .then(() => {
-    console.log("Database connected");
+    const { logger } = require("../utils/logger");
+    logger.info("Database connected");
   })
   .catch((error) => {
-    console.error("Database connection error", error);
+    const { logger } = require("../utils/logger");
+    logger.error({ err: error }, "Database connection error");
   });

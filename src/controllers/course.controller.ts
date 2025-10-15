@@ -30,6 +30,7 @@ export class CourseController {
       });
       res.status(201).json(minimalCourseDto);
     } catch (error) {
+      req.log.error({ err: error }, "createDraftCourse failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -72,6 +73,7 @@ export class CourseController {
       await this.courseService.updateCourse(courseBody);
       res.status(200).json({ message: "Course updated successfully" });
     } catch (error) {
+      req.log.error({ err: error, courseId: req.params.id }, "updateCourse failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -117,6 +119,7 @@ export class CourseController {
       await this.courseService.updateCourse(courseBody);
       res.status(200).json({ message: "Course updated successfully" });
     } catch (error) {
+      req.log.error({ err: error, courseId: req.params.id }, "updateDraftCourse failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -145,7 +148,7 @@ export class CourseController {
       const sessionDto = getSessionDto(session, course.type ?? "session");
       res.status(201).json(sessionDto);
     } catch (error) {
-      console.log(error);
+      req.log.error({ err: error, courseId: req.params.id }, "createCourseSession failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -181,7 +184,7 @@ export class CourseController {
       await this.courseService.updateSession(sessionBody);
       res.status(200).json({ message: "Session updated successfully" });
     } catch (error) {
-      console.log(error);
+      req.log.error({ err: error, courseId: req.params.id, sessionId: req.params.sessionId }, "updateCourseSession failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -209,7 +212,7 @@ export class CourseController {
       await this.courseService.deleteSession(sessionId);
       res.status(204).json({ message: "Session deleted successfully" });
     } catch (error) {
-      console.log(error);
+      req.log.error({ err: error, courseId: req.params.id, sessionId: req.params.sessionId }, "deleteCourseSession failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -240,6 +243,7 @@ export class CourseController {
       });
       res.status(201).json(certificateDto);
     } catch (error) {
+      req.log.error({ err: error, courseId: req.params.id }, "createCertificate failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -256,6 +260,7 @@ export class CourseController {
       const sessionDtos = getSessionDto(sessions, course.type ?? "session");
       res.status(200).json(sessionDtos);
     } catch (error) {
+      req.log.error({ err: error, courseId: req.params.id }, "getCourseSessions failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -290,6 +295,7 @@ export class CourseController {
 
       res.status(200).json({ message: "Course canceled successfully" });
     } catch (error) {
+      req.log.error({ err: error, courseId: req.params.id }, "cancelCourse failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -305,7 +311,7 @@ export class CourseController {
       const courseDto = getCourseDto(course, course.type ?? "minimal");
       res.status(200).json(courseDto);
     } catch (error) {
-      console.log(error);
+      req.log.error({ err: error, courseId: req.params.id }, "getCourseById failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -330,6 +336,7 @@ export class CourseController {
       const courseDtos = getCourseDto(courses, courseType);
       res.status(200).json(courseDtos);
     } catch (error) {
+      req.log.error({ err: error, teacherId: req.params.id, type: req.query.type }, "getCoursesByTeacherId failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -343,7 +350,7 @@ export class CourseController {
       const courseDtos = getCourseDto(courses, "live");
       res.status(200).json(courseDtos);
     } catch (error) {
-      console.log(error);
+      req.log.error({ err: error, page: req.query.page, limit: req.query.limit }, "getAllLiveCourses failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -356,7 +363,7 @@ export class CourseController {
       const courseDtos = getCourseDto(courses, "group");
       res.status(200).json(courseDtos);
     } catch (error) {
-      console.log(error);
+      req.log.error({ err: error, page: req.query.page, limit: req.query.limit }, "getAllGroupCourses failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -376,7 +383,7 @@ export class CourseController {
       const courseDtos = getCourseDto(courses, "prerecorded");
       res.status(200).json(courseDtos);
     } catch (error) {
-      console.log(error);
+      req.log.error({ err: error, page: req.query.page, limit: req.query.limit }, "getAllPrerecordedCourses failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -396,7 +403,7 @@ export class CourseController {
       await this.courseService.deleteCourse(id);
       res.status(204).send();
     } catch (error) {
-      console.log(error);
+      req.log.error({ err: error, courseId: req.params.id }, "deleteCourse failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -440,7 +447,7 @@ export class CourseController {
       );
       res.status(201).json(lessonDto);
     } catch (error) {
-      console.log(error);
+      req.log.error({ err: error, sessionId: req.params.id }, "createLesson failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -484,7 +491,7 @@ export class CourseController {
 
       res.status(200).json({ message: "Lesson updated successfully" });
     } catch (error) {
-      console.log(error);
+      req.log.error({ err: error, sessionId: req.params.id, lessonId: req.params.lessonId }, "updateLesson failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -515,7 +522,7 @@ export class CourseController {
       await this.courseService.deleteLesson(lessonId);
       res.status(204).send();
     } catch (error) {
-      console.log(error);
+      req.log.error({ err: error, sessionId: req.params.id, lessonId: req.params.lessonId }, "deleteLesson failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -545,7 +552,7 @@ export class CourseController {
       });
       res.status(200).json(lessonDtos);
     } catch (error) {
-      console.log(error);
+      req.log.error({ err: error, sessionId: req.params.id }, "getLessonsBySessionId failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -573,7 +580,7 @@ export class CourseController {
 
       res.status(200).json(sessionDto);
     } catch (error) {
-      console.log(error);
+      req.log.error({ err: error, sessionId: req.params.id }, "getPrerecordedSessionDetails failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -603,7 +610,7 @@ export class CourseController {
       });
       res.status(200).json(sectionDtos);
     } catch (error) {
-      console.log(error);
+      req.log.error({ err: error, courseId: req.params.id }, "getPrerecordedCourseSections failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -627,7 +634,7 @@ export class CourseController {
       const courseDtos = getCourseDto(courses, courseType);
       res.status(200).json(courseDtos);
     } catch (error) {
-      console.log(error);
+      req.log.error({ err: error, courseType: req.query.type, page: req.query.page, limit: req.query.limit }, "searchCourses failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -650,6 +657,7 @@ export class CourseController {
       });
       res.status(200).json(sessionDtos);
     } catch (error) {
+      req.log.error({ err: error, teacherId: req.params.teacherId }, "getOneOnOneSessionsByTeacherId failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -671,7 +679,7 @@ export class CourseController {
       await this.courseService.addMaterialsToCourse(courseId, ids);
       res.status(200).json({ message: "Materials added successfully" });
     } catch (error) {
-      console.log(error);
+      req.log.error({ err: error, courseId: req.params.id }, "addCourseMaterials failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -685,7 +693,7 @@ export class CourseController {
       });
       res.status(200).json(materialDtos);
     } catch (error) {
-      console.log(error);
+      req.log.error({ err: error, courseId: req.params.id }, "getCourseMaterials failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -701,7 +709,7 @@ export class CourseController {
       res.status(200).json(materialDtos);
     }
     catch (error) {
-      console.log(error);
+      req.log.error({ err: error, lessonId: req.params.lessonId }, "getLessonMaterials failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -724,6 +732,7 @@ export class CourseController {
       res.status(200).json({ message: "Materials removed successfully" });
     }
     catch (error) {
+      req.log.error({ err: error, lessonId: req.params.lessonId, id: req.params.id, materialIds: req.body?.materialIds }, "removeLessonMaterials failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -746,6 +755,7 @@ export class CourseController {
       res.status(200).json({ message: "Materials removed successfully" });
     }
     catch (error) {
+      req.log.error({ err: error, id: req.params.id, materialIds: req.body?.materialIds }, "removeCourseMaterials failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -768,6 +778,7 @@ export class CourseController {
       await this.courseService.setCourseMaterialsSharable(courseId, isSharable);
       res.status(200).json({ message: `Course materials ${isSharable ? "shared" : "unshared"} successfully` });
     } catch (error) {
+      req.log.error({ err: error, courseId: req.params.id, isSharable: req.body?.isSharable }, "toggleCourseMaterialsShare failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -796,6 +807,7 @@ export class CourseController {
         res.status(404).json({ error: "Material link not found" });
         return;
       }
+      req.log.error({ err: error, courseId: req.params.id, materialId: req.params.materialId }, "toggleCourseMaterialShare failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -819,6 +831,7 @@ export class CourseController {
       await this.courseService.setLessonMaterialsSharable(lessonId, isSharable);
       res.status(200).json({ message: `Lesson materials ${isSharable ? "shared" : "unshared"} successfully` });
     } catch (error) {
+      req.log.error({ err: error, sessionId: req.params.id, lessonId: req.params.lessonId, isSharable: req.body?.isSharable }, "toggleLessonMaterialsShare failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -852,6 +865,7 @@ export class CourseController {
         isSharable: newValue
       });
     } catch (error) {
+      req.log.error({ err: error, sessionId: req.params.id, lessonId: req.params.lessonId, materialId: req.params.materialId }, "toggleLessonMaterialShare failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };

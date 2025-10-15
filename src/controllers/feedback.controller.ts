@@ -32,7 +32,7 @@ export class FeedbackController {
       });
       res.status(201).json(reviewDto);
     } catch (error) {
-      console.error(error);
+      req.log.error({ err: error, courseId: req.params.id }, "createCourseReview failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -60,7 +60,7 @@ export class FeedbackController {
       });
       res.status(201).json(complaintDto);
     } catch (error) {
-      console.error(error);
+      req.log.error({ err: error, sessionId: req.params.id }, "createComplaint failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -98,7 +98,7 @@ export class FeedbackController {
       });
       res.status(200).json(complaintDto);
     } catch (error) {
-      console.error(error);
+      req.log.error({ err: error, complaintId: req.params.id }, "addComplaintInitialResponse failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -138,6 +138,7 @@ export class FeedbackController {
       });
       res.status(200).json(complaintDto);
     } catch (error) {
+      req.log.error({ err: error, complaintId: req.params.id }, "complaintAdminResolve failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -178,6 +179,7 @@ export class FeedbackController {
       });
       res.status(200).json(complaintDto);
     } catch (error) {
+      req.log.error({ err: error, complaintId: req.params.id }, "complaintStudentDecision failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -190,6 +192,7 @@ export class FeedbackController {
       });
       res.status(200).json(reviewDtos);
     } catch (error) {
+      req.log.error({ err: error }, "getAllReviews failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -202,6 +205,7 @@ export class FeedbackController {
       });
       res.status(200).json(complaintDtos);
     } catch (error) {
+      req.log.error({ err: error }, "getAllComplaints failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -220,6 +224,7 @@ export class FeedbackController {
       });
       res.status(200).json(complaintDtos);
     } catch (error) {
+      req.log.error({ err: error, studentId: req.params.id }, "getAllComplaintsByStudentId failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -231,6 +236,7 @@ export class FeedbackController {
       await this.feedbackService.deleteComplaint(complaintId);
       res.status(204).send();
     } catch (error) {
+      req.log.error({ err: error, complaintId: req.params.id }, "deleteComplaint failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -252,6 +258,7 @@ export class FeedbackController {
       });
       res.status(200).json(reviewDtos);
     } catch (error) {
+      req.log.error({ err: error, page: req.query.page, limit: req.query.limit }, "getReviewsOfPrerecordedCourses failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -270,6 +277,7 @@ export class FeedbackController {
       });
       res.status(200).json(reviewDtos);
     } catch (error) {
+      req.log.error({ err: error, courseId: req.params.id }, "getReviewsByCourseId failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -293,6 +301,7 @@ export class FeedbackController {
       });
       res.status(200).json(reviewDtos);
     } catch (error) {
+      req.log.error({ err: error, teacherId: req.params.teacherId }, "getReviewsByTeacherId failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -315,7 +324,7 @@ export class FeedbackController {
       });
       res.status(201).json(reviewDto);
     } catch (error) {
-      console.error(error);
+      req.log.error({ err: error, teacherId: req.body.teacherId }, "createOneOnOneReview failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -335,6 +344,7 @@ export class FeedbackController {
       });
       res.status(200).json(reviewDtos);
     } catch (error) {
+      req.log.error({ err: error, teacherId: req.params.teacherId }, "getReviewsByOneOnOneTeacherId failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -354,6 +364,7 @@ export class FeedbackController {
       });
       res.status(200).json(reviewDtos);
     } catch (error) {
+      req.log.error({ err: error, teacherId: req.params.teacherId }, "getAllReviewsByTeacherId failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -372,7 +383,7 @@ export class FeedbackController {
       });
       res.status(200).json(complaintDtos);
     } catch (error) {
-      console.log(error);
+      req.log.error({ err: error, teacherId: req.params.teacherId }, "getAllComplaintsByTeacherId failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };

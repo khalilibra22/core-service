@@ -1,4 +1,5 @@
 import { AppDataSource } from "../config/database";
+import { logger } from "../utils/logger";
 import { ComplaintModel } from "../models/complaint.model";
 import { ReviewModel } from "../models/review.model";
 
@@ -14,7 +15,7 @@ export class FeedbackService {
     try {
       return await this.reviewRepo.save(review);
     } catch (error) {
-      console.error(error);
+      logger.error({ err: error }, "createReview failed");
       throw new Error("Error creating review");
     }
   }
@@ -23,7 +24,7 @@ export class FeedbackService {
     try {
       return await this.complaintRepo.save(complaint);
     } catch (error) {
-      console.error(error);
+      logger.error({ err: error }, "createComplaint failed");
       throw new Error("Error creating complaint");
     }
   }
@@ -37,6 +38,7 @@ export class FeedbackService {
         },
       });
     } catch (error) {
+      logger.error({ err: error }, "getAllReviews failed");
       throw new Error("Error fetching reviews");
     }
   }
@@ -50,6 +52,7 @@ export class FeedbackService {
         },
       });
     } catch (error) {
+      logger.error({ err: error }, "getAllComplaints failed");
       throw new Error("Error fetching complaints");
     }
   }
@@ -66,6 +69,7 @@ export class FeedbackService {
         },
       });
     } catch (error) {
+      logger.error({ err: error, id }, "getReviewById failed");
       throw new Error("Error fetching review by ID");
     }
   }
@@ -82,6 +86,7 @@ export class FeedbackService {
         },
       });
     } catch (error) {
+      logger.error({ err: error, id }, "getComplaintById failed");
       throw new Error("Error fetching complaint by ID");
     }
   }
@@ -92,6 +97,7 @@ export class FeedbackService {
     try {
       return await this.complaintRepo.save(complaint);
     } catch (error) {
+      logger.error({ err: error }, "updateComplaint failed");
       throw new Error("Error updating complaint");
     }
   }
@@ -110,6 +116,7 @@ export class FeedbackService {
         },
       });
     } catch (error) {
+      logger.error({ err: error, courseId }, "getReviewsByCourseId failed");
       throw new Error("Error fetching reviews by course ID");
     }
   }
@@ -126,6 +133,7 @@ export class FeedbackService {
         },
       });
     } catch (error) {
+      logger.error({ err: error, studentId }, "getComplaintsByStudentId failed");
       throw new Error("Error fetching complaints by student ID");
     }
   }
@@ -142,6 +150,7 @@ export class FeedbackService {
         },
       });
     } catch (error) {
+      logger.error({ err: error, status }, "getComplaintsByStatus failed");
       throw new Error("Error fetching complaints by status");
     }
   }
@@ -151,6 +160,7 @@ export class FeedbackService {
     try {
       await this.complaintRepo.softDelete(id);
     } catch (error) {
+      logger.error({ err: error, id }, "deleteComplaint failed");
       throw new Error("Error deleting complaint");
     }
   }
@@ -175,6 +185,7 @@ export class FeedbackService {
         },
       });
     } catch (error) {
+      logger.error({ err: error, page, limit }, "getReviewsOfPrerecordedCourses failed");
       throw new Error("Error fetching reviews of prerecorded courses");
     }
   }
@@ -194,6 +205,7 @@ export class FeedbackService {
         },
       });
     } catch (error) {
+      logger.error({ err: error, teacherId }, "getReviewsByTeacherId failed");
       throw new Error("Error fetching reviews by teacher ID");
     }
   }
@@ -213,6 +225,7 @@ export class FeedbackService {
         },
       });
     } catch (error) {
+      logger.error({ err: error, teacherId }, "getReviewsByOneOnOneTeacherId failed");
       throw new Error("Error fetching reviews by one-on-one teacher ID");
     }
   }
@@ -231,6 +244,7 @@ export class FeedbackService {
         },
       });
     } catch (error) {
+      logger.error({ err: error, teacherId }, "getAllReviewsByTeacherId failed");
       // Preserve error context
       throw new Error(
         `Error fetching reviews for teacher ${teacherId}: ${
@@ -252,7 +266,7 @@ export class FeedbackService {
         .cache(`teacher-complaints-${teacherId}`, 300000) // 5 minutes in milliseconds
         .getMany();
     } catch (error) {
-      console.log(error);
+      logger.error({ err: error, teacherId }, "getComplaintsByTeacherId failed");
       throw new Error("Error fetching complaints by teacher ID");
     }
   }
@@ -269,6 +283,7 @@ export class FeedbackService {
       });
       return complaint?.session?.course?.ownerId ?? null;
     } catch (error) {
+      logger.error({ err: error, complaintId }, "getTeacherIdByComplaintId failed");
       throw new Error("Error fetching teacher ID by complaint ID");
     }
   }
@@ -287,6 +302,7 @@ export class FeedbackService {
         },
       });
     } catch (error) {
+      logger.error({ err: error, id }, "getRefundComplaintById failed");
       throw new Error("Error fetching complaint by ID");
     }
   }

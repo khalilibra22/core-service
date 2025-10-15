@@ -177,13 +177,9 @@ export const lessonValidationSchema = Joi.alternatives()
 
 export const courseMaterialsSchema = Joi.object({
   materials: Joi.array()
-    .items(
-      Joi.object({
-        id: Joi.string().uuid().required(),
-      })
-    )
+    .items(Joi.string().uuid().required())
     .min(1)
-    .required(),
+    .required().min(1),
   ownerId: Joi.string().uuid().optional(),
 });
 

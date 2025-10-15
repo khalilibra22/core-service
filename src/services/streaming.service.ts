@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import axios from "axios";
+import { logger } from "../utils/logger";
 
 export class StreamingService {
   private bunnyApiUrl: string;
@@ -32,6 +33,7 @@ export class StreamingService {
       const presignedHeaders = this.generatePresignedUploadHeaders(videoId);
       return presignedHeaders;
     } catch (error) {
+      logger.error({ err: error, title }, "createVideoEntry failed");
       throw new Error(`Failed to create video entry: ${error}`);
     }
   }
@@ -45,6 +47,7 @@ export class StreamingService {
 
       return `${this.cdnUrl}/${videoId}/playlist.m3u8`;
     } catch (error: any) {
+      logger.error({ err: error, videoId }, "getVideoById failed");
       if (error.response && error.response.status === 404) {
         throw new Error("Video not found");
       }
@@ -59,6 +62,7 @@ export class StreamingService {
         { headers: { AccessKey: this.bunnySecret } }
       );
     } catch (error: any) {
+      logger.error({ err: error, videoId }, "deleteVideoById failed");
       if (error.response && error.response.status === 404) {
         throw new Error("Video not found");
       }
@@ -84,6 +88,7 @@ export class StreamingService {
         VideoId: videoId,
       };
     } catch (error: any) {
+      logger.error({ err: error, videoId }, "generatePresignedUploadHeaders failed");
       throw new Error(`Failed to generate presigned upload headers: ${error}`);
     }
   }

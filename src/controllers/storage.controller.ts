@@ -37,6 +37,7 @@ export class StorageController {
 
       res.status(200).json(materialDto);
     } catch (error) {
+      req.log.error({ err: error }, "uploadFile failed");
       res.status(500).json({
         error: "Failed to upload file",
         details: error instanceof Error ? error.message : "Unknown error",
@@ -71,6 +72,7 @@ export class StorageController {
       await this.storageService.deleteFile(id);
       res.status(200).json({ message: "File deleted successfully" });
     } catch (error) {
+      req.log.error({ err: error, id: req.params.id }, "deleteFile failed");
       res.status(500).json({
         error: "Failed to delete file",
         details: error instanceof Error ? error.message : "Unknown error",
@@ -99,6 +101,7 @@ export class StorageController {
       }
       res.status(200).json({ url: fileUrl });
     } catch (error) {
+      req.log.error({ err: error, id: req.params.id }, "getFileUrl failed");
       res.status(500).json({
         error: "Failed to get file URL",
         details: error instanceof Error ? error.message : "Unknown error",
@@ -132,8 +135,52 @@ export class StorageController {
 
       res.status(200).json(materialDtos);
     } catch (error) {
+      req.log.error({ err: error, teacherId: req.body?.ownerId || (res.locals as any)?.ownerId }, "getMaterialsByTeacher failed");
       res.status(500).json({
         error: "Failed to get materials by teacher",
+        details: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  };
+
+  getMaterialsByTeacherSearch = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const teacherId =
+        req.body.ownerId ||
+        (res.locals as any)?.ownerId;
+
+      const rawTitle = (req.query.title as string) ?? "";
+      const title = rawTitle.trim();
+
+      if (!teacherId) {
+        res.status(400).json({ error: "Teacher ID is required" });
+        return;
+      }
+
+      if (!title) {
+        res.status(400).json({ error: "Title is required" });
+        return;
+      }
+
+      const page = Math.max(1, Number(req.query.page) || 1);
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+
+      const materials = await this.storageService.searchMaterialsByTeacherTitle(
+        teacherId,
+        title,
+        page,
+        limit
+      );
+
+      const materialDtos = plainToInstance(MinimalMaterialDto, materials, {
+        excludeExtraneousValues: true,
+      });
+
+      res.status(200).json(materialDtos);
+    } catch (error) {
+      req.log.error({ err: error, teacherId: req.body?.ownerId || (res.locals as any)?.ownerId, title: req.query?.title }, "getMaterialsByTeacherSearch failed");
+      res.status(500).json({
+        error: "Failed to search materials by teacher",
         details: error instanceof Error ? error.message : "Unknown error",
       });
     }
@@ -157,6 +204,7 @@ export class StorageController {
       });
       res.status(200).json({ uploadUrl: url, material: materialDto });
     } catch (error) {
+      req.log.error({ err: error, title: req.body?.title }, "generatePresignedUploadUrl failed");
       res.status(500).json({
         error: "Failed to generate presigned upload URL",
         details: error instanceof Error ? error.message : "Unknown error",

@@ -75,7 +75,7 @@ export class EnrollmentController {
       await this.enrollmentService.createEnrollment(enrollmentBody);
       res.status(201).json({ message: "Enrollment created successfully" });
     } catch (error: any) {
-      console.log(error);
+      req.log.error({ err: error, courseId: req.params.id }, "createEnrollment failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -124,7 +124,7 @@ export class EnrollmentController {
       );
       res.status(201).json({ message: "Enrollment created successfully" });
     } catch (error: any) {
-      console.error("Error in createOneOnOneErollment:", error.message);
+      req.log.error({ err: error, teacherId: req.body?.teacherId, ownerId: req.body?.ownerId, topicId: req.body?.topicId, sessionsNumber: req.body?.sessionsNumber }, "createOneOnOneErollment failed");
       if (error.message.includes("400")) {
         res.status(409).json({ error: "Some time slotes aleardy scheduled" });
         return;
@@ -176,7 +176,7 @@ export class EnrollmentController {
           .json({ error: "Some availabilities are not available" });
         return;
       }
-      console.error("Error in getCourseEnrollments:", error);
+      req.log.error({ err: error, courseId: req.params.id }, "getCourseEnrollments failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -208,7 +208,7 @@ export class EnrollmentController {
           const topic = await LruInMemoryCache.getUserTopic(
             enrollment?.sessions?.[0]?.topicId ?? 0
           );
-          console.log(topic);
+      req.log.info({ topic }, "Fetched topic for enrollment");
           const enrollmentDto = {
             ...enrollment,
             studentFullname: student?.fullname ?? "keynotfound",
@@ -223,7 +223,7 @@ export class EnrollmentController {
       );
       res.status(200).json(enrollmentDtos);
     } catch (error) {
-      console.error("Error in getOneOnOneEnrollementByTeacherId:", error);
+      req.log.error({ err: error, teacherId: req.params.id }, "getOneOnOneEnrollementByTeacherId failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -248,6 +248,7 @@ export class EnrollmentController {
         .status(200)
         .json({ message: "Enrollment status updated successfully" });
     } catch (error) {
+      req.log.error({ err: error, id: req.params.id }, "updateCourseEnrollmentStatus failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -324,6 +325,7 @@ export class EnrollmentController {
 
       res.status(200).json(allEnrollmentDtos);
     } catch (error) {
+      req.log.error({ err: error, studentId: req.body?.ownerId }, "getStudentEnrollments failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -374,7 +376,7 @@ export class EnrollmentController {
         .status(200)
         .json({ message: "One-on-one enrollment canceled successfully" });
     } catch (error) {
-      console.error("Error in cancelOneOnOneEnrollment:", error);
+      req.log.error({ err: error, enrollmentId: req.params.id }, "cancelOneOnOneEnrollment failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -410,6 +412,7 @@ export class EnrollmentController {
       });
       res.status(200).json(sessionDtos);
     } catch (error) {
+      req.log.error({ err: error, enrollmentId: req.params.id }, "getOneOnOneEnrollmentSessions failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -447,7 +450,7 @@ export class EnrollmentController {
       });
       res.status(201).json(refundDto);
     } catch (error) {
-      console.error(error);
+      req.log.error({ err: error, enrollmentId: req.params.id }, "createRefundRequest failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -496,7 +499,7 @@ export class EnrollmentController {
       });
       res.status(200).json(refundDto);
     } catch (error) {
-      console.error(error);
+      req.log.error({ err: error, refundId: req.params.refundId }, "addRefundInitialResponse failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -537,6 +540,7 @@ export class EnrollmentController {
       });
       res.status(200).json(refundDto);
     } catch (error) {
+      req.log.error({ err: error, refundId: req.params.refundId }, "refundStudentDecision failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -573,6 +577,7 @@ export class EnrollmentController {
       // TODO : in app refund
       res.status(200).json(refundDto);
     } catch (error) {
+      req.log.error({ err: error, refundId: req.params.refundId }, "refundAdminResolve failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };

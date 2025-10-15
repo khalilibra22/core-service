@@ -11,6 +11,7 @@ import {
   sessionValidationSchema,
   removeMaterialsSchema,
   toggleLessonMaterialShareValidationSchema,
+  courseMaterialsSchema,
 } from "../../validations/course.validation";
 import { reviewValdationSchema } from "../../validations/feedback.validation";
 import { enrollmentValidationsSchema } from "../../validations/enrollment.validation";
@@ -128,7 +129,7 @@ router.patch(
   "/:id/materials",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
-  //ValidationMiddleware.validate(courseMaterialsSchema),
+  ValidationMiddleware.validate(courseMaterialsSchema),
   courseController.addCourseMaterials
 );
 
