@@ -143,6 +143,49 @@ export class StorageController {
     }
   };
 
+  getMaterialsByTeacherSearch = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const teacherId =
+        req.body.ownerId ||
+        (res.locals as any)?.ownerId;
+
+      const rawTitle = (req.query.title as string) ?? "";
+      const title = rawTitle.trim();
+
+      if (!teacherId) {
+        res.status(400).json({ error: "Teacher ID is required" });
+        return;
+      }
+
+      if (!title) {
+        res.status(400).json({ error: "Title is required" });
+        return;
+      }
+
+      const page = Math.max(1, Number(req.query.page) || 1);
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+
+      const materials = await this.storageService.searchMaterialsByTeacherTitle(
+        teacherId,
+        title,
+        page,
+        limit
+      );
+
+      const materialDtos = plainToInstance(MinimalMaterialDto, materials, {
+        excludeExtraneousValues: true,
+      });
+
+      res.status(200).json(materialDtos);
+    } catch (error) {
+      req.log.error({ err: error, teacherId: req.body?.ownerId || (res.locals as any)?.ownerId, title: req.query?.title }, "getMaterialsByTeacherSearch failed");
+      res.status(500).json({
+        error: "Failed to search materials by teacher",
+        details: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  };
+
   generatePresignedUploadUrl = async (req: Request, res: Response): Promise<void> => {
     try {
       const { title } = req.body;

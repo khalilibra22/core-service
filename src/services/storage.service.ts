@@ -7,6 +7,7 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v4 as uuidv4 } from "uuid";
 import sharp from "sharp";
+import { ILike } from "typeorm";
 import { MaterialModel } from "../models/material.model";
 import { AppDataSource } from "../config/database";
 import { logger } from "../utils/logger";
@@ -93,6 +94,26 @@ export class StorageService {
     } catch (error) {
       logger.error({ err: error, teacherId, page, limit }, "getMaterialsByTeacher failed");
       throw new Error(`Failed to get materials by teacher: ${error}`);
+    }
+  }
+
+  async searchMaterialsByTeacherTitle(
+    teacherId: string,
+    title: string,
+    page = 1,
+    limit = 20
+  ): Promise<MaterialModel[]> {
+    try {
+      const skip = (page - 1) * limit;
+      return await this.materialRepo.find({
+        where: { teacherId, title: ILike(`%${title}%`) },
+        order: { createdAt: "DESC" },
+        skip,
+        take: limit,
+      });
+    } catch (error) {
+      logger.error({ err: error, teacherId, title, page, limit }, "searchMaterialsByTeacherTitle failed");
+      throw new Error(`Failed to search materials by teacher title: ${error}`);
     }
   }
 

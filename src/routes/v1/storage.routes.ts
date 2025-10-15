@@ -48,6 +48,14 @@ router.get(
   storageController.getMaterialsByTeacher
 );
 
+// Search materials by teacher and title
+router.get(
+  "/teacher/search",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "download_materials"),
+  storageController.getMaterialsByTeacherSearch
+);
+
 // Generate presigned upload url
 // router.post(
 //   "/direct-upload",
