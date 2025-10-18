@@ -181,7 +181,9 @@ export class CourseService {
   //getCoursesByTeacherId
   async getCoursesByTeacherId(
     teacherId: string,
-    type: string
+    type: string,
+    page: number,
+    limit: number
   ): Promise<CourseModel[]> {
     try {
       return await this.courseRepo.find({
@@ -190,13 +192,15 @@ export class CourseService {
           type: type,
         },
         relations: ["couresSettings", "enrollments", "sessions"],
+        skip: (page - 1) * limit,
+        take: limit,
         cache: {
-          id: `teacher-courses-${teacherId}-${type}`,
+          id: `teacher-courses-${teacherId}-${type}-${page}-${limit}`,
           milliseconds: 300000, // 5 minutes
         },
       });
     } catch (error) {
-      logger.error({ err: error, teacherId, type }, "getCoursesByTeacherId failed");
+      logger.error({ err: error, teacherId, type, page, limit }, "getCoursesByTeacherId failed");
       throw new Error("Error fetching courses by teacher ID");
     }
   }

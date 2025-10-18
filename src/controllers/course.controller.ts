@@ -324,6 +324,8 @@ export class CourseController {
     try {
       const id = req.params.id;
       const courseType = req.query.type as string;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
       const courseTypeList = ["group", "live", "prerecorded"];
       if (!courseTypeList.includes(courseType)) {
         res.status(400).json({ error: "Invalid course type" });
@@ -331,12 +333,31 @@ export class CourseController {
       }
       const courses = await this.courseService.getCoursesByTeacherId(
         id,
-        courseType
+        courseType,
+        page,
+        limit
       );
-      const courseDtos = getCourseDto(courses, courseType);
+     
+      let allCourses = courses;
+      if (courseType === "live") {
+        allCourses = courses.map(course => {
+          if (course.isRemote) {
+            return {
+              ...course,
+              lastPandingRequestsCount: undefined,
+            };
+          }
+          const lastPandingRequestsCount = course.enrollments?.filter(enrollment => enrollment.status === "pending" && enrollment.createdAt && enrollment.createdAt > new Date(Date.now() - 24 * 60 * 60 * 1000)).length;
+          return {
+            ...course,
+            lastPandingRequestsCount: lastPandingRequestsCount,
+          };
+        });
+      }
+      const courseDtos = getCourseDto(allCourses, courseType);
       res.status(200).json(courseDtos);
     } catch (error) {
-      req.log.error({ err: error, teacherId: req.params.id, type: req.query.type }, "getCoursesByTeacherId failed");
+      req.log.error({ err: error, teacherId: req.params.id, type: req.query.type, page: req.query.page, limit: req.query.limit }, "getCoursesByTeacherId failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };

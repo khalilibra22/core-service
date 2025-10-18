@@ -99,6 +99,9 @@ export class LiveCourseDto {
   topic?: string;
 
   @Expose()
+  lastPandingRequestsCount?: number;
+
+  @Expose()
   @Transform(({ obj }) => obj.couresSettings?.objectives)
   objectives?: string[];
 
