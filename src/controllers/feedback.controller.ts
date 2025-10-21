@@ -4,6 +4,7 @@ import { FeedbackService } from "../services/feedback.service";
 import { plainToInstance } from "class-transformer";
 import { ReviewDto } from "../dtos/review.dto";
 import { ComplaintDto } from "../dtos/complaint.dto";
+import { enrichDto } from "../utils";
 
 export class FeedbackController {
   private feedbackService: FeedbackService;
@@ -27,9 +28,7 @@ export class FeedbackController {
         course: course,
       };
       const review = await this.feedbackService.createReview(reviewBody);
-      const reviewDto = plainToInstance(ReviewDto, review, {
-        excludeExtraneousValues: true,
-      });
+      const reviewDto = await enrichDto<ReviewDto>(ReviewDto, review);
       res.status(201).json(reviewDto);
     } catch (error) {
       req.log.error({ err: error, courseId: req.params.id }, "createCourseReview failed");
@@ -55,9 +54,7 @@ export class FeedbackController {
       const complaint = await this.feedbackService.createComplaint(
         complaintBody
       );
-      const complaintDto = plainToInstance(ComplaintDto, complaint, {
-        excludeExtraneousValues: true,
-      });
+      const complaintDto = await enrichDto<ComplaintDto>(ComplaintDto, complaint);
       res.status(201).json(complaintDto);
     } catch (error) {
       req.log.error({ err: error, sessionId: req.params.id }, "createComplaint failed");
@@ -93,9 +90,7 @@ export class FeedbackController {
       const updatedComplaint = await this.feedbackService.updateComplaint(
         complaint
       );
-      const complaintDto = plainToInstance(ComplaintDto, updatedComplaint, {
-        excludeExtraneousValues: true,
-      });
+      const complaintDto = await enrichDto<ComplaintDto>(ComplaintDto, updatedComplaint);
       res.status(200).json(complaintDto);
     } catch (error) {
       req.log.error({ err: error, complaintId: req.params.id }, "addComplaintInitialResponse failed");
@@ -133,9 +128,7 @@ export class FeedbackController {
       const updatedComplaint = await this.feedbackService.updateComplaint(
         complaintBody
       );
-      const complaintDto = plainToInstance(ComplaintDto, updatedComplaint, {
-        excludeExtraneousValues: true,
-      });
+      const complaintDto = await enrichDto<ComplaintDto>(ComplaintDto, updatedComplaint);
       res.status(200).json(complaintDto);
     } catch (error) {
       req.log.error({ err: error, complaintId: req.params.id }, "complaintAdminResolve failed");
@@ -174,9 +167,7 @@ export class FeedbackController {
       const updatedComplaint = await this.feedbackService.updateComplaint(
         complaint
       );
-      const complaintDto = plainToInstance(ComplaintDto, updatedComplaint, {
-        excludeExtraneousValues: true,
-      });
+      const complaintDto = await enrichDto<ComplaintDto>(ComplaintDto, updatedComplaint);
       res.status(200).json(complaintDto);
     } catch (error) {
       req.log.error({ err: error, complaintId: req.params.id }, "complaintStudentDecision failed");
@@ -187,9 +178,7 @@ export class FeedbackController {
   getAllReviews = async (req: Request, res: Response): Promise<void> => {
     try {
       const reviews = await this.feedbackService.getAllReviews();
-      const reviewDtos = plainToInstance(ReviewDto, reviews, {
-        excludeExtraneousValues: true,
-      });
+      const reviewDtos = await enrichDto<ReviewDto[]>(ReviewDto, reviews);
       res.status(200).json(reviewDtos);
     } catch (error) {
       req.log.error({ err: error }, "getAllReviews failed");
@@ -200,9 +189,7 @@ export class FeedbackController {
   getAllComplaints = async (req: Request, res: Response): Promise<void> => {
     try {
       const complaints = await this.feedbackService.getAllComplaints();
-      const complaintDtos = plainToInstance(ComplaintDto, complaints, {
-        excludeExtraneousValues: true,
-      });
+      const complaintDtos = await enrichDto<ComplaintDto[]>(ComplaintDto, complaints);
       res.status(200).json(complaintDtos);
     } catch (error) {
       req.log.error({ err: error }, "getAllComplaints failed");
@@ -219,9 +206,7 @@ export class FeedbackController {
       const complaints = await this.feedbackService.getComplaintsByStudentId(
         studentId
       );
-      const complaintDtos = plainToInstance(ComplaintDto, complaints, {
-        excludeExtraneousValues: true,
-      });
+      const complaintDtos = await enrichDto<ComplaintDto[]>(ComplaintDto, complaints);
       res.status(200).json(complaintDtos);
     } catch (error) {
       req.log.error({ err: error, studentId: req.params.id }, "getAllComplaintsByStudentId failed");
@@ -253,9 +238,7 @@ export class FeedbackController {
         page,
         limit
       );
-      const reviewDtos = plainToInstance(ReviewDto, reviews, {
-        excludeExtraneousValues: true,
-      });
+      const reviewDtos = await enrichDto<ReviewDto[]>(ReviewDto, reviews);
       res.status(200).json(reviewDtos);
     } catch (error) {
       req.log.error({ err: error, page: req.query.page, limit: req.query.limit }, "getReviewsOfPrerecordedCourses failed");
@@ -272,9 +255,7 @@ export class FeedbackController {
         return;
       }
       const reviews = await this.feedbackService.getReviewsByCourseId(courseId);
-      const reviewDtos = plainToInstance(ReviewDto, reviews, {
-        excludeExtraneousValues: true,
-      });
+      const reviewDtos = await enrichDto<ReviewDto[]>(ReviewDto, reviews);
       res.status(200).json(reviewDtos);
     } catch (error) {
       req.log.error({ err: error, courseId: req.params.id }, "getReviewsByCourseId failed");
@@ -296,9 +277,7 @@ export class FeedbackController {
       const reviews = await this.feedbackService.getReviewsByTeacherId(
         teacherId
       );
-      const reviewDtos = plainToInstance(ReviewDto, reviews, {
-        excludeExtraneousValues: true,
-      });
+      const reviewDtos = await enrichDto<ReviewDto[]>(ReviewDto, reviews);
       res.status(200).json(reviewDtos);
     } catch (error) {
       req.log.error({ err: error, teacherId: req.params.teacherId }, "getReviewsByTeacherId failed");
@@ -319,9 +298,7 @@ export class FeedbackController {
         studentId: ownerId,
       };
       const review = await this.feedbackService.createReview(reviewBody);
-      const reviewDto = plainToInstance(ReviewDto, review, {
-        excludeExtraneousValues: true,
-      });
+      const reviewDto = await enrichDto<ReviewDto>(ReviewDto, review);
       res.status(201).json(reviewDto);
     } catch (error) {
       req.log.error({ err: error, teacherId: req.body.teacherId }, "createOneOnOneReview failed");
@@ -339,9 +316,7 @@ export class FeedbackController {
       const reviews = await this.feedbackService.getReviewsByOneOnOneTeacherId(
         teacherId
       );
-      const reviewDtos = plainToInstance(ReviewDto, reviews, {
-        excludeExtraneousValues: true,
-      });
+      const reviewDtos = await enrichDto<ReviewDto[]>(ReviewDto, reviews);
       res.status(200).json(reviewDtos);
     } catch (error) {
       req.log.error({ err: error, teacherId: req.params.teacherId }, "getReviewsByOneOnOneTeacherId failed");
@@ -359,9 +334,7 @@ export class FeedbackController {
       const reviews = await this.feedbackService.getAllReviewsByTeacherId(
         teacherId
       );
-      const reviewDtos = plainToInstance(ReviewDto, reviews, {
-        excludeExtraneousValues: true,
-      });
+      const reviewDtos = await enrichDto<ReviewDto[]>(ReviewDto, reviews);
       res.status(200).json(reviewDtos);
     } catch (error) {
       req.log.error({ err: error, teacherId: req.params.teacherId }, "getAllReviewsByTeacherId failed");
@@ -378,9 +351,7 @@ export class FeedbackController {
       const complaints = await this.feedbackService.getComplaintsByTeacherId(
         teacherId
       );
-      const complaintDtos = plainToInstance(ComplaintDto, complaints, {
-        excludeExtraneousValues: true,
-      });
+      const complaintDtos = await enrichDto<ComplaintDto[]>(ComplaintDto, complaints);
       res.status(200).json(complaintDtos);
     } catch (error) {
       req.log.error({ err: error, teacherId: req.params.teacherId }, "getAllComplaintsByTeacherId failed");

@@ -8,7 +8,7 @@ export class SessionTimeChangeRequestDto {
   // userId?: string;
 
   @Expose()
-  @Transform(() => "to be filled")
+  @Transform(({ obj, options }) => options?.context?.userById?.[obj?.userId]?.fullname)
   userFullName?: string;
 
   @Expose()

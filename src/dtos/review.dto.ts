@@ -5,11 +5,11 @@ export class ReviewDto {
   id?: string;
 
   @Expose()
-  @Transform(() => "to be filled")
+  @Transform(({ obj, options }) => options?.context?.userById?.[obj?.studentId]?.fullname)
   studentFullname?: string;
 
   @Expose()
-  @Transform(({ obj }) => (obj.teacherId ? "to be filled" : undefined))
+  @Transform(({ obj, options }) => obj.teacherId ? options?.context?.userById?.[obj?.teacherId]?.fullname : undefined)
   teacherFullname?: string;
 
   @Expose()

@@ -3,6 +3,7 @@ import { SessionTimeRequestService } from "../services/session-time-request.serv
 import { CourseService } from "../services/course.service";
 import { plainToInstance } from "class-transformer";
 import { SessionTimeChangeRequestDto } from "../dtos/session-time-change-request.dto";
+import { enrichDto } from "../utils";
 
 export class SessionTimeRequestController {
   private sessionTimeRequestService: SessionTimeRequestService;
@@ -41,12 +42,9 @@ export class SessionTimeRequestController {
         await this.sessionTimeRequestService.createSessionTimeRequest(
           sessionTimeRequestBody
         );
-      const sessionTimeRequestDto = plainToInstance(
+      const sessionTimeRequestDto = await enrichDto<SessionTimeChangeRequestDto>(
         SessionTimeChangeRequestDto,
-        sessionTimeRequest,
-        {
-          excludeExtraneousValues: true,
-        }
+        sessionTimeRequest
       );
       res.status(201).json(sessionTimeRequestDto);
     } catch (error) {

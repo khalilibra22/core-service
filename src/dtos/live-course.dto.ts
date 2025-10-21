@@ -25,7 +25,7 @@ export class LiveCourseDto {
   ownerId?: string;
 
   @Expose()
-  @Transform(() => "to be filled")
+  @Transform(({ obj, options }) => options?.context?.userById?.[obj.ownerId]?.fullname)
   ownerName?: string;
 
   @Expose()
@@ -91,11 +91,11 @@ export class LiveCourseDto {
   thumbnail?: string;
 
   @Expose()
-  @Transform(() => "to be filled")
+  @Transform(({ obj, options }) => options?.context?.topicById?.[obj?.couresSettings?.topicId]?.topic?.name)
   subject?: string;
 
   @Expose()
-  @Transform(() => "to be filled")
+  @Transform(({ obj, options }) => options?.context?.topicById?.[obj?.couresSettings?.topicId]?.topic?.name)
   topic?: string;
 
   @Expose()
