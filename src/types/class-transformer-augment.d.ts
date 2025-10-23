@@ -1,12 +1,12 @@
 import 'class-transformer';
+import { MinimalUser, UserTopic } from './user.types';
 
 declare module 'class-transformer' {
   interface ClassTransformOptions {
     context?: {
-      userById?: Record<string, unknown>;
-      topicById?: Record<number, unknown>;
-      [key: string]: unknown;
+      userById?: Record<string, MinimalUser | null>;
+      topicById?: Record<number, UserTopic | null>;
+      [key: string]: any;
     };
   }
 }
-
