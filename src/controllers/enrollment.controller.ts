@@ -4,7 +4,7 @@ import { EnrollmentService } from "../services/enrollment.service";
 import { EnrollmentDto } from "../dtos/enrollment.dto";
 import { plainToInstance } from "class-transformer";
 import { OneOnOneEnollmentDto } from "../dtos/one-on-one-enrollment.dto";
-import { generateSessionsFromAvailabilities } from "../utils";
+import { enrichDto, generateSessionsFromAvailabilities } from "../utils";
 import { SessionDto } from "../dtos/session.dto";
 import { RefundDto } from "../dtos/refund.dto";
 import { FeedbackService } from "../services/feedback.service";
@@ -407,9 +407,9 @@ export class EnrollmentController {
         await this.courseService.getOneOnOneSessionsByEnrollmentId(
           enrollmentId
         );
-      const sessionDtos = plainToInstance(SessionDto, sessions, {
-        excludeExtraneousValues: true,
-      });
+        const sessionDtos = await Promise.all(sessions.map(async (session) => {
+          return await enrichDto<SessionDto>(SessionDto, session);
+        }));
       res.status(200).json(sessionDtos);
     } catch (error) {
       req.log.error({ err: error, enrollmentId: req.params.id }, "getOneOnOneEnrollmentSessions failed");
