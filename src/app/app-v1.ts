@@ -7,6 +7,7 @@ import { sessionTimeRequestRouter } from "../routes/v1/session-time-request.rout
 import { sessionRouter } from "../routes/v1/session.routes";
 import { settingRouter } from "../routes/v1/setting.routes";
 import { storageRouter } from "../routes/v1/storage.routes";
+import { notificationRouter } from "../routes/v1/notification.routes";
 
 const app = express.Router();
 
@@ -18,5 +19,6 @@ app.use("/settings", settingRouter);
 app.use("/quizzes", quizRouter);
 app.use("/sessions", sessionRouter);
 app.use("/uploads", storageRouter);
+app.use("/notifications", notificationRouter);
 
 export { app as appV1 };
