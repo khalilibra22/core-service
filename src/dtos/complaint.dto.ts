@@ -11,7 +11,7 @@ export class ComplaintDto {
   status?: string;
 
   @Expose()
-  @Transform(() => "to be filled")
+  @Transform(({ obj, options }) => options?.context?.userById?.[obj?.studentId]?.fullname)
   studentFullname?: string;
 
   @Expose()

@@ -4,7 +4,7 @@ import { plainToInstance } from "class-transformer";
 import { CourseSettingsModel } from "../models/course-settings.model";
 import { CourseModel } from "../models/course.model";
 import { MinimalCourseDto } from "../dtos/minimal-course.dto";
-import { getCourseDto, getSessionDto } from "../utils";
+import { getCourseDto, getSessionDto, enrichDto } from "../utils";
 import { CertificateDto } from "../dtos/certificate.dto";
 import { LessonDto } from "../dtos/lesson.dto";
 import { RecordedSessionDto } from "../dtos/recorded-session.dto";
@@ -145,7 +145,7 @@ export class CourseController {
         course: course,
       };
       const session = await this.courseService.createCourseSession(sessionBody);
-      const sessionDto = getSessionDto(session, course.type ?? "session");
+      const sessionDto = await getSessionDto(session, course.type ?? "session");
       res.status(201).json(sessionDto);
     } catch (error) {
       req.log.error({ err: error, courseId: req.params.id }, "createCourseSession failed");
@@ -238,9 +238,7 @@ export class CourseController {
         certificateBody
       );
 
-      const certificateDto = plainToInstance(CertificateDto, certificate, {
-        excludeExtraneousValues: true,
-      });
+      const certificateDto = await enrichDto<CertificateDto>(CertificateDto, certificate);
       res.status(201).json(certificateDto);
     } catch (error) {
       req.log.error({ err: error, courseId: req.params.id }, "createCertificate failed");
@@ -257,7 +255,7 @@ export class CourseController {
         return;
       }
       const sessions = await this.courseService.getCourseSessions(id);
-      const sessionDtos = getSessionDto(sessions, course.type ?? "session");
+      const sessionDtos = await getSessionDto(sessions, course.type ?? "session");
       res.status(200).json(sessionDtos);
     } catch (error) {
       req.log.error({ err: error, courseId: req.params.id }, "getCourseSessions failed");
@@ -308,7 +306,7 @@ export class CourseController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
-      const courseDto = getCourseDto(course, course.type ?? "minimal");
+      const courseDto = await getCourseDto(course, course.type ?? "minimal");
       res.status(200).json(courseDto);
     } catch (error) {
       req.log.error({ err: error, courseId: req.params.id }, "getCourseById failed");
@@ -354,7 +352,7 @@ export class CourseController {
           };
         });
       }
-      const courseDtos = getCourseDto(allCourses, courseType);
+      const courseDtos = await getCourseDto(allCourses, courseType);
       res.status(200).json(courseDtos);
     } catch (error) {
       req.log.error({ err: error, teacherId: req.params.id, type: req.query.type, page: req.query.page, limit: req.query.limit }, "getCoursesByTeacherId failed");
@@ -368,7 +366,7 @@ export class CourseController {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
       const courses = await this.courseService.getAllLiveCourses(page, limit);
-      const courseDtos = getCourseDto(courses, "live");
+      const courseDtos = await getCourseDto(courses, "live");
       res.status(200).json(courseDtos);
     } catch (error) {
       req.log.error({ err: error, page: req.query.page, limit: req.query.limit }, "getAllLiveCourses failed");
@@ -381,7 +379,7 @@ export class CourseController {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
       const courses = await this.courseService.getAllGroupCourses(page, limit);
-      const courseDtos = getCourseDto(courses, "group");
+      const courseDtos = await getCourseDto(courses, "group");
       res.status(200).json(courseDtos);
     } catch (error) {
       req.log.error({ err: error, page: req.query.page, limit: req.query.limit }, "getAllGroupCourses failed");
@@ -401,7 +399,7 @@ export class CourseController {
         page,
         limit
       );
-      const courseDtos = getCourseDto(courses, "prerecorded");
+      const courseDtos = await getCourseDto(courses, "prerecorded");
       res.status(200).json(courseDtos);
     } catch (error) {
       req.log.error({ err: error, page: req.query.page, limit: req.query.limit }, "getAllPrerecordedCourses failed");
@@ -652,7 +650,7 @@ export class CourseController {
         page,
         limit
       );
-      const courseDtos = getCourseDto(courses, courseType);
+      const courseDtos = await getCourseDto(courses, courseType);
       res.status(200).json(courseDtos);
     } catch (error) {
       req.log.error({ err: error, courseType: req.query.type, page: req.query.page, limit: req.query.limit }, "searchCourses failed");

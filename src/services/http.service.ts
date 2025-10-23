@@ -63,7 +63,8 @@ export class HttpService implements ExternalService {
             if (!userTopicId || typeof userTopicId !== 'number' || userTopicId <= 0) {
                 throw new Error('Invalid userTopicId provided');
             }
-            return await this.httpClient.get(`${this.baseURL}/users/topics/${userTopicId}`);
+            const response = await this.httpClient.get(`${this.baseURL}/users/topics/${userTopicId}`);
+            return response.data;
         } catch (error: any) {
             logger.error({ err: error, userTopicId }, 'Failed to get user topic');
             if (error?.response?.status === 404) {
