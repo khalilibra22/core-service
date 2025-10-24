@@ -10,18 +10,21 @@ import { RefundDto } from "../dtos/refund.dto";
 import { FeedbackService } from "../services/feedback.service";
 import { LruInMemoryCache } from "../cache/lru-in-memory.cache";
 import { HttpService } from "../services/http.service";
+import { NotificationService } from "../services/notification.service";
 
 export class EnrollmentController {
   private enrollmentService: EnrollmentService;
   private courseService: CourseService;
   private externalService: HttpService;
   private feedbackService: FeedbackService;
+  private notificationService: NotificationService;
 
   constructor() {
     this.enrollmentService = new EnrollmentService();
     this.courseService = new CourseService();
     this.externalService = new HttpService();
     this.feedbackService = new FeedbackService();
+    this.notificationService = new NotificationService();
   }
 
   createEnrollment = async (req: Request, res: Response): Promise<void> => {
@@ -72,8 +75,27 @@ export class EnrollmentController {
         course: course,
         type: "course",
       };
-      await this.enrollmentService.createEnrollment(enrollmentBody);
-      res.status(201).json({ message: "Enrollment created successfully" });
+      const enrollment = await this.enrollmentService.createEnrollment(enrollmentBody);
+      
+      // Auto-subscribe to course notifications if fcmToken provided
+      const fcmToken = req.body.fcmToken as string | undefined;
+      const topic = `course-${course.id}`;
+      
+      if (fcmToken) {
+        try {
+          await this.notificationService.subscribeTokenToTopic(fcmToken, topic);
+          req.log.info({ topic, enrollmentId: enrollment.id }, "Auto-subscribed to course topic");
+        } catch (err) {
+          req.log.warn({ err, topic }, "Failed to auto-subscribe to course topic");
+        }
+      }
+      
+      res.status(201).json({
+        message: "Enrollment created successfully",
+        notificationTopics: {
+          course: topic,
+        },
+      });
     } catch (error: any) {
       req.log.error({ err: error, courseId: req.params.id }, "createEnrollment failed");
       res.status(500).json({ error: "Internal Server Error" });
@@ -105,7 +127,6 @@ export class EnrollmentController {
         await this.externalService.checkAvailabilities(
           availabilityIdsArray
         );
-      console.log(availabilities);
       const sessions = generateSessionsFromAvailabilities(
         availabilities,
         topicId,

@@ -2,6 +2,7 @@ import Joi from "joi";
 
 export const enrollmentValidationsSchema = Joi.object({
   ownerId: Joi.string().uuid().optional(),
+  fcmToken: Joi.string().min(10).optional(),
 });
 
 export const enrollmentStatusSchema = Joi.object({

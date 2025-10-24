@@ -4,6 +4,8 @@ import { appV1 } from "../app/app-v1";
 import pinoHttp from "pino-http";
 import crypto from "crypto";
 import { logger } from "../utils/logger";
+// Initialize event system
+import "../events";
 
 const app = express();
 const port = process.env.PORT || 5001;

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { VirtualClassroomService } from "../interfaces/virtual-classroom-service.interface";
 import { CourseService } from "../services/course.service";
+import { publish } from "../events";
 
 export class VirtualClassroomController {
   private virtualClassroomService: VirtualClassroomService;
@@ -40,6 +41,19 @@ export class VirtualClassroomController {
         attendeePW: "password_",
       };
       await this.virtualClassroomService.createMeeting(meetingData);
+      
+      // Publish session.started event to notify enrolled students
+      const courseId = session.course?.id || session.enrollment?.course?.id;
+      if (courseId && session.id) {
+        await publish("session.started", {
+          courseId,
+          sessionId: session.id,
+          title: session.title,
+          startsAt: session.date?.toISOString(),
+        });
+        req.log.info({ courseId, sessionId: session.id }, "Published session.started event");
+      }
+      
       const desktopJoinUrl = await this.virtualClassroomService.joinMeeting(
         session.id ?? "",
         { fullName:fullname, password: "password" }
