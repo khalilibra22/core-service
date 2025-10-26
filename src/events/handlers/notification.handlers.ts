@@ -21,21 +21,44 @@ subscribe<EventMap>({
     try {
       logger.info({ payload }, "Processing session.started event");
       
-      const { courseId, title, sessionId } = payload;
-      const topic = `course-${courseId}`;
+      const { courseId, enrollmentId, title, sessionId } = payload;
+      
+      // Determine topic based on session type
+      let topic: string;
+      let notificationType: string;
+      let notificationData: Record<string, string>;
+      
+      if (enrollmentId) {
+        // One-on-one session
+        topic = `oneonone-${enrollmentId}`;
+        notificationType = "oneonone_session_started";
+        notificationData = {
+          enrollmentId,
+          sessionId,
+          type: notificationType,
+        };
+      } else if (courseId) {
+        // Course session (group/live)
+        topic = `course-${courseId}`;
+        notificationType = "session_started";
+        notificationData = {
+          courseId,
+          sessionId,
+          type: notificationType,
+        };
+      } else {
+        logger.warn({ payload }, "session.started event missing both courseId and enrollmentId");
+        return;
+      }
 
       await notificationService.sendToTopic({
         topic,
         title: title || "Session Started",
         body: "Join now! The session has begun.",
-        data: {
-          courseId,
-          sessionId,
-          type: "session_started",
-        },
+        data: notificationData,
       });
 
-      logger.info({ topic, sessionId }, "Session started notification sent");
+      logger.info({ topic, sessionId, type: notificationType }, "Session started notification sent");
     } catch (err) {
       logger.error({ err, payload }, "Failed to send session.started notification");
     }

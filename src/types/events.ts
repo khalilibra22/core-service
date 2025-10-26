@@ -8,7 +8,8 @@ export type EnrollmentCreated = {
 };
 
 export type SessionStarted = {
-  courseId: string;
+  courseId?: string;
+  enrollmentId?: string;
   sessionId: string;
   title?: string;
   startsAt?: string;

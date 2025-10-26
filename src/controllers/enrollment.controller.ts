@@ -139,11 +139,41 @@ export class EnrollmentController {
         sessions: sessions,
         type: "one-on-one",
       } as any;
-      await this.enrollmentService.createEnrollment(enrollmentBody);
+      const enrollment = await this.enrollmentService.createEnrollment(enrollmentBody);
+      
+      // Topic for this one-on-one enrollment
+      const topic = `oneonone-${enrollment.id}`;
+      
+      // Optional auto-subscribe if fcmToken provided
+      const fcmToken = req.body.fcmToken as string | undefined;
+      if (fcmToken) {
+        try {
+          await this.notificationService.subscribeTokenToTopic(fcmToken, topic);
+          req.log.info({ topic, enrollmentId: enrollment.id }, "Auto-subscribed to 1:1 topic");
+        } catch (err) {
+          req.log.warn({ err, topic }, "Failed to auto-subscribe to 1:1 topic");
+        }
+      }
+      
+      // Optional welcome notification
+      try {
+        await this.notificationService.sendToTopic({
+          topic,
+          title: "One-on-one Scheduled",
+          body: "Your one-on-one sessions have been scheduled.",
+          data: { enrollmentId: String(enrollment.id), type: "oneonone_created" },
+        });
+      } catch (err) {
+        req.log.warn({ err, topic }, "Failed to send welcome 1:1 notification");
+      }
+      
       await this.externalService.updateAvailabilitiesToUnavailable(
         availabilityIdsArray
       );
-      res.status(201).json({ message: "Enrollment created successfully" });
+      res.status(201).json({
+        message: "Enrollment created successfully",
+        notificationTopics: { oneOnOne: topic },
+      });
     } catch (error: any) {
       req.log.error({ err: error, teacherId: req.body?.teacherId, ownerId: req.body?.ownerId, topicId: req.body?.topicId, sessionsNumber: req.body?.sessionsNumber }, "createOneOnOneErollment failed");
       if (error.message.includes("400")) {

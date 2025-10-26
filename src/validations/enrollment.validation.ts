@@ -27,6 +27,7 @@ export const oneOnOneEnrollmentSchema = Joi.object({
       otherwise: Joi.number().integer().min(1).required(),
     }),
   isPaid: Joi.boolean().required(),
+  fcmToken: Joi.string().min(10).optional(),
 })
   .custom((value, helpers) => {
     if (value.availabilityIds.length > value.sessionsNumber) {

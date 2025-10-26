@@ -44,14 +44,17 @@ export class VirtualClassroomController {
       
       // Publish session.started event to notify enrolled students
       const courseId = session.course?.id || session.enrollment?.course?.id;
-      if (courseId && session.id) {
+      const enrollmentId = session.enrollment?.id;
+      
+      if ((courseId || enrollmentId) && session.id) {
         await publish("session.started", {
           courseId,
+          enrollmentId,
           sessionId: session.id,
           title: session.title,
           startsAt: session.date?.toISOString(),
         });
-        req.log.info({ courseId, sessionId: session.id }, "Published session.started event");
+        req.log.info({ courseId, enrollmentId, sessionId: session.id }, "Published session.started event");
       }
       
       const desktopJoinUrl = await this.virtualClassroomService.joinMeeting(
