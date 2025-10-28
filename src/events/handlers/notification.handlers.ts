@@ -10,8 +10,45 @@ subscribe<EventMap>({
   "enrollment.created": async (payload) => {
     try {
       logger.info({ payload }, "Processing enrollment.created event");
-      // Event is logged; client will subscribe via /v1/notifications/subscribe-topic
-      // No action needed here unless we want to send a welcome notification
+      
+      const { courseId, enrollmentId, courseTitle, fcmToken } = payload;
+      
+      // 1. Send personal notification to the enrolling student (if token provided)
+      if (fcmToken) {
+        try {
+          await notificationService.sendToTokens({
+            tokens: [fcmToken],
+            title: "Enrollment Confirmed",
+            body: `You enrolled in ${courseTitle || "the course"}.`,
+            data: {
+              type: "course_enrollment_created",
+              courseId,
+              enrollmentId,
+            },
+          });
+          logger.info({ enrollmentId, courseId }, "Personal enrollment notification sent to student");
+        } catch (err) {
+          logger.error({ err, enrollmentId }, "Failed to send personal enrollment notification");
+        }
+      }
+      
+      // 2. Send notification to teacher via teacher-courseId topic
+      const teacherTopic = `teacher-${courseId}`;
+      try {
+        await notificationService.sendToTopic({
+          topic: teacherTopic,
+          title: "New Enrollment",
+          body: `A student enrolled in ${courseTitle || "your course"}.`,
+          data: {
+            type: "teacher_enrollment_notification",
+            courseId,
+            enrollmentId,
+          },
+        });
+        logger.info({ teacherTopic, enrollmentId, courseId }, "Teacher enrollment notification sent");
+      } catch (err) {
+        logger.error({ err, teacherTopic, enrollmentId }, "Failed to send teacher enrollment notification");
+      }
     } catch (err) {
       logger.error({ err, payload }, "Failed to process enrollment.created");
     }

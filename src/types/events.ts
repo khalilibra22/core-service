@@ -5,6 +5,7 @@ export type EnrollmentCreated = {
   userId: string;
   enrollmentId: string;
   courseTitle?: string;
+  fcmToken?: string;
 };
 
 export type SessionStarted = {

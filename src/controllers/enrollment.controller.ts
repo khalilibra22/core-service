@@ -44,14 +44,14 @@ export class EnrollmentController {
         return;
       }
       //check if the user already enrolled
-      if (
-        course.enrollments?.some(
-          (enrollment) => enrollment.studentId === req.body.ownerId
-        )
-      ) {
-        res.status(409).json({ error: "User already enrolled in this course" });
-        return;
-      }
+      // if (
+      //   course.enrollments?.some(
+      //     (enrollment) => enrollment.studentId === req.body.ownerId
+      //   )
+      // ) {
+      //   res.status(409).json({ error: "User already enrolled in this course" });
+      //   return;
+      // }
       if (course.couresSettings?.isCanceled) {
         res.status(409).json({ error: "Course is canceled" });
         return;
@@ -75,10 +75,14 @@ export class EnrollmentController {
         course: course,
         type: "course",
       };
-      const enrollment = await this.enrollmentService.createEnrollment(enrollmentBody);
+      
+      // Extract fcmToken before creating enrollment
+      const fcmToken = req.body.fcmToken as string | undefined;
+      delete enrollmentBody.fcmToken; // Remove from enrollment body
+      
+      const enrollment = await this.enrollmentService.createEnrollment(enrollmentBody, fcmToken);
       
       // Auto-subscribe to course notifications if fcmToken provided
-      const fcmToken = req.body.fcmToken as string | undefined;
       const topic = `course-${course.id}`;
       
       if (fcmToken) {

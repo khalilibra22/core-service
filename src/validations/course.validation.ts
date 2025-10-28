@@ -17,6 +17,7 @@ const sharedFields = {
   couponApplicable: Joi.boolean().required(),
   language: Joi.string().optional(),
   ownerId: Joi.string().uuid().optional(),
+  fcmToken: Joi.string().min(10).optional(),
 };
 
 // Base schema for group

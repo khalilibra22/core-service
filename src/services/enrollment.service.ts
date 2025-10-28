@@ -12,7 +12,8 @@ export class EnrollmentService {
   }
 
   async createEnrollment(
-    enrollment: EnrollmentModel
+    enrollment: EnrollmentModel,
+    fcmToken?: string
   ): Promise<EnrollmentModel> {
     try {
       const savedEnrollment = await this.enrollmentRepo.save(enrollment);
@@ -24,6 +25,7 @@ export class EnrollmentService {
           userId: savedEnrollment.studentId,
           enrollmentId: savedEnrollment.id,
           courseTitle: savedEnrollment.course.title,
+          fcmToken,
         });
       }
       
