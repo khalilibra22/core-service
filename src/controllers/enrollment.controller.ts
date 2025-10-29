@@ -4,13 +4,16 @@ import { EnrollmentService } from "../services/enrollment.service";
 import { EnrollmentDto } from "../dtos/enrollment.dto";
 import { plainToInstance } from "class-transformer";
 import { OneOnOneEnollmentDto } from "../dtos/one-on-one-enrollment.dto";
-import { enrichDto, generateSessionsFromAvailabilities } from "../utils";
+import { enrichDto, generateSessionsFromAvailabilities, getCourseDto } from "../utils";
 import { SessionDto } from "../dtos/session.dto";
 import { RefundDto } from "../dtos/refund.dto";
 import { FeedbackService } from "../services/feedback.service";
 import { LruInMemoryCache } from "../cache/lru-in-memory.cache";
 import { HttpService } from "../services/http.service";
 import { NotificationService } from "../services/notification.service";
+import { PrerecordedCourseDto } from "../dtos/prerecorded-course.dto";
+import { LiveCourseDto } from "../dtos/live-course.dto";
+import { GroupClassDto } from "../dtos/group-class.dto";
 
 export class EnrollmentController {
   private enrollmentService: EnrollmentService;
@@ -637,6 +640,33 @@ export class EnrollmentController {
       res.status(200).json(refundDto);
     } catch (error) {
       req.log.error({ err: error, refundId: req.params.refundId }, "refundAdminResolve failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  getStudentEnrolledCourses = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const studentId = req.body.ownerId;
+      const courseType = req.query.type as string;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+
+      const courseTypeList = ["live", "group", "prerecorded"];
+      if (!courseTypeList.includes(courseType)) {
+        res.status(400).json({ error: "Invalid course type" });
+        return;
+      }
+
+      const courses = await this.courseService.getStudentEnrolledCourses(
+        studentId,
+        page,
+        limit,
+        courseType
+      );
+      const courseDtos = await getCourseDto(courses, courseType);      
+      res.status(200).json(courseDtos);
+    } catch (error) {
+      req.log.error({ err: error, studentId: req.body?.ownerId, type: req.query?.type }, "getStudentEnrolledCourses failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };

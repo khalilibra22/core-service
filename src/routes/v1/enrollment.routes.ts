@@ -47,6 +47,13 @@ router.get(
   enrollmentController.getStudentEnrollments
 );
 
+router.get(
+  "/student/courses",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("enrollments", "view"),
+  enrollmentController.getStudentEnrolledCourses
+);
+
 //cancel one on one enrollment
 router.post(
   "/:id/cancel",

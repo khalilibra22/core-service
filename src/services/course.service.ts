@@ -798,4 +798,34 @@ export class CourseService {
     }
   }
 
+  // get student enrolled courses by student id
+  async getStudentEnrolledCourses(studentId: string, page: number, limit: number, courseType: string): Promise<CourseModel[]> {
+    try {
+      const skip = (page - 1) * limit;
+      const courses = await this.courseRepo
+        .createQueryBuilder("course")
+        .innerJoin(
+          "course.enrollments",
+          "enrollment",
+          "enrollment.studentId = :studentId AND enrollment.type = :enrollmentType"
+        )
+        .where("course.type = :courseType")
+        .setParameters({
+          studentId,
+          enrollmentType: "course",
+          courseType,
+        })
+        .leftJoinAndSelect("course.couresSettings", "couresSettings")
+        .leftJoinAndSelect("course.sessions", "sessions")
+        .leftJoinAndSelect("course.enrollments", "enrollments")
+        .orderBy("course.createdAt", "DESC")
+        .skip(skip)
+        .take(limit)
+        .getMany();
+      return courses;
+    } catch (error: any) {
+      logger.error({ err: error, studentId, page, limit, courseType }, "getStudentEnrolledCourses failed");
+      throw new Error("Error fetching student enrolled courses: " + error.message);
+    }
+  }
 }
