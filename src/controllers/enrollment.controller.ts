@@ -149,28 +149,32 @@ export class EnrollmentController {
       const topic = `oneonone-${enrollment.id}`;
       
       // Optional auto-subscribe if fcmToken provided
-      const fcmToken = req.body.fcmToken as string | undefined;
-      if (fcmToken) {
+      const stuedentFcmToken = req.body.fcmToken as string | undefined;
+      if (stuedentFcmToken) {
         try {
-          await this.notificationService.subscribeTokenToTopic(fcmToken, topic);
+          await this.notificationService.subscribeTokenToTopic(stuedentFcmToken, topic);
           req.log.info({ topic, enrollmentId: enrollment.id }, "Auto-subscribed to 1:1 topic");
         } catch (err) {
           req.log.warn({ err, topic }, "Failed to auto-subscribe to 1:1 topic");
         }
       }
-      
-      // Optional welcome notification
-      try {
-        await this.notificationService.sendToTopic({
-          topic,
-          title: "One-on-one Scheduled",
-          body: "Your one-on-one sessions have been scheduled.",
-          data: { enrollmentId: String(enrollment.id), type: "oneonone_created" },
-        });
-      } catch (err) {
-        req.log.warn({ err, topic }, "Failed to send welcome 1:1 notification");
-      }
-      
+      const teacher = await LruInMemoryCache.getUserDetails(teacherId);
+      if (teacher?.fcmToken) {
+        try {
+          const teacherTopic = `teacher-${teacherId}`;
+          await this.notificationService.subscribeTokenToTopic(teacher.fcmToken, teacherTopic);
+          //send notification to teacher
+          await this.notificationService.sendToTokens({
+            tokens: [teacher.fcmToken, stuedentFcmToken ?? ""],
+            title: "One-on-one Scheduled",
+            body: "Your one-on-one sessions have been scheduled.",
+            data: { enrollmentId: String(enrollment.id), type: "oneonone_created"},
+          });
+          req.log.info({ teacherTopic, enrollmentId: enrollment.id }, "Notification sent to teacher");
+        } catch (err) {
+          req.log.warn({ err, teacherFcmToken: teacher.fcmToken }, "Failed to send notification to teacher");
+        }
+      } 
       await this.externalService.updateAvailabilitiesToUnavailable(
         availabilityIdsArray
       );
