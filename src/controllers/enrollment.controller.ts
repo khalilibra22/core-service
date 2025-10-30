@@ -170,13 +170,16 @@ export class EnrollmentController {
         try {
           const teacherTopic = `teacher-${teacherId}`;
           await this.notificationService.subscribeTokenToTopic(teacher.fcmToken, teacherTopic);
-          //send notification to teacher
-          await this.notificationService.sendToTokens({
-            tokens: [teacher.fcmToken, stuedentFcmToken ?? ""],
-            title: "One-on-one Scheduled",
-            body: "Your one-on-one sessions have been scheduled.",
-            data: { enrollmentId: String(enrollment.id), type: "oneonone_created"},
-          });
+          //send notification to teacher and student (filter out undefined/empty tokens)
+          const tokens = [teacher.fcmToken, stuedentFcmToken].filter((token): token is string => !!token && token.length >= 10);
+          if (tokens.length > 0) {
+            await this.notificationService.sendToTokens({
+              tokens,
+              title: "One-on-one Scheduled",
+              body: "Your one-on-one sessions have been scheduled.",
+              data: { enrollmentId: String(enrollment.id), type: "oneonone_created"},
+            });
+          }
           req.log.info({ teacherTopic, enrollmentId: enrollment.id }, "Notification sent to teacher");
         } catch (err) {
           req.log.warn({ err, teacherFcmToken: teacher.fcmToken }, "Failed to send notification to teacher");

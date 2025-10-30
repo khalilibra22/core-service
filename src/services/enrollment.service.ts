@@ -88,9 +88,10 @@ export class EnrollmentService {
     enrollmentId: string
   ): Promise<EnrollmentModel | null> {
     try {
-      return await this.enrollmentRepo.findOneBy({
-        id: enrollmentId,
-      }, {
+      return await this.enrollmentRepo.findOne({
+        where: {
+          id: enrollmentId,
+        },
         cache: {
           id: `enrollment-${enrollmentId}`,
           milliseconds: 300000, // 5 minutes

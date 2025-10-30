@@ -382,7 +382,7 @@ export class CourseService {
   }
 
   // get prerecorded course by id with sessions and sessions lessons and quizzes
-  async getPrerecordedCourseSections(id: string): Promise<CourseModel | null> {
+  async getPrerecordedCourseSections(id: string): Promise<SessionModel[]> {
     try {
       return await this.sessionRepo.find({
         where: {

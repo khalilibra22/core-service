@@ -85,7 +85,8 @@ export class QuizService {
 
   async getQuizById(quizId: string): Promise<QuizModel | null> {
     try {
-      return await this.quizRepo.findOneBy({ id: quizId }, {
+      return await this.quizRepo.findOne({
+        where: { id: quizId },
         cache: {
           id: `quiz-${quizId}`,
           milliseconds: 300000, // 5 minutes
@@ -124,7 +125,8 @@ export class QuizService {
 
   async getQuestionById(questionId: string): Promise<QuestionModel | null> {
     try {
-      return await this.questionRepo.findOneBy({ id: questionId }, {
+      return await this.questionRepo.findOne({
+        where: { id: questionId },
         cache: {
           id: `question-${questionId}`,
           milliseconds: 300000, // 5 minutes
