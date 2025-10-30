@@ -1,4 +1,5 @@
 import { getFcm } from "../config/firebase-admin";
+import { getMailer } from "../config/mailer";
 
 type KeyValue = Record<string, string>;
 
@@ -22,6 +23,39 @@ export type SendToTopicInput = PlatformOverrides & {
   data?: KeyValue;
   imageUrl?: string;
   topic: string;
+};
+
+export type EmailAttachment = {
+  filename: string;
+  path?: string;
+  content?: string | Buffer;
+  contentType?: string;
+};
+
+export type SendEmailInput = {
+  from: string;
+  to: string | string[];
+  subject: string;
+  text?: string;
+  html?: string;
+  cc?: string | string[];
+  bcc?: string | string[];
+  replyTo?: string;
+  attachments?: EmailAttachment[];
+};
+
+export type SendBulkEmailInput = {
+  from: string;
+  recipients: Array<{
+    to: string;
+    subject: string;
+    text?: string;
+    html?: string;
+    cc?: string | string[];
+    bcc?: string | string[];
+  }>;
+  replyTo?: string;
+  attachments?: EmailAttachment[];
 };
 
 export class NotificationService {
@@ -131,6 +165,99 @@ export class NotificationService {
 
     const res = await fcm.unsubscribeFromTopic([token], topic);
     return res;
+  }
+
+  /**
+   * Send a single email using Mailtrap (Nodemailer)
+   */
+  async sendEmail(input: SendEmailInput) {
+    const mailer = getMailer();
+    if (!mailer) {
+      throw new Error("Mailer not configured");
+    }
+
+    const { from, to, subject, text, html, cc, bcc, replyTo, attachments } = input;
+
+    if (!text && !html) {
+      throw new Error("Either text or html content must be provided");
+    }
+
+    try {
+      const info = await mailer.sendMail({
+        from,
+        to,
+        subject,
+        text,
+        html,
+        cc,
+        bcc,
+        replyTo,
+        attachments,
+      });
+
+      return {
+        success: true,
+        messageId: info.messageId,
+        response: info.response,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || "Unknown error",
+      };
+    }
+  }
+
+  /**
+   * Send bulk emails (sequentially) using Mailtrap
+   * Returns a summary of successes and failures
+   */
+  async sendBulkEmail(input: SendBulkEmailInput) {
+    const mailer = getMailer();
+    if (!mailer) {
+      throw new Error("Mailer not configured");
+    }
+
+    const { from, recipients, replyTo, attachments } = input;
+    let successCount = 0;
+    let failureCount = 0;
+    const errors: Array<{ recipient: string; error: string }> = [];
+
+    for (const recipient of recipients) {
+      const { to, subject, text, html, cc, bcc } = recipient;
+
+      if (!text && !html) {
+        failureCount++;
+        errors.push({
+          recipient: Array.isArray(to) ? to.join(", ") : to,
+          error: "Either text or html content must be provided",
+        });
+        continue;
+      }
+
+      try {
+        await mailer.sendMail({
+          from,
+          to,
+          subject,
+          text,
+          html,
+          cc,
+          bcc,
+          replyTo,
+          attachments,
+        });
+        successCount++;
+      } catch (error: any) {
+        failureCount++;
+        errors.push({
+          recipient: Array.isArray(to) ? to.join(", ") : to,
+          error: error.message || "Unknown error",
+        });
+      }
+    }
+
+    return { successCount, failureCount, errors };
   }
 }
 

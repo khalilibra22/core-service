@@ -11,9 +11,6 @@ import { FeedbackService } from "../services/feedback.service";
 import { LruInMemoryCache } from "../cache/lru-in-memory.cache";
 import { HttpService } from "../services/http.service";
 import { NotificationService } from "../services/notification.service";
-import { PrerecordedCourseDto } from "../dtos/prerecorded-course.dto";
-import { LiveCourseDto } from "../dtos/live-course.dto";
-import { GroupClassDto } from "../dtos/group-class.dto";
 
 export class EnrollmentController {
   private enrollmentService: EnrollmentService;
@@ -103,6 +100,13 @@ export class EnrollmentController {
           course: topic,
         },
       });
+      // //send email to teacher
+      // await this.notificationService.sendEmail({
+      //   to: "test@test.com",
+      //   subject: "New Enrollment",
+      //   text: `A new student enrolled in ${course.name}.`,
+      //   from: "noreply@example.com",
+      // });
     } catch (error: any) {
       req.log.error({ err: error, courseId: req.params.id }, "createEnrollment failed");
       res.status(500).json({ error: "Internal Server Error" });
