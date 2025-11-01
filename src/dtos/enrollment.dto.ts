@@ -62,7 +62,7 @@ export class EnrollmentDto {
 
   @Expose()
   @Transform(({ obj }) => obj.course?.price)
-  price?: boolean;
+  price?: number;
 
   @Expose()
   @Transform(({ obj }) => obj.createdAt)

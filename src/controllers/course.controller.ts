@@ -10,11 +10,15 @@ import { LessonDto } from "../dtos/lesson.dto";
 import { RecordedSessionDto } from "../dtos/recorded-session.dto";
 import { SessionDto } from "../dtos/session.dto";
 import { MaterialDto } from "../dtos/material.dto";
+import { NotificationService } from "../services/notification.service";
 
 export class CourseController {
   private courseService: CourseService;
+  private notificationService: NotificationService;
+  
   constructor() {
     this.courseService = new CourseService();
+    this.notificationService = new NotificationService();
   }
 
   createDraftCourse = async (req: Request, res: Response): Promise<void> => {
@@ -71,6 +75,19 @@ export class CourseController {
         status: "published",
       };
       await this.courseService.updateCourse(courseBody);
+      
+      // Auto-subscribe teacher to teacher-courseId topic when publishing
+      const fcmToken = req.body.fcmToken as string | undefined;
+      if (fcmToken && course.status !== "published") {
+        const teacherTopic = `teacher-${id}`;
+        try {
+          await this.notificationService.subscribeTokenToTopic(fcmToken, teacherTopic);
+          req.log.info({ teacherTopic, courseId: id }, "Teacher auto-subscribed to teacher topic");
+        } catch (err) {
+          req.log.warn({ err, teacherTopic }, "Failed to auto-subscribe teacher to teacher topic");
+        }
+      }
+      
       res.status(200).json({ message: "Course updated successfully" });
     } catch (error) {
       req.log.error({ err: error, courseId: req.params.id }, "updateCourse failed");

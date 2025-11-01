@@ -44,7 +44,7 @@ type AdminAction =
   | "manage_all_complaints"
   | "manage_all_enrollments"
   | "manage_all_reviews"
-  | "mqanage_all_payments"
+  | "manage_all_payments"
   | "overview_platform";
 
 export type Action =

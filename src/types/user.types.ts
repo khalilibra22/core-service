@@ -4,6 +4,7 @@ export interface MinimalUser {
   email: string;
   phoneNumber: string;
   address: string;
+  fcmToken: string;
   role: number; // UserRole enum
 }
 

@@ -8,7 +8,7 @@ export const permissions: Record<UserRole, Record<Resource, Action[]>> = {
     sessions: ["manage_all_sessions", "view"],
     reviews: ["manage_all_reviews"],
     complaints: ["manage_all_complaints"],
-    payments: ["mqanage_all_payments"],
+    payments: ["manage_all_payments"],
   },
   [UserRole.TEACHER]: {
     enrollments: ["manage_enrollments", "cancel_enrollment", "view"],

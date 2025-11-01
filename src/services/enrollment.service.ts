@@ -2,6 +2,7 @@ import { In } from "typeorm";
 import { AppDataSource } from "../config/database";
 import { EnrollmentModel } from "../models/enrollment.model";
 import { logger } from "../utils/logger";
+import { publish } from "../events";
 
 export class EnrollmentService {
   enrollmentRepo: any;
@@ -11,10 +12,24 @@ export class EnrollmentService {
   }
 
   async createEnrollment(
-    enrollment: EnrollmentModel
+    enrollment: EnrollmentModel,
+    fcmToken?: string
   ): Promise<EnrollmentModel> {
     try {
-      return await this.enrollmentRepo.save(enrollment);
+      const savedEnrollment = await this.enrollmentRepo.save(enrollment);
+      
+      // Publish enrollment.created event for course enrollments
+      if (savedEnrollment.type === "course" && savedEnrollment.course?.id) {
+        await publish("enrollment.created", {
+          courseId: savedEnrollment.course.id,
+          userId: savedEnrollment.studentId,
+          enrollmentId: savedEnrollment.id,
+          courseTitle: savedEnrollment.course.title,
+          fcmToken,
+        });
+      }
+      
+      return savedEnrollment;
     } catch (error) {
       logger.error({ err: error }, "createEnrollment failed");
       throw new Error("Error creating course enrollment");
@@ -73,9 +88,10 @@ export class EnrollmentService {
     enrollmentId: string
   ): Promise<EnrollmentModel | null> {
     try {
-      return await this.enrollmentRepo.findOneBy({
-        id: enrollmentId,
-      }, {
+      return await this.enrollmentRepo.findOne({
+        where: {
+          id: enrollmentId,
+        },
         cache: {
           id: `enrollment-${enrollmentId}`,
           milliseconds: 300000, // 5 minutes

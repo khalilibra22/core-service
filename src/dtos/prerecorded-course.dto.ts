@@ -22,8 +22,9 @@ export class PrerecordedCourseDto {
   ownerId?: string;
 
   @Expose()
-  @Transform(({ obj }) => obj.instructorId ?? undefined)
-  instructorId?: string;
+  @Transform(({ obj, options }) => options?.context?.userById?.[obj.ownerId]?.fullname)
+  ownerName?: string;
+
 
   @Expose()
   price?: number;
@@ -38,12 +39,28 @@ export class PrerecordedCourseDto {
   language?: string;
 
   @Expose()
-  @Transform(({ obj }) => obj.enrollments?.length ?? undefined)
-  enrollmentsNumber?: number;
+  @Transform(({ obj }) => obj.enrollments?.length ?? 0)
+  enrollmentsCount?: number;
 
   @Expose()
-  @Transform(({ obj }) => obj.sessions?.length ?? undefined)
-  sectionsNumber?: number;
+  @Transform(({ obj }) => obj.sessions?.length ?? 0)
+  sectionsCount?: number;
+
+  @Expose()
+  @Transform(
+    () =>
+      //random number between 1 and 5
+      Math.floor(Math.random() * 5) + 1
+  )
+  ownerRating?: number;
+
+  @Expose()
+  @Transform(
+    () =>
+      //random number between 1 and 5
+      Math.floor(Math.random() * 5) + 1
+  )
+  courseRating?: number;
 
   @Expose()
   @Transform(({ obj }) => obj.couresSettings?.isPaid)
@@ -65,9 +82,13 @@ export class PrerecordedCourseDto {
   @Transform(({ obj }) => getPermanentUrl(obj.thumbnail))
   thumbnail?: string;
 
-  @Expose()
-  @Transform(({ obj }) => obj.couresSettings?.topicId)
-  topicId?: number;
+  // @Expose()
+  // @Transform(({ obj }) => obj.couresSettings?.topicId)
+  // topicId?: number;
+
+  // @Expose()
+  // @Transform(({ obj, options }) => options?.context?.topicById?.[obj.topicId]?.topic?.name)
+  // topic?: string;
 
   @Expose()
   @Transform(({ obj }) => obj.couresSettings?.objectives)

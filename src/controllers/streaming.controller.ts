@@ -52,7 +52,7 @@ export class StreamingServiceController {
       );
       if (
         session.course?.ownerId !== req.body.ownerId &&
-        !enrollment?.studentId !== req.body.ownerId
+        enrollment?.studentId !== req.body.ownerId
       ) {
         res.status(403).json({
           error: "You are not authorized to access this video",

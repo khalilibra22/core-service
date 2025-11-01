@@ -4,24 +4,27 @@ import { EnrollmentService } from "../services/enrollment.service";
 import { EnrollmentDto } from "../dtos/enrollment.dto";
 import { plainToInstance } from "class-transformer";
 import { OneOnOneEnollmentDto } from "../dtos/one-on-one-enrollment.dto";
-import { enrichDto, generateSessionsFromAvailabilities } from "../utils";
+import { enrichDto, generateSessionsFromAvailabilities, getCourseDto } from "../utils";
 import { SessionDto } from "../dtos/session.dto";
 import { RefundDto } from "../dtos/refund.dto";
 import { FeedbackService } from "../services/feedback.service";
 import { LruInMemoryCache } from "../cache/lru-in-memory.cache";
 import { HttpService } from "../services/http.service";
+import { NotificationService } from "../services/notification.service";
 
 export class EnrollmentController {
   private enrollmentService: EnrollmentService;
   private courseService: CourseService;
   private externalService: HttpService;
   private feedbackService: FeedbackService;
+  private notificationService: NotificationService;
 
   constructor() {
     this.enrollmentService = new EnrollmentService();
     this.courseService = new CourseService();
     this.externalService = new HttpService();
     this.feedbackService = new FeedbackService();
+    this.notificationService = new NotificationService();
   }
 
   createEnrollment = async (req: Request, res: Response): Promise<void> => {
@@ -41,14 +44,14 @@ export class EnrollmentController {
         return;
       }
       //check if the user already enrolled
-      if (
-        course.enrollments?.some(
-          (enrollment) => enrollment.studentId === req.body.ownerId
-        )
-      ) {
-        res.status(409).json({ error: "User already enrolled in this course" });
-        return;
-      }
+      // if (
+      //   course.enrollments?.some(
+      //     (enrollment) => enrollment.studentId === req.body.ownerId
+      //   )
+      // ) {
+      //   res.status(409).json({ error: "User already enrolled in this course" });
+      //   return;
+      // }
       if (course.couresSettings?.isCanceled) {
         res.status(409).json({ error: "Course is canceled" });
         return;
@@ -72,8 +75,38 @@ export class EnrollmentController {
         course: course,
         type: "course",
       };
-      await this.enrollmentService.createEnrollment(enrollmentBody);
-      res.status(201).json({ message: "Enrollment created successfully" });
+      
+      // Extract fcmToken before creating enrollment
+      const fcmToken = req.body.fcmToken as string | undefined;
+      delete enrollmentBody.fcmToken; // Remove from enrollment body
+      
+      const enrollment = await this.enrollmentService.createEnrollment(enrollmentBody, fcmToken);
+      
+      // Auto-subscribe to course notifications if fcmToken provided
+      const topic = `course-${course.id}`;
+      
+      if (fcmToken) {
+        try {
+          await this.notificationService.subscribeTokenToTopic(fcmToken, topic);
+          req.log.info({ topic, enrollmentId: enrollment.id }, "Auto-subscribed to course topic");
+        } catch (err) {
+          req.log.warn({ err, topic }, "Failed to auto-subscribe to course topic");
+        }
+      }
+      
+      res.status(201).json({
+        message: "Enrollment created successfully",
+        notificationTopics: {
+          course: topic,
+        },
+      });
+      // //send email to teacher
+      // await this.notificationService.sendEmail({
+      //   to: "test@test.com",
+      //   subject: "New Enrollment",
+      //   text: `A new student enrolled in ${course.name}.`,
+      //   from: "noreply@example.com",
+      // });
     } catch (error: any) {
       req.log.error({ err: error, courseId: req.params.id }, "createEnrollment failed");
       res.status(500).json({ error: "Internal Server Error" });
@@ -105,7 +138,6 @@ export class EnrollmentController {
         await this.externalService.checkAvailabilities(
           availabilityIdsArray
         );
-      console.log(availabilities);
       const sessions = generateSessionsFromAvailabilities(
         availabilities,
         topicId,
@@ -118,11 +150,48 @@ export class EnrollmentController {
         sessions: sessions,
         type: "one-on-one",
       } as any;
-      await this.enrollmentService.createEnrollment(enrollmentBody);
+      const enrollment = await this.enrollmentService.createEnrollment(enrollmentBody);
+      
+      // Topic for this one-on-one enrollment
+      const topic = `oneonone-${enrollment.id}`;
+      
+      // Optional auto-subscribe if fcmToken provided
+      const stuedentFcmToken = req.body.fcmToken as string | undefined;
+      if (stuedentFcmToken) {
+        try {
+          await this.notificationService.subscribeTokenToTopic(stuedentFcmToken, topic);
+          req.log.info({ topic, enrollmentId: enrollment.id }, "Auto-subscribed to 1:1 topic");
+        } catch (err) {
+          req.log.warn({ err, topic }, "Failed to auto-subscribe to 1:1 topic");
+        }
+      }
+      const teacher = await LruInMemoryCache.getUserDetails(teacherId);
+      if (teacher?.fcmToken) {
+        try {
+          const teacherTopic = `teacher-${teacherId}`;
+          await this.notificationService.subscribeTokenToTopic(teacher.fcmToken, teacherTopic);
+          //send notification to teacher and student (filter out undefined/empty tokens)
+          const tokens = [teacher.fcmToken, stuedentFcmToken].filter((token): token is string => !!token && token.length >= 10);
+          if (tokens.length > 0) {
+            await this.notificationService.sendToTokens({
+              tokens,
+              title: "One-on-one Scheduled",
+              body: "Your one-on-one sessions have been scheduled.",
+              data: { enrollmentId: String(enrollment.id), type: "oneonone_created"},
+            });
+          }
+          req.log.info({ teacherTopic, enrollmentId: enrollment.id }, "Notification sent to teacher");
+        } catch (err) {
+          req.log.warn({ err, teacherFcmToken: teacher.fcmToken }, "Failed to send notification to teacher");
+        }
+      } 
       await this.externalService.updateAvailabilitiesToUnavailable(
         availabilityIdsArray
       );
-      res.status(201).json({ message: "Enrollment created successfully" });
+      res.status(201).json({
+        message: "Enrollment created successfully",
+        notificationTopics: { oneOnOne: topic },
+      });
     } catch (error: any) {
       req.log.error({ err: error, teacherId: req.body?.teacherId, ownerId: req.body?.ownerId, topicId: req.body?.topicId, sessionsNumber: req.body?.sessionsNumber }, "createOneOnOneErollment failed");
       if (error.message.includes("400")) {
@@ -578,6 +647,33 @@ export class EnrollmentController {
       res.status(200).json(refundDto);
     } catch (error) {
       req.log.error({ err: error, refundId: req.params.refundId }, "refundAdminResolve failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  getStudentEnrolledCourses = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const studentId = req.body.ownerId;
+      const courseType = req.query.type as string;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+
+      const courseTypeList = ["live", "group", "prerecorded"];
+      if (!courseTypeList.includes(courseType)) {
+        res.status(400).json({ error: "Invalid course type" });
+        return;
+      }
+
+      const courses = await this.courseService.getStudentEnrolledCourses(
+        studentId,
+        page,
+        limit,
+        courseType
+      );
+      const courseDtos = await getCourseDto(courses, courseType);      
+      res.status(200).json(courseDtos);
+    } catch (error) {
+      req.log.error({ err: error, studentId: req.body?.ownerId, type: req.query?.type }, "getStudentEnrolledCourses failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
