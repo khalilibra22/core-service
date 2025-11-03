@@ -29,3 +29,17 @@ export const quizQuestionValidation = Joi.object({
     }),
   ownerId: Joi.string().uuid().optional(),
 });
+
+export const submitQuizAttemptValidation = Joi.object({
+  answers: Joi.array()
+    .items(
+      Joi.object({
+        questionId: Joi.string().uuid().required(),
+        answer: Joi.string().trim().required().min(1).max(500),
+      })
+    )
+    .min(1)
+    .required(),
+  timeTaken: Joi.number().integer().min(0).optional(),
+  ownerId: Joi.string().uuid().optional(),
+});
