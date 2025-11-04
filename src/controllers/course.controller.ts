@@ -610,7 +610,17 @@ export class CourseController {
         res.status(400).json({ error: "Session is not a prerecorded session" });
         return;
       }
-      const sessionDto = plainToInstance(RecordedSessionDto, sessionDetails, {
+      
+      // Transform materialLinks to materials for DTO
+      const shapedSession = {
+        ...sessionDetails,
+        lessons: sessionDetails.lessons?.map((l: any) => ({
+          ...l,
+          materials: (l.materialLinks ?? []).filter((link: any) => link?.material),
+        })),
+      };
+      
+      const sessionDto = plainToInstance(RecordedSessionDto, shapedSession, {
         excludeExtraneousValues: true,
       });
 
@@ -641,7 +651,17 @@ export class CourseController {
       const sections = await this.courseService.getPrerecordedCourseSections(
         courseId
       );
-      const sectionDtos = plainToInstance(RecordedSessionDto, sections, {
+      
+      // Transform materialLinks to materials for DTO
+      const shapedSections = sections.map(session => ({
+        ...session,
+        lessons: session.lessons?.map((l: any) => ({
+          ...l,
+          materials: (l.materialLinks ?? []).filter((link: any) => link?.material),
+        })),
+      }));
+      
+      const sectionDtos = plainToInstance(RecordedSessionDto, shapedSections, {
         excludeExtraneousValues: true,
       });
       res.status(200).json(sectionDtos);

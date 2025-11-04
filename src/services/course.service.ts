@@ -367,7 +367,7 @@ export class CourseService {
         where: {
           id: id,
         },
-        relations: ["lessons", "quizzes", "course"],
+        relations: ["lessons", "lessons.materialLinks", "lessons.materialLinks.material", "quizzes", "course"],
         cache: {
           id: `prerecorded-session-${id}`,
           milliseconds: 300000, // 5 minutes
@@ -390,7 +390,7 @@ export class CourseService {
             id: id,
           },
         },
-        relations: ["lessons", "quizzes"],
+        relations: ["lessons", "lessons.materialLinks", "lessons.materialLinks.material", "quizzes"],
         cache: {
           id: `prerecorded-course-sections-${id}`,
           milliseconds: 300000, // 5 minutes
