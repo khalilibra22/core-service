@@ -29,7 +29,7 @@ router.get(
   "/:id",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "download_materials"),
-  storageController.generatePresignedUploadUrl
+  storageController.getFileUrl
 );
 
 // Delete file
