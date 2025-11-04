@@ -192,6 +192,7 @@ export class QuizController {
   getSessionQuizzes = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
+      const userRole = req.body.userRole;
       const session = await this.courseService.getSessionById(id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
@@ -200,6 +201,7 @@ export class QuizController {
       const quizzes = await this.quizService.getSessionQuizzes(id);
       const quizDtos = plainToInstance(QuizDto, quizzes, {
         excludeExtraneousValues: true,
+        groups: userRole === 2 ? [] : ["instructor", "admin"],
       });
       res.status(200).json(quizDtos);
     } catch (error) {
@@ -211,14 +213,21 @@ export class QuizController {
   getQuizDetails = async (req: Request, res: Response): Promise<void> => {
     try {
       const quizId = req.params.id;
+      const userRole = req.body.userRole;
       const quiz = await this.quizService.getQuizDetails(quizId);
       if (!quiz) {
         res.status(404).json({ error: "Quiz not found" });
         return;
       }
+      
+      // Determine transformation groups based on user role
+      const groups = userRole === 2 ? [] : ["instructor", "admin"];
+      
       const quizDto = plainToInstance(QuizDto, quiz, {
         excludeExtraneousValues: true,
+        groups: groups,
       });
+      
       res.status(200).json(quizDto);
     } catch (error) {
       req.log.error({ err: error, quizId: req.params.id }, "getQuizDetails failed");

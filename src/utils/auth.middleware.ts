@@ -31,7 +31,9 @@ export class AuthMiddleware {
       const decoded = await AuthMiddleware.decodeToken(token);
       req.body.ownerId = decoded.id; // Assuming the token contains an 'id' field
       req.body.user = decoded;
+      req.body.userRole = decoded.roles;
       res.locals.ownerId = decoded.id;
+      res.locals.user = decoded;
       next();
     } catch (error) {
       req.log?.error({ err: error }, "verifyToken failed");

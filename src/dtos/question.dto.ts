@@ -16,6 +16,6 @@ export class QuestionDto {
   @Expose()
   points?: number;
 
-  @Expose()
+  @Expose({ groups: ["instructor", "admin"] })
   answer?: string;
 }
