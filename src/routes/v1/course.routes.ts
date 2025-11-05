@@ -106,6 +106,23 @@ router.get(
   feedbackController.getReviewsByCourseId
 );
 
+//update a review
+router.put(
+  "/:id/reviews/:reviewId",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("reviews", "submit_review"),
+  ValidationMiddleware.validate(reviewValdationSchema),
+  feedbackController.updateCourseReview
+);
+
+//delete a review
+router.delete(
+  "/:id/reviews/:reviewId",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("reviews", "submit_review"),
+  feedbackController.deleteCourseReview
+);
+
 //create a certificate
 router.post(
   "/:id/certificates",

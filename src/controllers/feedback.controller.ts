@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { CourseService } from "../services/course.service";
 import { FeedbackService } from "../services/feedback.service";
-import { plainToInstance } from "class-transformer";
 import { ReviewDto } from "../dtos/review.dto";
 import { ComplaintDto } from "../dtos/complaint.dto";
 import { enrichDto } from "../utils";
@@ -16,6 +15,16 @@ export class FeedbackController {
 
   createCourseReview = async (req: Request, res: Response): Promise<void> => {
     try {
+      // Check if the user already reviewed the course (efficient query)
+      const hasReviewed = await this.feedbackService.hasStudentReviewedCourse(
+        req.body.ownerId,
+        req.params.id
+      );
+      if (hasReviewed) {
+        res.status(409).json({ error: "You have already reviewed this course" });
+        return;
+      }
+
       const course = await this.courseService.getCourseById(req.params.id);
       if (!course) {
         res.status(404).json({ error: "Course not found" });
@@ -32,6 +41,74 @@ export class FeedbackController {
       res.status(201).json(reviewDto);
     } catch (error) {
       req.log.error({ err: error, courseId: req.params.id }, "createCourseReview failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  updateCourseReview = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const courseId = req.params.id;
+      const reviewId = req.params.reviewId;
+      
+      const review = await this.feedbackService.getReviewById(reviewId);
+      if (!review) {
+        res.status(404).json({ error: "Review not found" });
+        return;
+      }
+
+      // Verify the review belongs to the course
+      if (review.course?.id !== courseId) {
+        res.status(404).json({ error: "Review not found for this course" });
+        return;
+      }
+
+      // Verify ownership
+      if (review.studentId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this review" });
+        return;
+      }
+
+      // Update only allowed fields
+      review.rating = req.body.rating;
+      review.title = req.body.title;
+      review.comment = req.body.comment;
+
+      const updatedReview = await this.feedbackService.updateReview(review);
+      const reviewDto = await enrichDto<ReviewDto>(ReviewDto, updatedReview);
+      res.status(200).json(reviewDto);
+    } catch (error) {
+      req.log.error({ err: error, courseId: req.params.id, reviewId: req.params.reviewId }, "updateCourseReview failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  deleteCourseReview = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const courseId = req.params.id;
+      const reviewId = req.params.reviewId;
+      
+      const review = await this.feedbackService.getReviewById(reviewId);
+      if (!review) {
+        res.status(404).json({ error: "Review not found" });
+        return;
+      }
+
+      // Verify the review belongs to the course
+      if (review.course?.id !== courseId) {
+        res.status(404).json({ error: "Review not found for this course" });
+        return;
+      }
+
+      // Verify ownership
+      if (review.studentId !== req.body.ownerId) {
+        res.status(403).json({ error: "You are not the owner of this review" });
+        return;
+      }
+
+      await this.feedbackService.softDeleteReview(reviewId);
+      res.status(204).send();
+    } catch (error) {
+      req.log.error({ err: error, courseId: req.params.id, reviewId: req.params.reviewId }, "deleteCourseReview failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };

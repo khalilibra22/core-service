@@ -20,6 +20,41 @@ export class FeedbackService {
     }
   }
 
+  async updateReview(review: ReviewModel): Promise<ReviewModel> {
+    try {
+      return await this.reviewRepo.save(review);
+    } catch (error) {
+      logger.error({ err: error }, "updateReview failed");
+      throw new Error("Error updating review");
+    }
+  }
+
+  async softDeleteReview(id: string): Promise<void> {
+    try {
+      await this.reviewRepo.softDelete(id);
+    } catch (error) {
+      logger.error({ err: error, id }, "softDeleteReview failed");
+      throw new Error("Error deleting review");
+    }
+  }
+
+  async hasStudentReviewedCourse(studentId: string, courseId: string): Promise<boolean> {
+    try {
+      const count = await this.reviewRepo.count({
+        where: {
+          studentId: studentId,
+          course: {
+            id: courseId,
+          },
+        },
+      });
+      return count > 0;
+    } catch (error) {
+      logger.error({ err: error, studentId, courseId }, "hasStudentReviewedCourse failed");
+      throw new Error("Error checking student review status");
+    }
+  }
+
   async createComplaint(complaint: ComplaintModel): Promise<ComplaintModel> {
     try {
       return await this.complaintRepo.save(complaint);
@@ -63,6 +98,7 @@ export class FeedbackService {
         where: {
           id: id,
         },
+        relations: ["course"],
         cache: {
           id: `review-${id}`,
           milliseconds: 300000, // 5 minutes
