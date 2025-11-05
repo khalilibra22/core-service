@@ -672,7 +672,7 @@ export class CourseController {
     }
   };
 
-  //search courses by its type using pagination
+  //search courses by its type using pagination with optional text search
   searchCourses = async (req: Request, res: Response): Promise<void> => {
     try {
       const courseType = req.query.type as string;
@@ -683,15 +683,20 @@ export class CourseController {
       }
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
+      
+      // Get optional search query parameter
+      const searchQuery = req.query.q as string | undefined;
+      
       const courses = await this.courseService.searchCourses(
         courseType,
         page,
-        limit
+        limit,
+        searchQuery
       );
       const courseDtos = await getCourseDto(courses, courseType);
       res.status(200).json(courseDtos);
     } catch (error) {
-      req.log.error({ err: error, courseType: req.query.type, page: req.query.page, limit: req.query.limit }, "searchCourses failed");
+      req.log.error({ err: error, courseType: req.query.type, page: req.query.page, limit: req.query.limit, searchQuery: req.query.q }, "searchCourses failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };

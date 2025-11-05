@@ -411,24 +411,56 @@ export class CourseService {
   async searchCourses(
     type: string,
     page: number,
-    limit: number
+    limit: number,
+    searchQuery?: string
   ): Promise<CourseModel[]> {
     try {
-      return await this.courseRepo.find({
-        where: {
-          type: type,
-        },
-        relations: ["couresSettings", "enrollments"],
-        skip: (page - 1) * limit,
-        take: limit,
-        cache: {
-          id: `courses-${type}-${page}-${limit}`,
-          duration: 60000,
-        },
-      });
-    } catch (error) {
-      logger.error({ err: error, type, page, limit }, "searchCourses failed");
-      throw new Error("Error fetching all courses of type live");
+      const skip = (page - 1) * limit;
+
+      // If no search query, use the original simple find
+      if (!searchQuery || searchQuery.trim() === "") {
+        return await this.courseRepo.find({
+          where: {
+            type: type,
+          },
+          relations: ["couresSettings", "enrollments"],
+          skip: skip,
+          take: limit,
+          cache: {
+            id: `courses-${type}-${page}-${limit}`,
+            duration: 60000,
+          },
+        });
+      }
+
+      // Use QueryBuilder for text search with Postgres full-text search
+      const query = this.courseRepo
+        .createQueryBuilder("course")
+        .leftJoinAndSelect("course.couresSettings", "couresSettings")
+        .leftJoinAndSelect("course.enrollments", "enrollments")
+        .where("course.type = :type", { type })
+        .andWhere("course.deletedAt IS NULL");
+
+      // Sanitize search query - remove special chars that could break SQL
+      const sanitized = searchQuery.trim().replace(/[%_\\]/g, "\\$&");
+      const searchPattern = `%${sanitized}%`;
+
+      // Build comprehensive search across key text fields
+      // Using OR conditions for main searchable fields
+      query.andWhere(
+        "(course.name ILIKE :search OR course.description ILIKE :search OR course.language ILIKE :search OR couresSettings.syllabus ILIKE :search OR couresSettings.grade ILIKE :search)",
+        { search: searchPattern }
+      );
+
+      query
+        .orderBy("course.createdAt", "DESC")
+        .skip(skip)
+        .take(limit);
+
+      return await query.getMany();
+    } catch (error: any) {
+      logger.error({ err: error, type, page, limit, searchQuery }, "searchCourses failed");
+      throw new Error("Error fetching courses: " + error.message);
     }
   }
 
