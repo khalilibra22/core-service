@@ -7,7 +7,9 @@ import { LessonModel } from "../models/lesson.model";
 import { SessionModel } from "../models/session.model";
 import { MaterialModel } from "../models/material.model";
 import { MaterialLinkModel } from "../models/material-link.model";
+import { StudentRequestModel } from "../models/student-request.model";
 import { In, IsNull } from "typeorm";
+import { StudentRequestService } from "./student-request.service";
 
 export class CourseService {
   courseRepo: any;
@@ -17,6 +19,7 @@ export class CourseService {
   lessonRepo: any;
   materialRepo: any;
   materialLinkRepo: any;
+  studentRequestService: StudentRequestService;
   constructor() {
     this.courseRepo = AppDataSource.getRepository(CourseModel);
     this.courseSettingsRepo = AppDataSource.getRepository(CourseSettingsModel);
@@ -25,6 +28,7 @@ export class CourseService {
     this.lessonRepo = AppDataSource.getRepository(LessonModel);
     this.materialRepo = AppDataSource.getRepository(MaterialModel);
     this.materialLinkRepo = AppDataSource.getRepository(MaterialLinkModel);
+    this.studentRequestService = new StudentRequestService();
   }
 
   async createCourse(course: CourseModel): Promise<CourseModel> {
@@ -826,6 +830,87 @@ export class CourseService {
     } catch (error: any) {
       logger.error({ err: error, studentId, page, limit, courseType }, "getStudentEnrolledCourses failed");
       throw new Error("Error fetching student enrolled courses: " + error.message);
+    }
+  }
+
+  // Student Request Methods
+  async createStudentRequest(
+    courseId: string,
+    studentId: string,
+    type: string,
+    message?: string,
+    payload?: any
+  ): Promise<StudentRequestModel> {
+    try {
+      const course = await this.getCourseById(courseId);
+      if (!course) {
+        throw new Error("Course not found");
+      }
+      const requestBody: StudentRequestModel = {
+        studentId,
+        type,
+        message,
+        payload,
+        status: "pending",
+        course,
+      };
+      return await this.studentRequestService.createStudentRequest(requestBody);
+    } catch (error: any) {
+      logger.error({ err: error, courseId, studentId, type }, "createStudentRequest failed");
+      throw new Error("Error creating student request: " + error.message);
+    }
+  }
+
+  async updateStudentRequestStatus(
+    requestId: string,
+    status: string,
+    ownerResponse?: string,
+    respondedBy?: string
+  ): Promise<StudentRequestModel> {
+    try {
+      const request = await this.studentRequestService.getStudentRequestById(requestId);
+      if (!request) {
+        throw new Error("Student request not found");
+      }
+      request.status = status;
+      if (ownerResponse) {
+        request.ownerResponse = ownerResponse;
+      }
+      if (respondedBy) {
+        request.respondedBy = respondedBy;
+        request.respondedAt = new Date();
+      }
+      return await this.studentRequestService.updateStudentRequest(request);
+    } catch (error: any) {
+      logger.error({ err: error, requestId, status }, "updateStudentRequestStatus failed");
+      throw new Error("Error updating student request status: " + error.message);
+    }
+  }
+
+  async getStudentRequestsByCourseId(courseId: string): Promise<StudentRequestModel[]> {
+    try {
+      return await this.studentRequestService.getStudentRequestsByCourseId(courseId);
+    } catch (error: any) {
+      logger.error({ err: error, courseId }, "getStudentRequestsByCourseId failed");
+      throw new Error("Error fetching student requests: " + error.message);
+    }
+  }
+
+  async getStudentRequestsByOwnerId(ownerId: string): Promise<StudentRequestModel[]> {
+    try {
+      return await this.studentRequestService.getStudentRequestsByOwnerId(ownerId);
+    } catch (error: any) {
+      logger.error({ err: error, ownerId }, "getStudentRequestsByOwnerId failed");
+      throw new Error("Error fetching student requests: " + error.message);
+    }
+  }
+
+  async getStudentRequestById(requestId: string): Promise<StudentRequestModel | null> {
+    try {
+      return await this.studentRequestService.getStudentRequestById(requestId);
+    } catch (error: any) {
+      logger.error({ err: error, requestId }, "getStudentRequestById failed");
+      throw new Error("Error fetching student request: " + error.message);
     }
   }
 }
