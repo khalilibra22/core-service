@@ -31,7 +31,7 @@ export class QuizModel {
   @Column({ type: "int", default: 10 })
   timeLimit?: number; // in minutes
 
-  @Column({ type: "int", default: 1 })
+  @Column({ type: "int", default: 3 })
   maxAttempts?: number;
 
   @Column({ type: "decimal", precision: 5, scale: 2, default: 0 })

@@ -16,6 +16,7 @@ import { CertificateModel } from "./certificate.model";
 import { SessionModel } from "./session.model";
 import { EnrollmentModel } from "./enrollment.model";
 import { MaterialLinkModel } from "./material-link.model";
+import { StudentRequestModel } from "./student-request.model";
 
 @Entity("courses")
 @Index("IDX_courses_type", ["type"])
@@ -96,6 +97,9 @@ export class CourseModel {
     cascade: true,
   })
   materialLinks?: MaterialLinkModel[];
+
+  @OneToMany(() => StudentRequestModel, (request) => request.course)
+  studentRequests?: StudentRequestModel[];
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;

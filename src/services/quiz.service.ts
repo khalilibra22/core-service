@@ -171,4 +171,78 @@ export class QuizService {
       throw new Error("Error fetching quiz owner");
     }
   }
+
+  async getStudentAttemptCount(
+    quizId: string,
+    studentId: string
+  ): Promise<number> {
+    try {
+      return await this.quizAttemptRepo.count({
+        where: {
+          quiz: { id: quizId },
+          studentId: studentId,
+        },
+      });
+    } catch (error) {
+      logger.error(
+        { err: error, quizId, studentId },
+        "getStudentAttemptCount failed"
+      );
+      throw new Error("Error fetching student attempt count");
+    }
+  }
+
+  async getStudentBestAttempt(
+    quizId: string,
+    studentId: string
+  ): Promise<QuizAttemptModel | null> {
+    try {
+      const attempts = await this.quizAttemptRepo.find({
+        where: {
+          quiz: { id: quizId },
+          studentId: studentId,
+          isCompleted: true,
+        },
+        order: {
+          score: "DESC",
+          maxScore: "DESC",
+        },
+      });
+
+      return attempts.length > 0 ? attempts[0] : null;
+    } catch (error) {
+      logger.error(
+        { err: error, quizId, studentId },
+        "getStudentBestAttempt failed"
+      );
+      throw new Error("Error fetching student best attempt");
+    }
+  }
+
+  async updateQuizAttempt(
+    quizAttempt: QuizAttemptModel
+  ): Promise<QuizAttemptModel> {
+    try {
+      return await this.quizAttemptRepo.save(quizAttempt);
+    } catch (error) {
+      logger.error({ err: error }, "updateQuizAttempt failed");
+      throw new Error("Error updating quiz attempt");
+    }
+  }
+
+  async getQuizWithQuestions(quizId: string): Promise<QuizModel | null> {
+    try {
+      return await this.quizRepo.findOne({
+        where: { id: quizId },
+        relations: ["questions"],
+        cache: {
+          id: `quiz-with-questions-${quizId}`,
+          milliseconds: 300000, // 5 minutes
+        },
+      });
+    } catch (error) {
+      logger.error({ err: error, quizId }, "getQuizWithQuestions failed");
+      throw new Error("Error fetching quiz with questions");
+    }
+  }
 }

@@ -44,14 +44,14 @@ export class EnrollmentController {
         return;
       }
       //check if the user already enrolled
-      // if (
-      //   course.enrollments?.some(
-      //     (enrollment) => enrollment.studentId === req.body.ownerId
-      //   )
-      // ) {
-      //   res.status(409).json({ error: "User already enrolled in this course" });
-      //   return;
-      // }
+      if (
+        course.enrollments?.some(
+          (enrollment) => enrollment.studentId === req.body.ownerId
+        )
+      ) {
+        res.status(409).json({ error: "User already enrolled in this course" });
+        return;
+      }
       if (course.couresSettings?.isCanceled) {
         res.status(409).json({ error: "Course is canceled" });
         return;

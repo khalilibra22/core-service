@@ -2,7 +2,10 @@ import express from "express";
 import { ValidationMiddleware } from "../../utils/validation.middleware";
 import { AuthMiddleware } from "../../utils/auth.middleware";
 import { QuizController } from "../../controllers/Quiz.controller";
-import { quizQuestionValidation } from "../../validations/quiz.validation";
+import {
+  quizQuestionValidation,
+  submitQuizAttemptValidation,
+} from "../../validations/quiz.validation";
 
 const router = express.Router();
 
@@ -40,6 +43,23 @@ router.get(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "view"),
   quizController.getQuizDetails
+);
+
+// submit quiz attempt
+router.post(
+  "/:id/attempts",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "view"),
+  ValidationMiddleware.validate(submitQuizAttemptValidation),
+  quizController.submitQuizAttempt
+);
+
+// get best attempt for a quiz
+router.get(
+  "/:id/best-attempt",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "view"),
+  quizController.getBestAttempt
 );
 
 export { router as quizRouter };

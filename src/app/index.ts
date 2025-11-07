@@ -29,6 +29,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction): void => {
   if (err instanceof SyntaxError && err.name === "SyntaxError") {
     // JSON parsing error
     res.status(400).json({ error: "Invalid JSON" });
+    return; // Stop execution after sending response
   }
   next(err); // Forward the error if it's not a JSON parsing error
 });

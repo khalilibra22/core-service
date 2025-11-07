@@ -12,6 +12,8 @@ import {
   removeMaterialsSchema,
   toggleLessonMaterialShareValidationSchema,
   courseMaterialsSchema,
+  createStudentRequestValidationSchema,
+  updateStudentRequestStatusValidationSchema,
 } from "../../validations/course.validation";
 import { reviewValdationSchema } from "../../validations/feedback.validation";
 import { enrollmentValidationsSchema } from "../../validations/enrollment.validation";
@@ -104,6 +106,23 @@ router.get(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("reviews", "view"),
   feedbackController.getReviewsByCourseId
+);
+
+//update a review
+router.put(
+  "/:id/reviews/:reviewId",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("reviews", "submit_review"),
+  ValidationMiddleware.validate(reviewValdationSchema),
+  feedbackController.updateCourseReview
+);
+
+//delete a review
+router.delete(
+  "/:id/reviews/:reviewId",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("reviews", "submit_review"),
+  feedbackController.deleteCourseReview
 );
 
 //create a certificate
@@ -233,6 +252,30 @@ router.get(
   "/",
   //AuthMiddleware.verifyToken,
   courseController.searchCourses
+);
+
+// Student request routes
+router.post(
+  "/:id/requests",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "view"),
+  ValidationMiddleware.validate(createStudentRequestValidationSchema),
+  courseController.createStudentRequest
+);
+
+router.get(
+  "/:id/requests",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "manage_courses"),
+  courseController.getCourseStudentRequests
+);
+
+router.patch(
+  "/:id/requests/:requestId",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "manage_courses"),
+  ValidationMiddleware.validate(updateStudentRequestStatusValidationSchema),
+  courseController.updateStudentRequestStatus
 );
 
 export { router as courseRouter };

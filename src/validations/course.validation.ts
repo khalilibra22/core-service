@@ -203,3 +203,29 @@ export const toggleLessonMaterialShareValidationSchema = Joi.object({
   ownerId: Joi.string().uuid().optional(),
 });
 
+// Student request validation schemas
+export const createStudentRequestValidationSchema = Joi.object({
+  type: Joi.string()
+    .valid("certificate","general")
+    .required()
+    .messages({
+      "any.only": "Type must be one of: certificate, general",
+      "any.required": "Request type is required",
+    }),
+  message: Joi.string().max(1000).optional(),
+  payload: Joi.object().optional(),
+  ownerId: Joi.string().uuid().optional(),
+});
+
+export const updateStudentRequestStatusValidationSchema = Joi.object({
+  status: Joi.string()
+    .valid("pending", "approved", "rejected", "completed")
+    .required()
+    .messages({
+      "any.only": "Status must be one of: pending, approved, rejected, completed",
+      "any.required": "Status is required",
+    }),
+  ownerResponse: Joi.string().max(1000).optional(),
+  ownerId: Joi.string().uuid().optional(),
+});
+

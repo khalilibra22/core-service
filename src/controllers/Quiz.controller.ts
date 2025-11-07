@@ -4,6 +4,7 @@ import { QuizService } from "../services/quiz.service";
 import { plainToInstance } from "class-transformer";
 import { QuizDto } from "../dtos/quiz.dto";
 import { QuestionDto } from "../dtos/question.dto";
+import { QuizAttemptDto } from "../dtos/quiz-attempt.dto";
 
 export class QuizController {
   private quizService: QuizService;
@@ -191,6 +192,7 @@ export class QuizController {
   getSessionQuizzes = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id;
+      const userRole = req.body.userRole;
       const session = await this.courseService.getSessionById(id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
@@ -199,6 +201,7 @@ export class QuizController {
       const quizzes = await this.quizService.getSessionQuizzes(id);
       const quizDtos = plainToInstance(QuizDto, quizzes, {
         excludeExtraneousValues: true,
+        groups: userRole === 2 ? [] : ["instructor", "admin"],
       });
       res.status(200).json(quizDtos);
     } catch (error) {
@@ -210,17 +213,130 @@ export class QuizController {
   getQuizDetails = async (req: Request, res: Response): Promise<void> => {
     try {
       const quizId = req.params.id;
+      const userRole = req.body.userRole;
       const quiz = await this.quizService.getQuizDetails(quizId);
       if (!quiz) {
         res.status(404).json({ error: "Quiz not found" });
         return;
       }
+      
+      // Determine transformation groups based on user role
+      const groups = userRole === 2 ? [] : ["instructor", "admin"];
+      
       const quizDto = plainToInstance(QuizDto, quiz, {
         excludeExtraneousValues: true,
+        groups: groups,
       });
+      
       res.status(200).json(quizDto);
     } catch (error) {
       req.log.error({ err: error, quizId: req.params.id }, "getQuizDetails failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  submitQuizAttempt = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const quizId = req.params.id;
+      const studentId = req.body.ownerId;
+      const { answers, timeTaken } = req.body;
+
+      // Get quiz with questions
+      const quiz = await this.quizService.getQuizWithQuestions(quizId);
+      if (!quiz) {
+        res.status(404).json({ error: "Quiz not found" });
+        return;
+      }
+
+      // Check if quiz is active
+      if (!quiz.isActive) {
+        res.status(400).json({ error: "Quiz is not active" });
+        return;
+      }
+
+      // Check attempt count
+      const attemptCount = await this.quizService.getStudentAttemptCount(
+        quizId,
+        studentId
+      );
+      if (attemptCount >= (quiz.maxAttempts || 3)) {
+        res.status(400).json({
+          error: `Maximum attempts (${quiz.maxAttempts || 3}) reached for this quiz`,
+        });
+        return;
+      }
+
+      // Calculate score
+      let score = 0;
+      let maxScore = 0;
+      const questions = quiz.questions || [];
+
+      for (const question of questions) {
+        maxScore += question.points || 0;
+        const studentAnswer = answers.find(
+          (a: any) => a.questionId === question.id
+        );
+        if (studentAnswer && studentAnswer.answer === question.answer) {
+          score += question.points || 0;
+        }
+      }
+
+      // Create quiz attempt
+      const quizAttempt = await this.quizService.createQuizAttempt({
+        studentId,
+        quiz: { id: quizId } as any,
+        score,
+        maxScore,
+        timeTaken: timeTaken || null,
+        isCompleted: true,
+      });
+
+      const attemptDto = plainToInstance(QuizAttemptDto, quizAttempt, {
+        excludeExtraneousValues: true,
+      });
+
+      res.status(201).json(attemptDto);
+    } catch (error) {
+      req.log.error(
+        { err: error, quizId: req.params.id },
+        "submitQuizAttempt failed"
+      );
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  getBestAttempt = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const quizId = req.params.id;
+      const studentId = req.body.ownerId;
+      console.log("studentId", studentId);
+
+      const quiz = await this.quizService.getQuizById(quizId);
+      if (!quiz) {
+        res.status(404).json({ error: "Quiz not found" });
+        return;
+      }
+
+      const bestAttempt = await this.quizService.getStudentBestAttempt(
+        quizId,
+        studentId
+      );
+
+      if (!bestAttempt) {
+        res.status(404).json({ error: "No completed attempts found" });
+        return;
+      }
+
+      const attemptDto = plainToInstance(QuizAttemptDto, bestAttempt, {
+        excludeExtraneousValues: true,
+      });
+
+      res.status(200).json(attemptDto);
+    } catch (error) {
+      req.log.error(
+        { err: error, quizId: req.params.id },
+        "getBestAttempt failed"
+      );
       res.status(500).json({ error: "Internal Server Error" });
     }
   };

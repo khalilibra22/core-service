@@ -10,6 +10,7 @@ import { LessonDto } from "../dtos/lesson.dto";
 import { RecordedSessionDto } from "../dtos/recorded-session.dto";
 import { SessionDto } from "../dtos/session.dto";
 import { MaterialDto } from "../dtos/material.dto";
+import { StudentRequestDto } from "../dtos/student-request.dto";
 import { NotificationService } from "../services/notification.service";
 
 export class CourseController {
@@ -610,7 +611,17 @@ export class CourseController {
         res.status(400).json({ error: "Session is not a prerecorded session" });
         return;
       }
-      const sessionDto = plainToInstance(RecordedSessionDto, sessionDetails, {
+      
+      // Transform materialLinks to materials for DTO
+      const shapedSession = {
+        ...sessionDetails,
+        lessons: sessionDetails.lessons?.map((l: any) => ({
+          ...l,
+          materials: (l.materialLinks ?? []).filter((link: any) => link?.material),
+        })),
+      };
+      
+      const sessionDto = plainToInstance(RecordedSessionDto, shapedSession, {
         excludeExtraneousValues: true,
       });
 
@@ -641,7 +652,17 @@ export class CourseController {
       const sections = await this.courseService.getPrerecordedCourseSections(
         courseId
       );
-      const sectionDtos = plainToInstance(RecordedSessionDto, sections, {
+      
+      // Transform materialLinks to materials for DTO
+      const shapedSections = sections.map(session => ({
+        ...session,
+        lessons: session.lessons?.map((l: any) => ({
+          ...l,
+          materials: (l.materialLinks ?? []).filter((link: any) => link?.material),
+        })),
+      }));
+      
+      const sectionDtos = plainToInstance(RecordedSessionDto, shapedSections, {
         excludeExtraneousValues: true,
       });
       res.status(200).json(sectionDtos);
@@ -651,7 +672,7 @@ export class CourseController {
     }
   };
 
-  //search courses by its type using pagination
+  //search courses by its type using pagination with optional text search
   searchCourses = async (req: Request, res: Response): Promise<void> => {
     try {
       const courseType = req.query.type as string;
@@ -662,15 +683,20 @@ export class CourseController {
       }
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
+      
+      // Get optional search query parameter
+      const searchQuery = req.query.q as string | undefined;
+      
       const courses = await this.courseService.searchCourses(
         courseType,
         page,
-        limit
+        limit,
+        searchQuery
       );
       const courseDtos = await getCourseDto(courses, courseType);
       res.status(200).json(courseDtos);
     } catch (error) {
-      req.log.error({ err: error, courseType: req.query.type, page: req.query.page, limit: req.query.limit }, "searchCourses failed");
+      req.log.error({ err: error, courseType: req.query.type, page: req.query.page, limit: req.query.limit, searchQuery: req.query.q }, "searchCourses failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -902,6 +928,126 @@ export class CourseController {
       });
     } catch (error) {
       req.log.error({ err: error, sessionId: req.params.id, lessonId: req.params.lessonId, materialId: req.params.materialId }, "toggleLessonMaterialShare failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  // Student Request Methods
+  createStudentRequest = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const courseId = req.params.id;
+      const studentId = req.body.ownerId;
+      const { type, message, payload } = req.body;
+
+      const course = await this.courseService.getCourseById(courseId);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+
+      // Check if student has already requested a certificate for this course
+      if (type === "certificate") {
+        const hasRequested = await this.courseService.studentRequestService.hasStudentRequestedCertificate(studentId, courseId);
+        if (hasRequested) {
+          res.status(409).json({ error: "You have already requested a certificate for this course" });
+          return;
+        }
+      }
+
+      const request = await this.courseService.createStudentRequest(
+        courseId,
+        studentId,
+        type,
+        message,
+        payload
+      );
+      const requestDto = await enrichDto<StudentRequestDto>(StudentRequestDto, request);
+      res.status(201).json(requestDto);
+    } catch (error) {
+      req.log.error({ err: error, courseId: req.params.id }, "createStudentRequest failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  updateStudentRequestStatus = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const requestId = req.params.requestId;
+      const { status, ownerResponse } = req.body;
+      const ownerId = req.body.ownerId;
+
+      const request = await this.courseService.getStudentRequestById(requestId);
+      if (!request) {
+        res.status(404).json({ error: "Request not found" });
+        return;
+      }
+
+      // Verify that the user is the course owner
+      if (request.course?.ownerId !== ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
+
+      const updatedRequest = await this.courseService.updateStudentRequestStatus(
+        requestId,
+        status,
+        ownerResponse,
+        ownerId
+      );
+
+      const requestDto = plainToInstance(StudentRequestDto, updatedRequest, {
+        excludeExtraneousValues: true,
+      });
+
+      res.status(200).json(requestDto);
+    } catch (error) {
+      req.log.error({ err: error, requestId: req.params.requestId }, "updateStudentRequestStatus failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  getCourseStudentRequests = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const courseId = req.params.id;
+      const ownerId = req.body.ownerId;
+
+      const course = await this.courseService.getCourseById(courseId);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+
+      // Verify that the user is the course owner
+      if (course.ownerId !== ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
+
+      const requests = await this.courseService.getStudentRequestsByCourseId(courseId);
+
+      const requestDtos = plainToInstance(StudentRequestDto, requests, {
+        excludeExtraneousValues: true,
+      });
+
+      res.status(200).json(requestDtos);
+    } catch (error) {
+      req.log.error({ err: error, courseId: req.params.id }, "getCourseStudentRequests failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  getOwnerStudentRequests = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const ownerId = req.body.ownerId;
+
+      const requests = await this.courseService.getStudentRequestsByOwnerId(ownerId);
+
+      const requestDtos = plainToInstance(StudentRequestDto, requests, {
+        excludeExtraneousValues: true,
+      });
+
+      res.status(200).json(requestDtos);
+    } catch (error) {
+      req.log.error({ err: error, ownerId: req.body.ownerId }, "getOwnerStudentRequests failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };

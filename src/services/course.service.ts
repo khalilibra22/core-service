@@ -7,7 +7,9 @@ import { LessonModel } from "../models/lesson.model";
 import { SessionModel } from "../models/session.model";
 import { MaterialModel } from "../models/material.model";
 import { MaterialLinkModel } from "../models/material-link.model";
+import { StudentRequestModel } from "../models/student-request.model";
 import { In, IsNull } from "typeorm";
+import { StudentRequestService } from "./student-request.service";
 
 export class CourseService {
   courseRepo: any;
@@ -17,6 +19,7 @@ export class CourseService {
   lessonRepo: any;
   materialRepo: any;
   materialLinkRepo: any;
+  studentRequestService: StudentRequestService;
   constructor() {
     this.courseRepo = AppDataSource.getRepository(CourseModel);
     this.courseSettingsRepo = AppDataSource.getRepository(CourseSettingsModel);
@@ -25,6 +28,7 @@ export class CourseService {
     this.lessonRepo = AppDataSource.getRepository(LessonModel);
     this.materialRepo = AppDataSource.getRepository(MaterialModel);
     this.materialLinkRepo = AppDataSource.getRepository(MaterialLinkModel);
+    this.studentRequestService = new StudentRequestService();
   }
 
   async createCourse(course: CourseModel): Promise<CourseModel> {
@@ -367,7 +371,7 @@ export class CourseService {
         where: {
           id: id,
         },
-        relations: ["lessons", "quizzes", "course"],
+        relations: ["lessons", "lessons.materialLinks", "lessons.materialLinks.material", "quizzes", "course"],
         cache: {
           id: `prerecorded-session-${id}`,
           milliseconds: 300000, // 5 minutes
@@ -390,7 +394,7 @@ export class CourseService {
             id: id,
           },
         },
-        relations: ["lessons", "quizzes"],
+        relations: ["lessons", "lessons.materialLinks", "lessons.materialLinks.material", "quizzes"],
         cache: {
           id: `prerecorded-course-sections-${id}`,
           milliseconds: 300000, // 5 minutes
@@ -407,24 +411,56 @@ export class CourseService {
   async searchCourses(
     type: string,
     page: number,
-    limit: number
+    limit: number,
+    searchQuery?: string
   ): Promise<CourseModel[]> {
     try {
-      return await this.courseRepo.find({
-        where: {
-          type: type,
-        },
-        relations: ["couresSettings", "enrollments"],
-        skip: (page - 1) * limit,
-        take: limit,
-        cache: {
-          id: `courses-${type}-${page}-${limit}`,
-          duration: 60000,
-        },
-      });
-    } catch (error) {
-      logger.error({ err: error, type, page, limit }, "searchCourses failed");
-      throw new Error("Error fetching all courses of type live");
+      const skip = (page - 1) * limit;
+
+      // If no search query, use the original simple find
+      if (!searchQuery || searchQuery.trim() === "") {
+        return await this.courseRepo.find({
+          where: {
+            type: type,
+          },
+          relations: ["couresSettings", "enrollments"],
+          skip: skip,
+          take: limit,
+          cache: {
+            id: `courses-${type}-${page}-${limit}`,
+            duration: 60000,
+          },
+        });
+      }
+
+      // Use QueryBuilder for text search with Postgres full-text search
+      const query = this.courseRepo
+        .createQueryBuilder("course")
+        .leftJoinAndSelect("course.couresSettings", "couresSettings")
+        .leftJoinAndSelect("course.enrollments", "enrollments")
+        .where("course.type = :type", { type })
+        .andWhere("course.deletedAt IS NULL");
+
+      // Sanitize search query - remove special chars that could break SQL
+      const sanitized = searchQuery.trim().replace(/[%_\\]/g, "\\$&");
+      const searchPattern = `%${sanitized}%`;
+
+      // Build comprehensive search across key text fields
+      // Using OR conditions for main searchable fields
+      query.andWhere(
+        "(course.name ILIKE :search OR course.description ILIKE :search OR course.language ILIKE :search OR couresSettings.syllabus ILIKE :search OR couresSettings.grade ILIKE :search)",
+        { search: searchPattern }
+      );
+
+      query
+        .orderBy("course.createdAt", "DESC")
+        .skip(skip)
+        .take(limit);
+
+      return await query.getMany();
+    } catch (error: any) {
+      logger.error({ err: error, type, page, limit, searchQuery }, "searchCourses failed");
+      throw new Error("Error fetching courses: " + error.message);
     }
   }
 
@@ -826,6 +862,87 @@ export class CourseService {
     } catch (error: any) {
       logger.error({ err: error, studentId, page, limit, courseType }, "getStudentEnrolledCourses failed");
       throw new Error("Error fetching student enrolled courses: " + error.message);
+    }
+  }
+
+  // Student Request Methods
+  async createStudentRequest(
+    courseId: string,
+    studentId: string,
+    type: string,
+    message?: string,
+    payload?: any
+  ): Promise<StudentRequestModel> {
+    try {
+      const course = await this.getCourseById(courseId);
+      if (!course) {
+        throw new Error("Course not found");
+      }
+      const requestBody: StudentRequestModel = {
+        studentId,
+        type,
+        message,
+        payload,
+        status: "pending",
+        course,
+      };
+      return await this.studentRequestService.createStudentRequest(requestBody);
+    } catch (error: any) {
+      logger.error({ err: error, courseId, studentId, type }, "createStudentRequest failed");
+      throw new Error("Error creating student request: " + error.message);
+    }
+  }
+
+  async updateStudentRequestStatus(
+    requestId: string,
+    status: string,
+    ownerResponse?: string,
+    respondedBy?: string
+  ): Promise<StudentRequestModel> {
+    try {
+      const request = await this.studentRequestService.getStudentRequestById(requestId);
+      if (!request) {
+        throw new Error("Student request not found");
+      }
+      request.status = status;
+      if (ownerResponse) {
+        request.ownerResponse = ownerResponse;
+      }
+      if (respondedBy) {
+        request.respondedBy = respondedBy;
+        request.respondedAt = new Date();
+      }
+      return await this.studentRequestService.updateStudentRequest(request);
+    } catch (error: any) {
+      logger.error({ err: error, requestId, status }, "updateStudentRequestStatus failed");
+      throw new Error("Error updating student request status: " + error.message);
+    }
+  }
+
+  async getStudentRequestsByCourseId(courseId: string): Promise<StudentRequestModel[]> {
+    try {
+      return await this.studentRequestService.getStudentRequestsByCourseId(courseId);
+    } catch (error: any) {
+      logger.error({ err: error, courseId }, "getStudentRequestsByCourseId failed");
+      throw new Error("Error fetching student requests: " + error.message);
+    }
+  }
+
+  async getStudentRequestsByOwnerId(ownerId: string): Promise<StudentRequestModel[]> {
+    try {
+      return await this.studentRequestService.getStudentRequestsByOwnerId(ownerId);
+    } catch (error: any) {
+      logger.error({ err: error, ownerId }, "getStudentRequestsByOwnerId failed");
+      throw new Error("Error fetching student requests: " + error.message);
+    }
+  }
+
+  async getStudentRequestById(requestId: string): Promise<StudentRequestModel | null> {
+    try {
+      return await this.studentRequestService.getStudentRequestById(requestId);
+    } catch (error: any) {
+      logger.error({ err: error, requestId }, "getStudentRequestById failed");
+      throw new Error("Error fetching student request: " + error.message);
     }
   }
 }
