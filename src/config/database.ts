@@ -16,6 +16,7 @@ import { EnrollmentModel } from "../models/enrollment.model";
 import { MaterialModel } from "../models/material.model";
 import { MaterialLinkModel } from "../models/material-link.model";
 import { StudentRequestModel } from "../models/student-request.model";
+import { CourseViewModel } from "../models/course-view.model";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -43,7 +44,8 @@ export const AppDataSource = new DataSource({
     EnrollmentModel,
     MaterialModel,
     MaterialLinkModel,
-    StudentRequestModel
+    StudentRequestModel,
+    CourseViewModel
   ],
   synchronize: true,
   cache: false,

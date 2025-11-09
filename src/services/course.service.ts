@@ -8,6 +8,7 @@ import { SessionModel } from "../models/session.model";
 import { MaterialModel } from "../models/material.model";
 import { MaterialLinkModel } from "../models/material-link.model";
 import { StudentRequestModel } from "../models/student-request.model";
+import { CourseViewModel } from "../models/course-view.model";
 import { In, IsNull } from "typeorm";
 import { StudentRequestService } from "./student-request.service";
 
@@ -19,6 +20,7 @@ export class CourseService {
   lessonRepo: any;
   materialRepo: any;
   materialLinkRepo: any;
+  courseViewRepo: any;
   studentRequestService: StudentRequestService;
   constructor() {
     this.courseRepo = AppDataSource.getRepository(CourseModel);
@@ -28,6 +30,7 @@ export class CourseService {
     this.lessonRepo = AppDataSource.getRepository(LessonModel);
     this.materialRepo = AppDataSource.getRepository(MaterialModel);
     this.materialLinkRepo = AppDataSource.getRepository(MaterialLinkModel);
+    this.courseViewRepo = AppDataSource.getRepository(CourseViewModel);
     this.studentRequestService = new StudentRequestService();
   }
 
@@ -945,4 +948,46 @@ export class CourseService {
       throw new Error("Error fetching student request: " + error.message);
     }
   }
+
+  // Course View Methods
+  async createCourseView(course: CourseModel, studentId: string): Promise<CourseViewModel> {
+    try {
+      const view = this.courseViewRepo.create({
+        course: course,
+        studentId: studentId,
+      });
+      return await this.courseViewRepo.save(view);
+    } catch (error: any) {
+      logger.error({ err: error, courseId: course.id, studentId }, "createCourseView failed");
+      throw new Error("Error creating course view: " + error.message);
+    }
+  }
+
+  async getCourseViewCount(courseId: string): Promise<number> {
+    try {
+      return await this.courseViewRepo.count({
+        where: {
+          course: { id: courseId },
+        },
+      });
+    } catch (error: any) {
+      logger.error({ err: error, courseId }, "getCourseViewCount failed");
+      throw new Error("Error fetching course view count: " + error.message);
+    }
+  }
+
+  async getUserCourseViewCount(courseId: string, studentId: string): Promise<number> {
+    try {
+      return await this.courseViewRepo.count({
+        where: {
+          course: { id: courseId },
+          studentId: studentId,
+        },
+      });
+    } catch (error: any) {
+      logger.error({ err: error, courseId, studentId }, "getUserCourseViewCount failed");
+      throw new Error("Error fetching user course view count: " + error.message);
+    }
+  }
+
 }

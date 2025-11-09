@@ -137,4 +137,8 @@ export class PrerecordedCourseDto {
   @Expose()
   @Transform(({ obj }) => obj.createdAt)
   creationDate?: Date;
+
+  @Expose()
+  @Transform(({ obj }) => obj.viewsCount ?? 0)
+  viewsCount?: number;
 }

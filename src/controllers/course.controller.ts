@@ -324,6 +324,18 @@ export class CourseController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
+
+      // For prerecorded courses, add viewsCount
+      if (course.type === "prerecorded") {
+        try {
+          const viewsCount = await this.courseService.getCourseViewCount(id);
+          (course as any).viewsCount = viewsCount;
+        } catch (countError) {
+          req.log.warn({ err: countError, courseId: id }, "Failed to get course view count");
+          (course as any).viewsCount = 0;
+        }
+      }
+
       const courseDto = await getCourseDto(course, course.type ?? "minimal");
       res.status(200).json(courseDto);
     } catch (error) {
@@ -649,6 +661,33 @@ export class CourseController {
         res.status(400).json({ error: "Course is not a prerecorded course" });
         return;
       }
+
+      // Record view for authenticated users
+      const studentId = req.body.ownerId;
+      if (studentId) {
+        try {
+          const isFree = course.couresSettings?.isPaid === false;
+          
+          // Check view limit for free courses
+          if (isFree) {
+            const userViewCount = await this.courseService.getUserCourseViewCount(courseId, studentId);
+            if (userViewCount >= 20) {
+              res.status(403).json({ 
+                error: "You have reached the maximum number of views (20) for this free course",
+                viewsCount: userViewCount
+              });
+              return;
+            }
+          }
+          
+          // Record the view
+          await this.courseService.createCourseView(course, studentId);
+        } catch (viewError) {
+          // Log but don't fail the request if view recording fails
+          req.log.warn({ err: viewError, courseId, studentId }, "Failed to record course view");
+        }
+      }
+
       const sections = await this.courseService.getPrerecordedCourseSections(
         courseId
       );
