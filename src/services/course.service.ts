@@ -62,7 +62,7 @@ export class CourseService {
         where: {
           id: id,
         },
-        relations: ["couresSettings"],
+        relations: ["couresSettings","enrollments","sessions"],
         cache: {
           id: `course-${id}`,
           milliseconds: 300000, // 5 minutes
@@ -80,7 +80,7 @@ export class CourseService {
         where: {
           id: id,
         },
-        relations: ["couresSettings"],
+        relations: ["couresSettings","enrollments","sessions"],
         cache: false,
       });
     } catch (error: any) {
@@ -426,7 +426,7 @@ export class CourseService {
           where: {
             type: type,
           },
-          relations: ["couresSettings", "enrollments"],
+          relations: ["couresSettings", "enrollments", "sessions"],
           skip: skip,
           take: limit,
           cache: {
@@ -441,6 +441,7 @@ export class CourseService {
         .createQueryBuilder("course")
         .leftJoinAndSelect("course.couresSettings", "couresSettings")
         .leftJoinAndSelect("course.enrollments", "enrollments")
+        .leftJoinAndSelect("course.sessions", "sessions")
         .where("course.type = :type", { type })
         .andWhere("course.deletedAt IS NULL");
 
