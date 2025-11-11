@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { CourseService } from "../services/course.service";
+import { QuizService } from "../services/quiz.service";
 import { plainToInstance } from "class-transformer";
 import { CourseSettingsModel } from "../models/course-settings.model";
 import { CourseModel } from "../models/course.model";
@@ -16,10 +17,12 @@ import { NotificationService } from "../services/notification.service";
 export class CourseController {
   private courseService: CourseService;
   private notificationService: NotificationService;
+  private quizService: QuizService;
   
   constructor() {
     this.courseService = new CourseService();
     this.notificationService = new NotificationService();
+    this.quizService = new QuizService();
   }
 
   createDraftCourse = async (req: Request, res: Response): Promise<void> => {
@@ -990,6 +993,59 @@ export class CourseController {
         if (hasRequested) {
           res.status(409).json({ error: "You have already requested a certificate for this course" });
           return;
+        }
+
+        // Calculate quiz progression and score
+        try {
+          const quizMetrics = await this.quizService.getCourseQuizProgressionAndScore(courseId, studentId);
+          
+          // Check if progression is 100% and score is > 90%
+          if (quizMetrics.progressionPercent < 100) {
+            res.status(403).json({ 
+              error: "You must complete all quizzes to request a certificate",
+              progressionPercent: quizMetrics.progressionPercent,
+              scorePercent: quizMetrics.scorePercent,
+              completedQuizzes: quizMetrics.completedQuizzes,
+              totalQuizzes: quizMetrics.totalQuizzes
+            });
+            return;
+          }
+
+          if (quizMetrics.scorePercent <= 90) {
+            res.status(403).json({ 
+              error: "You must achieve a score greater than 90% to request a certificate",
+              progressionPercent: quizMetrics.progressionPercent,
+              scorePercent: quizMetrics.scorePercent,
+              totalScore: quizMetrics.totalScore,
+              totalMaxScore: quizMetrics.totalMaxScore
+            });
+            return;
+          }
+
+          // If checks pass, add metrics to payload
+          const enhancedPayload = {
+            ...payload,
+            progressionPercent: quizMetrics.progressionPercent,
+            scorePercent: quizMetrics.scorePercent,
+            completedQuizzes: quizMetrics.completedQuizzes,
+            totalQuizzes: quizMetrics.totalQuizzes,
+            totalScore: quizMetrics.totalScore,
+            totalMaxScore: quizMetrics.totalMaxScore
+          };
+
+          const request = await this.courseService.createStudentRequest(
+            courseId,
+            studentId,
+            type,
+            message,
+            enhancedPayload
+          );
+          const requestDto = await enrichDto<StudentRequestDto>(StudentRequestDto, request);
+          res.status(201).json(requestDto);
+          return;
+        } catch (quizError) {
+          req.log.warn({ err: quizError, courseId, studentId }, "Failed to calculate quiz metrics for certificate request");
+          // Continue with request creation even if quiz metrics calculation fails
         }
       }
 
