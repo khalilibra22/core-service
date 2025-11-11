@@ -271,6 +271,13 @@ router.get(
   courseController.getCourseStudentRequests
 );
 
+router.get(
+  "/:id/requests/summary",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "manage_courses"),
+  courseController.getCourseStudentRequestSummary
+);
+
 router.patch(
   "/:id/requests/:requestId",
   AuthMiddleware.verifyToken,

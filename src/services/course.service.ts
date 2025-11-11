@@ -1097,4 +1097,35 @@ export class CourseService {
     }
   }
 
+  async getCourseStudentRequestSummary(courseId: string): Promise<{ last24hCount: number; last24hPendingCount: number }> {
+    try {
+      const cutoffTime = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+      // Count all requests in last 24 hours
+      const last24hCount = await AppDataSource.getRepository(StudentRequestModel)
+        .createQueryBuilder("sr")
+        .where("sr.courseId = :courseId", { courseId })
+        .andWhere("sr.createdAt > :cutoffTime", { cutoffTime })
+        .andWhere("sr.deletedAt IS NULL")
+        .getCount();
+
+      // Count pending requests in last 24 hours
+      const last24hPendingCount = await AppDataSource.getRepository(StudentRequestModel)
+        .createQueryBuilder("sr")
+        .where("sr.courseId = :courseId", { courseId })
+        .andWhere("sr.createdAt > :cutoffTime", { cutoffTime })
+        .andWhere("sr.status = :status", { status: "pending" })
+        .andWhere("sr.deletedAt IS NULL")
+        .getCount();
+
+      return {
+        last24hCount,
+        last24hPendingCount,
+      };
+    } catch (error: any) {
+      logger.error({ err: error, courseId }, "getCourseStudentRequestSummary failed");
+      throw new Error("Error fetching course student request summary: " + error.message);
+    }
+  }
+
 }

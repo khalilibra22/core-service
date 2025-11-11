@@ -1150,6 +1150,32 @@ export class CourseController {
     }
   };
 
+  getCourseStudentRequestSummary = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const courseId = req.params.id;
+      const ownerId = req.body.ownerId;
+
+      const course = await this.courseService.getCourseById(courseId);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+
+      // Verify that the user is the course owner
+      if (course.ownerId !== ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
+
+      const summary = await this.courseService.getCourseStudentRequestSummary(courseId);
+
+      res.status(200).json(summary);
+    } catch (error) {
+      req.log.error({ err: error, courseId: req.params.id }, "getCourseStudentRequestSummary failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
   // Course Progress Methods
   updateCourseProgress = async (req: Request, res: Response): Promise<void> => {
     try {
