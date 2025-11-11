@@ -229,3 +229,13 @@ export const updateStudentRequestStatusValidationSchema = Joi.object({
   ownerId: Joi.string().uuid().optional(),
 });
 
+// Course progress validation schemas
+export const updateCourseProgressValidationSchema = Joi.object({
+  percentComplete: Joi.number().min(0).max(100).required(),
+  lastSessionId: Joi.string().uuid().optional(),
+  lastLessonId: Joi.string().uuid().optional(),
+  ownerId: Joi.string().uuid().optional(),
+}).or("percentComplete", "lastSessionId", "lastLessonId").messages({
+  "object.missing": "At least one of percentComplete, lastSessionId, or lastLessonId must be provided",
+});
+

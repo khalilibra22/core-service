@@ -9,6 +9,7 @@ import { MaterialModel } from "../models/material.model";
 import { MaterialLinkModel } from "../models/material-link.model";
 import { StudentRequestModel } from "../models/student-request.model";
 import { CourseViewModel } from "../models/course-view.model";
+import { CourseProgressModel } from "../models/course-progress.model";
 import { In, IsNull } from "typeorm";
 import { StudentRequestService } from "./student-request.service";
 
@@ -21,6 +22,7 @@ export class CourseService {
   materialRepo: any;
   materialLinkRepo: any;
   courseViewRepo: any;
+  courseProgressRepo: any;
   studentRequestService: StudentRequestService;
   constructor() {
     this.courseRepo = AppDataSource.getRepository(CourseModel);
@@ -31,6 +33,7 @@ export class CourseService {
     this.materialRepo = AppDataSource.getRepository(MaterialModel);
     this.materialLinkRepo = AppDataSource.getRepository(MaterialLinkModel);
     this.courseViewRepo = AppDataSource.getRepository(CourseViewModel);
+    this.courseProgressRepo = AppDataSource.getRepository(CourseProgressModel);
     this.studentRequestService = new StudentRequestService();
   }
 
@@ -988,6 +991,109 @@ export class CourseService {
     } catch (error: any) {
       logger.error({ err: error, courseId, studentId }, "getUserCourseViewCount failed");
       throw new Error("Error fetching user course view count: " + error.message);
+    }
+  }
+
+  // Course Progress Methods
+  async getCourseProgress(courseId: string, studentId: string): Promise<CourseProgressModel | null> {
+    try {
+      return await this.courseProgressRepo.findOne({
+        where: {
+          course: { id: courseId },
+          studentId: studentId,
+        },
+        relations: ["course", "lastSession", "lastLesson"],
+      });
+    } catch (error: any) {
+      logger.error({ err: error, courseId, studentId }, "getCourseProgress failed");
+      throw new Error("Error fetching course progress: " + error.message);
+    }
+  }
+
+  async upsertCourseProgress(
+    courseId: string,
+    studentId: string,
+    percentComplete?: number,
+    lastSessionId?: string,
+    lastLessonId?: string
+  ): Promise<CourseProgressModel> {
+    try {
+      // Find existing progress
+      let progress = await this.courseProgressRepo.findOne({
+        where: {
+          course: { id: courseId },
+          studentId: studentId,
+        },
+      });
+
+      const course = await this.courseRepo.findOne({ where: { id: courseId } });
+      if (!course) {
+        throw new Error("Course not found");
+      }
+
+      // Fetch related entities if IDs are provided
+      let lastSession = undefined;
+      let lastLesson = undefined;
+
+      if (lastSessionId) {
+        lastSession = await this.sessionRepo.findOne({ where: { id: lastSessionId } });
+      }
+
+      if (lastLessonId) {
+        lastLesson = await this.lessonRepo.findOne({ where: { id: lastLessonId } });
+      }
+
+      if (progress) {
+        // Update existing progress
+        if (percentComplete !== undefined) {
+          progress.percentComplete = percentComplete;
+        }
+        if (lastSession) {
+          progress.lastSession = lastSession;
+        }
+        if (lastLesson) {
+          progress.lastLesson = lastLesson;
+        }
+      } else {
+        // Create new progress
+        progress = this.courseProgressRepo.create({
+          course,
+          studentId,
+          percentComplete: percentComplete ?? 0,
+          lastSession,
+          lastLesson,
+        });
+      }
+
+      return await this.courseProgressRepo.save(progress);
+    } catch (error: any) {
+      logger.error({ err: error, courseId, studentId }, "upsertCourseProgress failed");
+      throw new Error("Error upserting course progress: " + error.message);
+    }
+  }
+
+  async getCourseProgressSummary(courseId: string, studentId: string): Promise<any> {
+    try {
+      const progress = await this.getCourseProgress(courseId, studentId);
+      
+      if (!progress) {
+        return {
+          percentComplete: 0,
+          lastSessionId: null,
+          lastLessonId: null,
+          lastUpdated: null,
+        };
+      }
+
+      return {
+        percentComplete: progress.percentComplete ?? 0,
+        lastSessionId: progress.lastSession?.id ?? null,
+        lastLessonId: progress.lastLesson?.id ?? null,
+        lastUpdated: progress.updatedAt,
+      };
+    } catch (error: any) {
+      logger.error({ err: error, courseId, studentId }, "getCourseProgressSummary failed");
+      throw new Error("Error fetching course progress summary: " + error.message);
     }
   }
 

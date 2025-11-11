@@ -12,6 +12,7 @@ import { RecordedSessionDto } from "../dtos/recorded-session.dto";
 import { SessionDto } from "../dtos/session.dto";
 import { MaterialDto } from "../dtos/material.dto";
 import { StudentRequestDto } from "../dtos/student-request.dto";
+import { CourseProgressDto } from "../dtos/course-progress.dto";
 import { NotificationService } from "../services/notification.service";
 
 export class CourseController {
@@ -1011,7 +1012,7 @@ export class CourseController {
             return;
           }
 
-          if (quizMetrics.scorePercent <= 90) {
+          if (quizMetrics.scorePercent < 100) {
             res.status(403).json({ 
               error: "You must achieve a score greater than 90% to request a certificate",
               progressionPercent: quizMetrics.progressionPercent,
@@ -1143,6 +1144,71 @@ export class CourseController {
       res.status(200).json(requestDtos);
     } catch (error) {
       req.log.error({ err: error, ownerId: req.body.ownerId }, "getOwnerStudentRequests failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  // Course Progress Methods
+  updateCourseProgress = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const courseId = req.params.id;
+      const studentId = req.body.ownerId;
+      const { percentComplete, lastSessionId, lastLessonId } = req.body;
+
+      const course = await this.courseService.getCourseById(courseId);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+
+      if (course.type !== "prerecorded") {
+        res.status(400).json({ error: "Progress tracking is only available for prerecorded courses" });
+        return;
+      }
+
+      const progress = await this.courseService.upsertCourseProgress(
+        courseId,
+        studentId,
+        percentComplete,
+        lastSessionId,
+        lastLessonId
+      );
+
+      const progressDto = plainToInstance(CourseProgressDto, progress, {
+        excludeExtraneousValues: true,
+      });
+
+      res.status(200).json({
+        message: "Progress updated successfully",
+        progress: progressDto,
+      });
+    } catch (error) {
+      req.log.error({ err: error, courseId: req.params.id }, "updateCourseProgress failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  getCourseProgress = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const courseId = req.params.id;
+      const studentId = req.body.ownerId;
+
+      const course = await this.courseService.getCourseById(courseId);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+
+      if (course.type !== "prerecorded") {
+        res.status(400).json({ error: "Progress tracking is only available for prerecorded courses" });
+        return;
+      }
+
+      const progress = await this.courseService.getCourseProgressSummary(courseId, studentId);
+
+      res.status(200).json(progress);
+    } catch (error) {
+      req.log.error({ err: error, courseId: req.params.id }, "getCourseProgress failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };

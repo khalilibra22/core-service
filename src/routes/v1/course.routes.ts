@@ -14,6 +14,7 @@ import {
   courseMaterialsSchema,
   createStudentRequestValidationSchema,
   updateStudentRequestStatusValidationSchema,
+  updateCourseProgressValidationSchema,
 } from "../../validations/course.validation";
 import { reviewValdationSchema } from "../../validations/feedback.validation";
 import { enrollmentValidationsSchema } from "../../validations/enrollment.validation";
@@ -276,6 +277,22 @@ router.patch(
   AuthMiddleware.authorize("courses", "manage_courses"),
   ValidationMiddleware.validate(updateStudentRequestStatusValidationSchema),
   courseController.updateStudentRequestStatus
+);
+
+// Course progress routes
+router.patch(
+  "/:id/progress",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "view"),
+  ValidationMiddleware.validate(updateCourseProgressValidationSchema),
+  courseController.updateCourseProgress
+);
+
+router.get(
+  "/:id/progress",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "view"),
+  courseController.getCourseProgress
 );
 
 export { router as courseRouter };
