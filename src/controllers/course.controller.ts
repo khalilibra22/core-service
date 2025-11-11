@@ -996,26 +996,28 @@ export class CourseController {
           return;
         }
 
+        // Get course progress
+        const courseProgress = await this.courseService.getCourseProgress(courseId, studentId);
+        const progressionPercent = Number(courseProgress?.percentComplete ?? 0);
+
+        // Check if course progression is at least 80%
+        if (progressionPercent < 80) {
+          res.status(403).json({ 
+            error: "You must complete at least 80% of the course to request a certificate",
+            progressionPercent: progressionPercent
+          });
+          return;
+        }
+
         // Calculate quiz progression and score
         try {
           const quizMetrics = await this.quizService.getCourseQuizProgressionAndScore(courseId, studentId);
           
-          // Check if progression is 100% and score is > 90%
-          if (quizMetrics.progressionPercent < 100) {
-            res.status(403).json({ 
-              error: "You must complete all quizzes to request a certificate",
-              progressionPercent: quizMetrics.progressionPercent,
-              scorePercent: quizMetrics.scorePercent,
-              completedQuizzes: quizMetrics.completedQuizzes,
-              totalQuizzes: quizMetrics.totalQuizzes
-            });
-            return;
-          }
-
-          if (quizMetrics.scorePercent < 100) {
+          // Check if quiz score is > 90%
+          if (quizMetrics.scorePercent < 90) {
             res.status(403).json({ 
               error: "You must achieve a score greater than 90% to request a certificate",
-              progressionPercent: quizMetrics.progressionPercent,
+              progressionPercent: progressionPercent,
               scorePercent: quizMetrics.scorePercent,
               totalScore: quizMetrics.totalScore,
               totalMaxScore: quizMetrics.totalMaxScore
@@ -1026,7 +1028,7 @@ export class CourseController {
           // If checks pass, add metrics to payload
           const enhancedPayload = {
             ...payload,
-            progressionPercent: quizMetrics.progressionPercent,
+            progressionPercent: progressionPercent,
             scorePercent: quizMetrics.scorePercent,
             completedQuizzes: quizMetrics.completedQuizzes,
             totalQuizzes: quizMetrics.totalQuizzes,

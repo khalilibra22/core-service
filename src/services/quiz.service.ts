@@ -249,7 +249,7 @@ export class QuizService {
   async getCourseQuizProgressionAndScore(
     courseId: string,
     studentId: string
-  ): Promise<{ progressionPercent: number; scorePercent: number; completedQuizzes: number; totalQuizzes: number; totalScore: number; totalMaxScore: number }> {
+  ): Promise<{ scorePercent: number; completedQuizzes: number; totalQuizzes: number; totalScore: number; totalMaxScore: number }> {
     try {
       // Get all quizzes for the course across all sessions
       const quizzes = await this.quizRepo.find({
@@ -261,7 +261,6 @@ export class QuizService {
       
       if (totalQuizzes === 0) {
         return {
-          progressionPercent: 100,
           scorePercent: 0,
           completedQuizzes: 0,
           totalQuizzes: 0,
@@ -298,11 +297,9 @@ export class QuizService {
         }
       }
 
-      const progressionPercent = totalQuizzes > 0 ? (completedQuizzes / totalQuizzes) * 100 : 0;
       const scorePercent = totalMaxScore > 0 ? (totalScore / totalMaxScore) * 100 : 0;
 
       return {
-        progressionPercent,
         scorePercent,
         completedQuizzes,
         totalQuizzes,

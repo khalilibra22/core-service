@@ -219,10 +219,10 @@ export const createStudentRequestValidationSchema = Joi.object({
 
 export const updateStudentRequestStatusValidationSchema = Joi.object({
   status: Joi.string()
-    .valid("pending", "approved", "rejected", "completed")
+    .valid("pending", "preparing","dispatched","delivered" ,"rejected", "completed")
     .required()
     .messages({
-      "any.only": "Status must be one of: pending, approved, rejected, completed",
+      "any.only": "Status must be one of: pending, preparing, dispatched, delivered, rejected, completed",
       "any.required": "Status is required",
     }),
   ownerResponse: Joi.string().max(1000).optional(),
