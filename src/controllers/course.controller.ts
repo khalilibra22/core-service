@@ -697,24 +697,32 @@ export class CourseController {
       }
 
       // Record view for authenticated users
-      const studentId = req.body.ownerId;
+      const studentId = req.body.ownerId ?? res.locals.ownerId;
       if (studentId) {
+        const isPaid = course.couresSettings?.isPaid === true;
+        const isFree = course.couresSettings?.isPaid === false;
+        
+        // Get current view count once
+        const userViewCount = await this.courseService.getUserCourseViewCount(courseId, studentId);
+        // Check view limit based on course type
+        if (isFree && userViewCount >= 4) {
+          res.status(403).json({ 
+            error: "You have reached the maximum number of views (4) for this free course",
+            viewsCount: userViewCount
+          });
+          return;
+        }
+        
+        if (isPaid && userViewCount >= 16) {
+          res.status(403).json({ 
+            error: "You have reached the maximum number of views (16) for this paid course",
+            viewsCount: userViewCount
+          });
+          return;
+        }
+        
+        // Record the view (wrapped in try-catch to not fail the request if recording fails)
         try {
-          const isFree = course.couresSettings?.isPaid === false;
-          
-          // Check view limit for free courses
-          if (isFree) {
-            const userViewCount = await this.courseService.getUserCourseViewCount(courseId, studentId);
-            if (userViewCount >= 20) {
-              res.status(403).json({ 
-                error: "You have reached the maximum number of views (20) for this free course",
-                viewsCount: userViewCount
-              });
-              return;
-            }
-          }
-          
-          // Record the view
           await this.courseService.createCourseView(course, studentId);
         } catch (viewError) {
           // Log but don't fail the request if view recording fails
@@ -1043,10 +1051,10 @@ export class CourseController {
         try {
           const quizMetrics = await this.quizService.getCourseQuizProgressionAndScore(courseId, studentId);
           
-          // Check if quiz score is > 90%
-          if (quizMetrics.scorePercent < 90) {
+          // Check if quiz score is 100%
+          if (quizMetrics.scorePercent < 100) {
             res.status(403).json({ 
-              error: "You must achieve a score greater than 90% to request a certificate",
+              error: "You must achieve a score of 100% to request a certificate",
               progressionPercent: progressionPercent,
               scorePercent: quizMetrics.scorePercent,
               totalScore: quizMetrics.totalScore,
