@@ -141,4 +141,12 @@ export class PrerecordedCourseDto {
   @Expose()
   @Transform(({ obj }) => obj.viewsCount ?? 0)
   viewsCount?: number;
+
+  @Expose()
+  @Transform(({ obj }) => obj.last24hStudentRequestsCount ?? 0)
+  last24hStudentRequestsCount?: number;
+
+  @Expose()
+  @Transform(({ obj }) => obj.last24hPendingStudentRequestsCount ?? 0)
+  last24hPendingStudentRequestsCount?: number;
 }

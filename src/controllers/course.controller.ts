@@ -386,6 +386,36 @@ export class CourseController {
           };
         });
       }
+      
+      if (courseType === "prerecorded") {
+        allCourses = await Promise.all(
+          courses.map(async (course) => {
+            try {
+              if (!course.id) {
+                return {
+                  ...course,
+                  last24hStudentRequestsCount: 0,
+                  last24hPendingStudentRequestsCount: 0,
+                };
+              }
+              const requestSummary = await this.courseService.getCourseStudentRequestSummary(course.id);
+              return {
+                ...course,
+                last24hStudentRequestsCount: requestSummary.last24hCount,
+                last24hPendingStudentRequestsCount: requestSummary.last24hPendingCount,
+              };
+            } catch (error) {
+              req.log.warn({ err: error, courseId: course.id }, "Failed to get student request summary");
+              return {
+                ...course,
+                last24hStudentRequestsCount: 0,
+                last24hPendingStudentRequestsCount: 0,
+              };
+            }
+          })
+        );
+      }
+      
       const courseDtos = await getCourseDto(allCourses, courseType);
       res.status(200).json(courseDtos);
     } catch (error) {
