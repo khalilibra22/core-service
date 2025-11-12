@@ -245,4 +245,73 @@ export class QuizService {
       throw new Error("Error fetching quiz with questions");
     }
   }
+
+  async getCourseQuizProgressionAndScore(
+    courseId: string,
+    studentId: string
+  ): Promise<{ scorePercent: number; completedQuizzes: number; totalQuizzes: number; totalScore: number; totalMaxScore: number }> {
+    try {
+      // Get all quizzes for the course across all sessions
+      const quizzes = await this.quizRepo.find({
+        where: { session: { course: { id: courseId } } },
+        relations: ["session", "session.course", "questions"],
+      });
+
+      const totalQuizzes = quizzes.length;
+      
+      if (totalQuizzes === 0) {
+        return {
+          scorePercent: 0,
+          completedQuizzes: 0,
+          totalQuizzes: 0,
+          totalScore: 0,
+          totalMaxScore: 0,
+        };
+      }
+
+      let completedQuizzes = 0;
+      let totalScore = 0;
+      let totalMaxScore = 0;
+
+      // For each quiz, get the best completed attempt for this student
+      for (const quiz of quizzes) {
+        const bestAttempt = await this.getStudentBestAttempt(quiz.id!, studentId);
+        
+        if (bestAttempt && bestAttempt.isCompleted) {
+          completedQuizzes++;
+          totalScore += bestAttempt.score || 0;
+          
+          // Use maxScore from attempt if available, otherwise calculate from questions
+          if (bestAttempt.maxScore) {
+            totalMaxScore += bestAttempt.maxScore;
+          } else if (quiz.questions && quiz.questions.length > 0) {
+            const quizMaxScore = quiz.questions.reduce((sum: number, q: any) => sum + (q.points || 0), 0);
+            totalMaxScore += quizMaxScore;
+          }
+        } else {
+          // Quiz not completed - still need to count max score for denominator
+          if (quiz.questions && quiz.questions.length > 0) {
+            const quizMaxScore = quiz.questions.reduce((sum: number, q: any) => sum + (q.points || 0), 0);
+            totalMaxScore += quizMaxScore;
+          }
+        }
+      }
+
+      const scorePercent = totalMaxScore > 0 ? (totalScore / totalMaxScore) * 100 : 0;
+
+      return {
+        scorePercent,
+        completedQuizzes,
+        totalQuizzes,
+        totalScore,
+        totalMaxScore,
+      };
+    } catch (error) {
+      logger.error(
+        { err: error, courseId, studentId },
+        "getCourseQuizProgressionAndScore failed"
+      );
+      throw new Error("Error calculating course quiz progression and score");
+    }
+  }
 }

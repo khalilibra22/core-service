@@ -8,6 +8,8 @@ import { SessionModel } from "../models/session.model";
 import { MaterialModel } from "../models/material.model";
 import { MaterialLinkModel } from "../models/material-link.model";
 import { StudentRequestModel } from "../models/student-request.model";
+import { CourseViewModel } from "../models/course-view.model";
+import { CourseProgressModel } from "../models/course-progress.model";
 import { In, IsNull } from "typeorm";
 import { StudentRequestService } from "./student-request.service";
 
@@ -19,6 +21,8 @@ export class CourseService {
   lessonRepo: any;
   materialRepo: any;
   materialLinkRepo: any;
+  courseViewRepo: any;
+  courseProgressRepo: any;
   studentRequestService: StudentRequestService;
   constructor() {
     this.courseRepo = AppDataSource.getRepository(CourseModel);
@@ -28,6 +32,8 @@ export class CourseService {
     this.lessonRepo = AppDataSource.getRepository(LessonModel);
     this.materialRepo = AppDataSource.getRepository(MaterialModel);
     this.materialLinkRepo = AppDataSource.getRepository(MaterialLinkModel);
+    this.courseViewRepo = AppDataSource.getRepository(CourseViewModel);
+    this.courseProgressRepo = AppDataSource.getRepository(CourseProgressModel);
     this.studentRequestService = new StudentRequestService();
   }
 
@@ -59,7 +65,7 @@ export class CourseService {
         where: {
           id: id,
         },
-        relations: ["couresSettings"],
+        relations: ["couresSettings","enrollments","sessions"],
         cache: {
           id: `course-${id}`,
           milliseconds: 300000, // 5 minutes
@@ -77,7 +83,7 @@ export class CourseService {
         where: {
           id: id,
         },
-        relations: ["couresSettings"],
+        relations: ["couresSettings","enrollments","sessions"],
         cache: false,
       });
     } catch (error: any) {
@@ -423,7 +429,7 @@ export class CourseService {
           where: {
             type: type,
           },
-          relations: ["couresSettings", "enrollments"],
+          relations: ["couresSettings", "enrollments", "sessions"],
           skip: skip,
           take: limit,
           cache: {
@@ -438,6 +444,7 @@ export class CourseService {
         .createQueryBuilder("course")
         .leftJoinAndSelect("course.couresSettings", "couresSettings")
         .leftJoinAndSelect("course.enrollments", "enrollments")
+        .leftJoinAndSelect("course.sessions", "sessions")
         .where("course.type = :type", { type })
         .andWhere("course.deletedAt IS NULL");
 
@@ -945,4 +952,180 @@ export class CourseService {
       throw new Error("Error fetching student request: " + error.message);
     }
   }
+
+  // Course View Methods
+  async createCourseView(course: CourseModel, studentId: string): Promise<CourseViewModel> {
+    try {
+      const view = this.courseViewRepo.create({
+        course: course,
+        studentId: studentId,
+      });
+      return await this.courseViewRepo.save(view);
+    } catch (error: any) {
+      logger.error({ err: error, courseId: course.id, studentId }, "createCourseView failed");
+      throw new Error("Error creating course view: " + error.message);
+    }
+  }
+
+  async getCourseViewCount(courseId: string): Promise<number> {
+    try {
+      return await this.courseViewRepo.count({
+        where: {
+          course: { id: courseId },
+        },
+      });
+    } catch (error: any) {
+      logger.error({ err: error, courseId }, "getCourseViewCount failed");
+      throw new Error("Error fetching course view count: " + error.message);
+    }
+  }
+
+  async getUserCourseViewCount(courseId: string, studentId: string): Promise<number> {
+    try {
+      return await this.courseViewRepo.count({
+        where: {
+          course: { id: courseId },
+          studentId: studentId,
+        },
+      });
+    } catch (error: any) {
+      logger.error({ err: error, courseId, studentId }, "getUserCourseViewCount failed");
+      throw new Error("Error fetching user course view count: " + error.message);
+    }
+  }
+
+  // Course Progress Methods
+  async getCourseProgress(courseId: string, studentId: string): Promise<CourseProgressModel | null> {
+    try {
+      return await this.courseProgressRepo.findOne({
+        where: {
+          course: { id: courseId },
+          studentId: studentId,
+        },
+        relations: ["course", "lastSession", "lastLesson"],
+      });
+    } catch (error: any) {
+      logger.error({ err: error, courseId, studentId }, "getCourseProgress failed");
+      throw new Error("Error fetching course progress: " + error.message);
+    }
+  }
+
+  async upsertCourseProgress(
+    courseId: string,
+    studentId: string,
+    percentComplete?: number,
+    lastSessionId?: string,
+    lastLessonId?: string
+  ): Promise<CourseProgressModel> {
+    try {
+      // Find existing progress
+      let progress = await this.courseProgressRepo.findOne({
+        where: {
+          course: { id: courseId },
+          studentId: studentId,
+        },
+      });
+
+      const course = await this.courseRepo.findOne({ where: { id: courseId } });
+      if (!course) {
+        throw new Error("Course not found");
+      }
+
+      // Fetch related entities if IDs are provided
+      let lastSession = undefined;
+      let lastLesson = undefined;
+
+      if (lastSessionId) {
+        lastSession = await this.sessionRepo.findOne({ where: { id: lastSessionId } });
+      }
+
+      if (lastLessonId) {
+        lastLesson = await this.lessonRepo.findOne({ where: { id: lastLessonId } });
+      }
+
+      if (progress) {
+        // Update existing progress
+        if (percentComplete !== undefined) {
+          progress.percentComplete = percentComplete;
+        }
+        if (lastSession) {
+          progress.lastSession = lastSession;
+        }
+        if (lastLesson) {
+          progress.lastLesson = lastLesson;
+        }
+      } else {
+        // Create new progress
+        progress = this.courseProgressRepo.create({
+          course,
+          studentId,
+          percentComplete: percentComplete ?? 0,
+          lastSession,
+          lastLesson,
+        });
+      }
+
+      return await this.courseProgressRepo.save(progress);
+    } catch (error: any) {
+      logger.error({ err: error, courseId, studentId }, "upsertCourseProgress failed");
+      throw new Error("Error upserting course progress: " + error.message);
+    }
+  }
+
+  async getCourseProgressSummary(courseId: string, studentId: string): Promise<any> {
+    try {
+      const progress = await this.getCourseProgress(courseId, studentId);
+      
+      if (!progress) {
+        return {
+          percentComplete: 0,
+          lastSessionId: null,
+          lastLessonId: null,
+          lastUpdated: null,
+        };
+      }
+
+      return {
+        percentComplete: progress.percentComplete ?? 0,
+        lastSessionId: progress.lastSession?.id ?? null,
+        lastLessonId: progress.lastLesson?.id ?? null,
+        lastUpdated: progress.updatedAt,
+      };
+    } catch (error: any) {
+      logger.error({ err: error, courseId, studentId }, "getCourseProgressSummary failed");
+      throw new Error("Error fetching course progress summary: " + error.message);
+    }
+  }
+
+  async getCourseStudentRequestSummary(courseId: string): Promise<{ last24hCount: number; last24hPendingCount: number }> {
+    try {
+      const cutoffTime = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+      // Count all requests in last 24 hours
+      const last24hCount = await AppDataSource.getRepository(StudentRequestModel)
+        .createQueryBuilder("sr")
+        .where("sr.courseId = :courseId", { courseId })
+        .andWhere("sr.createdAt > :cutoffTime", { cutoffTime })
+        .andWhere("sr.deletedAt IS NULL")
+        .getCount();
+
+      // Count pending requests in last 24 hours
+      const last24hPendingCount = await AppDataSource.getRepository(StudentRequestModel)
+        .createQueryBuilder("sr")
+        .where("sr.courseId = :courseId", { courseId })
+        .andWhere("sr.createdAt > :cutoffTime", { cutoffTime })
+        .andWhere("sr.status = :status", { status: "pending" })
+        .andWhere("sr.deletedAt IS NULL")
+        .getCount();
+
+      return {
+        last24hCount,
+        last24hPendingCount,
+      };
+    } catch (error: any) {
+      logger.error({ err: error, courseId }, "getCourseStudentRequestSummary failed");
+      throw new Error("Error fetching course student request summary: " + error.message);
+    }
+  }
+
 }

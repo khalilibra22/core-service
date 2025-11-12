@@ -219,13 +219,23 @@ export const createStudentRequestValidationSchema = Joi.object({
 
 export const updateStudentRequestStatusValidationSchema = Joi.object({
   status: Joi.string()
-    .valid("pending", "approved", "rejected", "completed")
+    .valid("pending", "preparing","dispatched","delivered" ,"rejected", "completed")
     .required()
     .messages({
-      "any.only": "Status must be one of: pending, approved, rejected, completed",
+      "any.only": "Status must be one of: pending, preparing, dispatched, delivered, rejected, completed",
       "any.required": "Status is required",
     }),
   ownerResponse: Joi.string().max(1000).optional(),
   ownerId: Joi.string().uuid().optional(),
+});
+
+// Course progress validation schemas
+export const updateCourseProgressValidationSchema = Joi.object({
+  percentComplete: Joi.number().min(0).max(100).required(),
+  lastSessionId: Joi.string().uuid().optional(),
+  lastLessonId: Joi.string().uuid().optional(),
+  ownerId: Joi.string().uuid().optional(),
+}).or("percentComplete", "lastSessionId", "lastLessonId").messages({
+  "object.missing": "At least one of percentComplete, lastSessionId, or lastLessonId must be provided",
 });
 

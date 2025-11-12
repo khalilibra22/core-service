@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { CourseService } from "../services/course.service";
+import { QuizService } from "../services/quiz.service";
 import { plainToInstance } from "class-transformer";
 import { CourseSettingsModel } from "../models/course-settings.model";
 import { CourseModel } from "../models/course.model";
@@ -11,15 +12,18 @@ import { RecordedSessionDto } from "../dtos/recorded-session.dto";
 import { SessionDto } from "../dtos/session.dto";
 import { MaterialDto } from "../dtos/material.dto";
 import { StudentRequestDto } from "../dtos/student-request.dto";
+import { CourseProgressDto } from "../dtos/course-progress.dto";
 import { NotificationService } from "../services/notification.service";
 
 export class CourseController {
   private courseService: CourseService;
   private notificationService: NotificationService;
+  private quizService: QuizService;
   
   constructor() {
     this.courseService = new CourseService();
     this.notificationService = new NotificationService();
+    this.quizService = new QuizService();
   }
 
   createDraftCourse = async (req: Request, res: Response): Promise<void> => {
@@ -324,6 +328,18 @@ export class CourseController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
+
+      // For prerecorded courses, add viewsCount
+      if (course.type === "prerecorded") {
+        try {
+          const viewsCount = await this.courseService.getCourseViewCount(id);
+          (course as any).viewsCount = viewsCount;
+        } catch (countError) {
+          req.log.warn({ err: countError, courseId: id }, "Failed to get course view count");
+          (course as any).viewsCount = 0;
+        }
+      }
+
       const courseDto = await getCourseDto(course, course.type ?? "minimal");
       res.status(200).json(courseDto);
     } catch (error) {
@@ -370,6 +386,36 @@ export class CourseController {
           };
         });
       }
+      
+      if (courseType === "prerecorded") {
+        allCourses = await Promise.all(
+          courses.map(async (course) => {
+            try {
+              if (!course.id) {
+                return {
+                  ...course,
+                  last24hStudentRequestsCount: 0,
+                  last24hPendingStudentRequestsCount: 0,
+                };
+              }
+              const requestSummary = await this.courseService.getCourseStudentRequestSummary(course.id);
+              return {
+                ...course,
+                last24hStudentRequestsCount: requestSummary.last24hCount,
+                last24hPendingStudentRequestsCount: requestSummary.last24hPendingCount,
+              };
+            } catch (error) {
+              req.log.warn({ err: error, courseId: course.id }, "Failed to get student request summary");
+              return {
+                ...course,
+                last24hStudentRequestsCount: 0,
+                last24hPendingStudentRequestsCount: 0,
+              };
+            }
+          })
+        );
+      }
+      
       const courseDtos = await getCourseDto(allCourses, courseType);
       res.status(200).json(courseDtos);
     } catch (error) {
@@ -649,6 +695,33 @@ export class CourseController {
         res.status(400).json({ error: "Course is not a prerecorded course" });
         return;
       }
+
+      // Record view for authenticated users
+      const studentId = req.body.ownerId;
+      if (studentId) {
+        try {
+          const isFree = course.couresSettings?.isPaid === false;
+          
+          // Check view limit for free courses
+          if (isFree) {
+            const userViewCount = await this.courseService.getUserCourseViewCount(courseId, studentId);
+            if (userViewCount >= 20) {
+              res.status(403).json({ 
+                error: "You have reached the maximum number of views (20) for this free course",
+                viewsCount: userViewCount
+              });
+              return;
+            }
+          }
+          
+          // Record the view
+          await this.courseService.createCourseView(course, studentId);
+        } catch (viewError) {
+          // Log but don't fail the request if view recording fails
+          req.log.warn({ err: viewError, courseId, studentId }, "Failed to record course view");
+        }
+      }
+
       const sections = await this.courseService.getPrerecordedCourseSections(
         courseId
       );
@@ -952,6 +1025,61 @@ export class CourseController {
           res.status(409).json({ error: "You have already requested a certificate for this course" });
           return;
         }
+
+        // Get course progress
+        const courseProgress = await this.courseService.getCourseProgress(courseId, studentId);
+        const progressionPercent = Number(courseProgress?.percentComplete ?? 0);
+
+        // Check if course progression is at least 80%
+        if (progressionPercent < 80) {
+          res.status(403).json({ 
+            error: "You must complete at least 80% of the course to request a certificate",
+            progressionPercent: progressionPercent
+          });
+          return;
+        }
+
+        // Calculate quiz progression and score
+        try {
+          const quizMetrics = await this.quizService.getCourseQuizProgressionAndScore(courseId, studentId);
+          
+          // Check if quiz score is > 90%
+          if (quizMetrics.scorePercent < 90) {
+            res.status(403).json({ 
+              error: "You must achieve a score greater than 90% to request a certificate",
+              progressionPercent: progressionPercent,
+              scorePercent: quizMetrics.scorePercent,
+              totalScore: quizMetrics.totalScore,
+              totalMaxScore: quizMetrics.totalMaxScore
+            });
+            return;
+          }
+
+          // If checks pass, add metrics to payload
+          const enhancedPayload = {
+            ...payload,
+            progressionPercent: progressionPercent,
+            scorePercent: quizMetrics.scorePercent,
+            completedQuizzes: quizMetrics.completedQuizzes,
+            totalQuizzes: quizMetrics.totalQuizzes,
+            totalScore: quizMetrics.totalScore,
+            totalMaxScore: quizMetrics.totalMaxScore
+          };
+
+          const request = await this.courseService.createStudentRequest(
+            courseId,
+            studentId,
+            type,
+            message,
+            enhancedPayload
+          );
+          const requestDto = await enrichDto<StudentRequestDto>(StudentRequestDto, request);
+          res.status(201).json(requestDto);
+          return;
+        } catch (quizError) {
+          req.log.warn({ err: quizError, courseId, studentId }, "Failed to calculate quiz metrics for certificate request");
+          // Continue with request creation even if quiz metrics calculation fails
+        }
       }
 
       const request = await this.courseService.createStudentRequest(
@@ -1048,6 +1176,97 @@ export class CourseController {
       res.status(200).json(requestDtos);
     } catch (error) {
       req.log.error({ err: error, ownerId: req.body.ownerId }, "getOwnerStudentRequests failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  getCourseStudentRequestSummary = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const courseId = req.params.id;
+      const ownerId = req.body.ownerId;
+
+      const course = await this.courseService.getCourseById(courseId);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+
+      // Verify that the user is the course owner
+      if (course.ownerId !== ownerId) {
+        res.status(403).json({ error: "You are not the owner of this course" });
+        return;
+      }
+
+      const summary = await this.courseService.getCourseStudentRequestSummary(courseId);
+
+      res.status(200).json(summary);
+    } catch (error) {
+      req.log.error({ err: error, courseId: req.params.id }, "getCourseStudentRequestSummary failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  // Course Progress Methods
+  updateCourseProgress = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const courseId = req.params.id;
+      const studentId = req.body.ownerId;
+      const { percentComplete, lastSessionId, lastLessonId } = req.body;
+
+      const course = await this.courseService.getCourseById(courseId);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+
+      if (course.type !== "prerecorded") {
+        res.status(400).json({ error: "Progress tracking is only available for prerecorded courses" });
+        return;
+      }
+
+      const progress = await this.courseService.upsertCourseProgress(
+        courseId,
+        studentId,
+        percentComplete,
+        lastSessionId,
+        lastLessonId
+      );
+
+      const progressDto = plainToInstance(CourseProgressDto, progress, {
+        excludeExtraneousValues: true,
+      });
+
+      res.status(200).json({
+        message: "Progress updated successfully",
+        progress: progressDto,
+      });
+    } catch (error) {
+      req.log.error({ err: error, courseId: req.params.id }, "updateCourseProgress failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  getCourseProgress = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const courseId = req.params.id;
+      const studentId = req.body.ownerId;
+
+      const course = await this.courseService.getCourseById(courseId);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+
+      if (course.type !== "prerecorded") {
+        res.status(400).json({ error: "Progress tracking is only available for prerecorded courses" });
+        return;
+      }
+
+      const progress = await this.courseService.getCourseProgressSummary(courseId, studentId);
+
+      res.status(200).json(progress);
+    } catch (error) {
+      req.log.error({ err: error, courseId: req.params.id }, "getCourseProgress failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
