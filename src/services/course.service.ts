@@ -84,7 +84,7 @@ export class CourseService {
         where: {
           id: id,
         },
-        relations: ["couresSettings","enrollments","sessions"],
+        relations: ["couresSettings","enrollments","sessions", "sessions.lessons", "sessions.quizzes"],
         cache: false,
       });
     } catch (error: any) {
