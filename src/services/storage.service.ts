@@ -11,6 +11,7 @@ import { ILike } from "typeorm";
 import { MaterialModel } from "../models/material.model";
 import { AppDataSource } from "../config/database";
 import { logger } from "../utils/logger";
+import { PaginatedResult } from "../utils";
 
 export class StorageService {
   private s3: S3Client;
@@ -82,15 +83,16 @@ export class StorageService {
     teacherId: string,
     page = 1,
     limit = 20
-  ): Promise<MaterialModel[]> {
+  ): Promise<PaginatedResult<MaterialModel>> {
     try {
       const skip = (page - 1) * limit;
-      return await this.materialRepo.find({
+      const [data, total] = await this.materialRepo.findAndCount({
         where: { teacherId },
         order: { createdAt: "DESC" },
         skip,
         take: limit,
       });
+      return { data, total };
     } catch (error) {
       logger.error({ err: error, teacherId, page, limit }, "getMaterialsByTeacher failed");
       throw new Error(`Failed to get materials by teacher: ${error}`);
@@ -102,15 +104,16 @@ export class StorageService {
     title: string,
     page = 1,
     limit = 20
-  ): Promise<MaterialModel[]> {
+  ): Promise<PaginatedResult<MaterialModel>> {
     try {
       const skip = (page - 1) * limit;
-      return await this.materialRepo.find({
+      const [data, total] = await this.materialRepo.findAndCount({
         where: { teacherId, title: ILike(`%${title}%`) },
         order: { createdAt: "DESC" },
         skip,
         take: limit,
       });
+      return { data, total };
     } catch (error) {
       logger.error({ err: error, teacherId, title, page, limit }, "searchMaterialsByTeacherTitle failed");
       throw new Error(`Failed to search materials by teacher title: ${error}`);

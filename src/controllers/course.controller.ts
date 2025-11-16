@@ -5,7 +5,7 @@ import { plainToInstance } from "class-transformer";
 import { CourseSettingsModel } from "../models/course-settings.model";
 import { CourseModel } from "../models/course.model";
 import { MinimalCourseDto } from "../dtos/minimal-course.dto";
-import { getCourseDto, getSessionDto, enrichDto } from "../utils";
+import { getCourseDto, getSessionDto, enrichDto, setPaginationHeaders } from "../utils";
 import { CertificateDto } from "../dtos/certificate.dto";
 import { LessonDto } from "../dtos/lesson.dto";
 import { RecordedSessionDto } from "../dtos/recorded-session.dto";
@@ -363,7 +363,7 @@ export class CourseController {
         res.status(400).json({ error: "Invalid course type" });
         return;
       }
-      const courses = await this.courseService.getCoursesByTeacherId(
+      const { data: courses, total } = await this.courseService.getCoursesByTeacherId(
         id,
         courseType,
         page,
@@ -417,6 +417,7 @@ export class CourseController {
       }
       
       const courseDtos = await getCourseDto(allCourses, courseType);
+      setPaginationHeaders(res, total, page, limit);
       res.status(200).json(courseDtos);
     } catch (error) {
       req.log.error({ err: error, teacherId: req.params.id, type: req.query.type, page: req.query.page, limit: req.query.limit }, "getCoursesByTeacherId failed");
@@ -429,8 +430,9 @@ export class CourseController {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
-      const courses = await this.courseService.getAllLiveCourses(page, limit);
+      const { data: courses, total } = await this.courseService.getAllLiveCourses(page, limit);
       const courseDtos = await getCourseDto(courses, "live");
+      setPaginationHeaders(res, total, page, limit);
       res.status(200).json(courseDtos);
     } catch (error) {
       req.log.error({ err: error, page: req.query.page, limit: req.query.limit }, "getAllLiveCourses failed");
@@ -442,8 +444,9 @@ export class CourseController {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
-      const courses = await this.courseService.getAllGroupCourses(page, limit);
+      const { data: courses, total } = await this.courseService.getAllGroupCourses(page, limit);
       const courseDtos = await getCourseDto(courses, "group");
+      setPaginationHeaders(res, total, page, limit);
       res.status(200).json(courseDtos);
     } catch (error) {
       req.log.error({ err: error, page: req.query.page, limit: req.query.limit }, "getAllGroupCourses failed");
@@ -459,11 +462,12 @@ export class CourseController {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
-      const courses = await this.courseService.getAllPrerecordedCourses(
+      const { data: courses, total } = await this.courseService.getAllPrerecordedCourses(
         page,
         limit
       );
       const courseDtos = await getCourseDto(courses, "prerecorded");
+      setPaginationHeaders(res, total, page, limit);
       res.status(200).json(courseDtos);
     } catch (error) {
       req.log.error({ err: error, page: req.query.page, limit: req.query.limit }, "getAllPrerecordedCourses failed");
@@ -768,14 +772,16 @@ export class CourseController {
       // Get optional search query parameter
       const searchQuery = req.query.q as string | undefined;
       
-      const courses = await this.courseService.searchCourses(
+      const { data: courses, total } = await this.courseService.searchCourses(
         courseType,
         page,
         limit,
         searchQuery
       );
       const courseDtos = await getCourseDto(courses, courseType);
+      setPaginationHeaders(res, total, page, limit);
       res.status(200).json(courseDtos);
+      
     } catch (error) {
       req.log.error({ err: error, courseType: req.query.type, page: req.query.page, limit: req.query.limit, searchQuery: req.query.q }, "searchCourses failed");
       res.status(500).json({ error: "Internal Server Error" });

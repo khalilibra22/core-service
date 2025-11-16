@@ -13,6 +13,11 @@ import { Request, Response, NextFunction } from "express";
 import { LruInMemoryCache } from "../cache/lru-in-memory.cache";
 import { MinimalUser, UserTopic } from "../types/user.types";
 
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+}
+
 export const getCourseDto = async (
   courses: CourseModel | CourseModel[],
   type: string
@@ -320,4 +325,15 @@ export const getVideoThumbnail = (videoId: string) =>
 export const getPermanentUrl = (storageId: string): string => {
   // Generate permanent URL for public-read files
   return `${process.env.S3_READ_URL}/${storageId}`;
+}
+
+export const setPaginationHeaders = (
+  res: Response,
+  total: number,
+  page: number,
+  limit: number
+): void => {
+  res.setHeader("X-Total-Count", total.toString());
+  res.setHeader("X-Page", page.toString());
+  res.setHeader("X-Limit", limit.toString());
 }
