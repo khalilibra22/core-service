@@ -4,7 +4,7 @@ import { EnrollmentService } from "../services/enrollment.service";
 import { EnrollmentDto } from "../dtos/enrollment.dto";
 import { plainToInstance } from "class-transformer";
 import { OneOnOneEnollmentDto } from "../dtos/one-on-one-enrollment.dto";
-import { enrichDto, generateSessionsFromAvailabilities, getCourseDto } from "../utils";
+import { enrichDto, generateSessionsFromAvailabilities, getCourseDto, setPaginationHeaders } from "../utils";
 import { SessionDto } from "../dtos/session.dto";
 import { RefundDto } from "../dtos/refund.dto";
 import { FeedbackService } from "../services/feedback.service";
@@ -664,13 +664,14 @@ export class EnrollmentController {
         return;
       }
 
-      const courses = await this.courseService.getStudentEnrolledCourses(
+      const { data: courses, total } = await this.courseService.getStudentEnrolledCourses(
         studentId,
         page,
         limit,
         courseType
       );
-      const courseDtos = await getCourseDto(courses, courseType);      
+      const courseDtos = await getCourseDto(courses, courseType);
+      setPaginationHeaders(res, total, page, limit);
       res.status(200).json(courseDtos);
     } catch (error) {
       req.log.error({ err: error, studentId: req.body?.ownerId, type: req.query?.type }, "getStudentEnrolledCourses failed");

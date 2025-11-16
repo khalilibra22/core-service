@@ -2,6 +2,7 @@ import { AppDataSource } from "../config/database";
 import { logger } from "../utils/logger";
 import { ComplaintModel } from "../models/complaint.model";
 import { ReviewModel } from "../models/review.model";
+import { PaginatedResult } from "../utils";
 
 export class FeedbackService {
   reviewRepo: any;
@@ -205,9 +206,9 @@ export class FeedbackService {
   async getReviewsOfPrerecordedCourses(
     page: number,
     limit: number
-  ): Promise<ReviewModel[]> {
+  ): Promise<PaginatedResult<ReviewModel>> {
     try {
-      return await this.reviewRepo.find({
+      const [data, total] = await this.reviewRepo.findAndCount({
         where: {
           course: {
             type: "prerecorded",
@@ -220,6 +221,7 @@ export class FeedbackService {
           milliseconds: 300000, // 5 minutes
         },
       });
+      return { data, total };
     } catch (error) {
       logger.error({ err: error, page, limit }, "getReviewsOfPrerecordedCourses failed");
       throw new Error("Error fetching reviews of prerecorded courses");

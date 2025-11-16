@@ -3,7 +3,7 @@ import { CourseService } from "../services/course.service";
 import { FeedbackService } from "../services/feedback.service";
 import { ReviewDto } from "../dtos/review.dto";
 import { ComplaintDto } from "../dtos/complaint.dto";
-import { enrichDto } from "../utils";
+import { enrichDto, setPaginationHeaders } from "../utils";
 
 export class FeedbackController {
   private feedbackService: FeedbackService;
@@ -311,11 +311,12 @@ export class FeedbackController {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
-      const reviews = await this.feedbackService.getReviewsOfPrerecordedCourses(
+      const { data: reviews, total } = await this.feedbackService.getReviewsOfPrerecordedCourses(
         page,
         limit
       );
       const reviewDtos = await enrichDto<ReviewDto[]>(ReviewDto, reviews);
+      setPaginationHeaders(res, total, page, limit);
       res.status(200).json(reviewDtos);
     } catch (error) {
       req.log.error({ err: error, page: req.query.page, limit: req.query.limit }, "getReviewsOfPrerecordedCourses failed");

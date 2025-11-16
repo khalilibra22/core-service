@@ -3,6 +3,7 @@ import { StorageService } from "../services/storage.service";
 import { plainToInstance } from "class-transformer";
 import { MinimalMaterialDto } from "../dtos/minimal-material.dto";
 import { v4 as uuidv4 } from "uuid";
+import { setPaginationHeaders } from "../utils";
 
 export class StorageController {
   private storageService: StorageService;
@@ -123,7 +124,7 @@ export class StorageController {
       const page = Math.max(1, Number(req.query.page) || 1);
       const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
 
-      const materials = await this.storageService.getMaterialsByTeacher(
+      const { data: materials, total } = await this.storageService.getMaterialsByTeacher(
         teacherId,
         page,
         limit
@@ -133,6 +134,7 @@ export class StorageController {
         excludeExtraneousValues: true,
       });
 
+      setPaginationHeaders(res, total, page, limit);
       res.status(200).json(materialDtos);
     } catch (error) {
       req.log.error({ err: error, teacherId: req.body?.ownerId || (res.locals as any)?.ownerId }, "getMaterialsByTeacher failed");
@@ -165,7 +167,7 @@ export class StorageController {
       const page = Math.max(1, Number(req.query.page) || 1);
       const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
 
-      const materials = await this.storageService.searchMaterialsByTeacherTitle(
+      const { data: materials, total } = await this.storageService.searchMaterialsByTeacherTitle(
         teacherId,
         title,
         page,
@@ -176,6 +178,7 @@ export class StorageController {
         excludeExtraneousValues: true,
       });
 
+      setPaginationHeaders(res, total, page, limit);
       res.status(200).json(materialDtos);
     } catch (error) {
       req.log.error({ err: error, teacherId: req.body?.ownerId || (res.locals as any)?.ownerId, title: req.query?.title }, "getMaterialsByTeacherSearch failed");

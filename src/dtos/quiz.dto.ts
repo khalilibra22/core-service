@@ -12,7 +12,19 @@ export class QuizDto {
   description?: string;
 
   @Expose()
+  timeLimit?: number;
+
+  @Expose()
+  maxAttempts?: number;
+
+  @Expose()
+  passingScore?: number;
+
+  @Expose()
   order?: number;
+
+  @Expose()
+  isActive?: boolean;
 
   @Expose()
   @Type(() => QuestionDto)

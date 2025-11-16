@@ -1,5 +1,6 @@
-import { Expose, Transform } from "class-transformer";
+import { Expose, Transform, Type } from "class-transformer";
 import { getPermanentUrl } from "../utils";
+import { RecordedSessionDto } from "./recorded-session.dto";
 
 export class PrerecordedCourseDto {
   @Expose()
@@ -149,4 +150,8 @@ export class PrerecordedCourseDto {
   @Expose()
   @Transform(({ obj }) => obj.last24hPendingStudentRequestsCount ?? 0)
   last24hPendingStudentRequestsCount?: number;
+
+  @Expose({ name: "sessions" })
+  @Type(() => RecordedSessionDto)
+  sections?: RecordedSessionDto[];
 }

@@ -12,6 +12,7 @@ import { CourseViewModel } from "../models/course-view.model";
 import { CourseProgressModel } from "../models/course-progress.model";
 import { In, IsNull } from "typeorm";
 import { StudentRequestService } from "./student-request.service";
+import { PaginatedResult } from "../utils";
 
 export class CourseService {
   courseRepo: any;
@@ -83,7 +84,7 @@ export class CourseService {
         where: {
           id: id,
         },
-        relations: ["couresSettings","enrollments","sessions"],
+        relations: ["couresSettings","enrollments","sessions", "sessions.lessons", "sessions.quizzes"],
         cache: false,
       });
     } catch (error: any) {
@@ -194,9 +195,9 @@ export class CourseService {
     type: string,
     page: number,
     limit: number
-  ): Promise<CourseModel[]> {
+  ): Promise<PaginatedResult<CourseModel>> {
     try {
-      return await this.courseRepo.find({
+      const [data, total] = await this.courseRepo.findAndCount({
         where: {
           ownerId: teacherId,
           type: type,
@@ -209,6 +210,7 @@ export class CourseService {
           milliseconds: 300000, // 5 minutes
         },
       });
+      return { data, total };
     } catch (error) {
       logger.error({ err: error, teacherId, type, page, limit }, "getCoursesByTeacherId failed");
       throw new Error("Error fetching courses by teacher ID");
@@ -216,9 +218,9 @@ export class CourseService {
   }
 
   //get all courses of type live using pagination
-  async getAllLiveCourses(page: number, limit: number): Promise<CourseModel[]> {
+  async getAllLiveCourses(page: number, limit: number): Promise<PaginatedResult<CourseModel>> {
     try {
-      return await this.courseRepo.find({
+      const [data, total] = await this.courseRepo.findAndCount({
         where: {
           type: "live",
         },
@@ -230,6 +232,7 @@ export class CourseService {
           milliseconds: 300000, // 5 minutes
         },
       });
+      return { data, total };
     } catch (error) {
       logger.error({ err: error, page, limit }, "getAllLiveCourses failed");
       throw new Error("Error fetching all courses of type live");
@@ -239,9 +242,9 @@ export class CourseService {
   async getAllGroupCourses(
     page: number,
     limit: number
-  ): Promise<CourseModel[]> {
+  ): Promise<PaginatedResult<CourseModel>> {
     try {
-      return await this.courseRepo.find({
+      const [data, total] = await this.courseRepo.findAndCount({
         where: {
           type: "group",
         },
@@ -253,6 +256,7 @@ export class CourseService {
           milliseconds: 300000, // 5 minutes
         },
       });
+      return { data, total };
     } catch (error) {
       logger.error({ err: error, page, limit }, "getAllGroupCourses failed");
       throw new Error("Error fetching all courses of type group");
@@ -263,9 +267,9 @@ export class CourseService {
   async getAllPrerecordedCourses(
     page: number,
     limit: number
-  ): Promise<CourseModel[]> {
+  ): Promise<PaginatedResult<CourseModel>> {
     try {
-      return await this.courseRepo.find({
+      const [data, total] = await this.courseRepo.findAndCount({
         where: {
           type: "prerecorded",
         },
@@ -277,6 +281,7 @@ export class CourseService {
           milliseconds: 300000, // 5 minutes
         },
       });
+      return { data, total };
     } catch (error) {
       logger.error({ err: error, page, limit }, "getAllPrerecordedCourses failed");
       throw new Error("Error fetching all courses of type prerecorded");
@@ -419,13 +424,13 @@ export class CourseService {
     page: number,
     limit: number,
     searchQuery?: string
-  ): Promise<CourseModel[]> {
+  ): Promise<PaginatedResult<CourseModel>> {
     try {
       const skip = (page - 1) * limit;
 
       // If no search query, use the original simple find
       if (!searchQuery || searchQuery.trim() === "") {
-        return await this.courseRepo.find({
+        const [data, total] = await this.courseRepo.findAndCount({
           where: {
             type: type,
           },
@@ -437,6 +442,7 @@ export class CourseService {
             duration: 60000,
           },
         });
+        return { data, total };
       }
 
       // Use QueryBuilder for text search with Postgres full-text search
@@ -464,7 +470,8 @@ export class CourseService {
         .skip(skip)
         .take(limit);
 
-      return await query.getMany();
+      const [data, total] = await query.getManyAndCount();
+      return { data, total };
     } catch (error: any) {
       logger.error({ err: error, type, page, limit, searchQuery }, "searchCourses failed");
       throw new Error("Error fetching courses: " + error.message);
@@ -842,10 +849,10 @@ export class CourseService {
   }
 
   // get student enrolled courses by student id
-  async getStudentEnrolledCourses(studentId: string, page: number, limit: number, courseType: string): Promise<CourseModel[]> {
+  async getStudentEnrolledCourses(studentId: string, page: number, limit: number, courseType: string): Promise<PaginatedResult<CourseModel>> {
     try {
       const skip = (page - 1) * limit;
-      const courses = await this.courseRepo
+      const query = this.courseRepo
         .createQueryBuilder("course")
         .innerJoin(
           "course.enrollments",
@@ -863,9 +870,10 @@ export class CourseService {
         .leftJoinAndSelect("course.enrollments", "enrollments")
         .orderBy("course.createdAt", "DESC")
         .skip(skip)
-        .take(limit)
-        .getMany();
-      return courses;
+        .take(limit);
+      
+      const [data, total] = await query.getManyAndCount();
+      return { data, total };
     } catch (error: any) {
       logger.error({ err: error, studentId, page, limit, courseType }, "getStudentEnrolledCourses failed");
       throw new Error("Error fetching student enrolled courses: " + error.message);
