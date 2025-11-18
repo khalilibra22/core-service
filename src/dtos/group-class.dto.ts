@@ -93,6 +93,9 @@ export class GroupClassDto {
   // hasEnrollments?: boolean;
 
   @Expose()
+  groupId?: string;
+
+  @Expose()
   @Transform(({ obj }) => obj.createdAt)
   creationDate?: Date;
 }

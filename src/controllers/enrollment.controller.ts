@@ -81,10 +81,11 @@ export class EnrollmentController {
       delete enrollmentBody.fcmToken; // Remove from enrollment body
       
       const enrollment = await this.enrollmentService.createEnrollment(enrollmentBody, fcmToken);
-      
+      if(course.groupId){
+        const isJoined = await this.externalService.joinChatGroup(course.groupId, studentId);
+      }
       // Auto-subscribe to course notifications if fcmToken provided
       const topic = `course-${course.id}`;
-      
       if (fcmToken) {
         try {
           await this.notificationService.subscribeTokenToTopic(fcmToken, topic);
@@ -144,11 +145,32 @@ export class EnrollmentController {
         sessionsNumber
       );
 
+      // Create chat group for one-on-one enrollment before creating enrollment
+      let groupId: string | null = null;
+      try {
+        groupId = await this.externalService.createChatGroup({
+          name: `One-on-One - ${ownerId}-${teacherId}`,
+          type: "one-on-one",
+          ownerId: ownerId,
+          members: [ownerId, teacherId], // Add both student and teacher as members
+        });
+        
+        if (groupId) {
+          req.log.info({ groupId, studentId: ownerId, teacherId }, "Chat group created for one-on-one enrollment");
+        } else {
+          req.log.warn({ studentId: ownerId, teacherId }, "Failed to create chat group for one-on-one enrollment");
+        }
+      } catch (err) {
+        req.log.warn({ err, studentId: ownerId, teacherId }, "Error creating chat group for one-on-one enrollment");
+        // Don't fail enrollment creation if chat group creation fails
+      }
+
       const enrollmentBody = {
         studentId: ownerId,
         teacherId: teacherId,
         sessions: sessions,
         type: "one-on-one",
+        groupId: groupId, // Include groupId in enrollment body
       } as any;
       const enrollment = await this.enrollmentService.createEnrollment(enrollmentBody);
       

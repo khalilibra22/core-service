@@ -14,16 +14,19 @@ import { MaterialDto } from "../dtos/material.dto";
 import { StudentRequestDto } from "../dtos/student-request.dto";
 import { CourseProgressDto } from "../dtos/course-progress.dto";
 import { NotificationService } from "../services/notification.service";
+import { HttpService } from "../services/http.service";
 
 export class CourseController {
   private courseService: CourseService;
   private notificationService: NotificationService;
   private quizService: QuizService;
+  private httpService: HttpService;
   
   constructor() {
     this.courseService = new CourseService();
     this.notificationService = new NotificationService();
     this.quizService = new QuizService();
+    this.httpService = new HttpService();
   }
 
   createDraftCourse = async (req: Request, res: Response): Promise<void> => {
@@ -68,10 +71,18 @@ export class CourseController {
         }
       );
       delete req.body.ownerId; // ownerId is not allowed to be updated
-      const courseFromBody = plainToInstance(CourseModel, req.body, {
-        excludeExtraneousValues: false,
-      });
-
+      
+        if(!course.groupId){
+          const groupId = await this.httpService.createChatGroup({
+            name: course.name,
+            type: course.type,
+            ownerId: course.ownerId,
+          });
+          req.body.groupId = groupId;
+        }
+        const courseFromBody = plainToInstance(CourseModel, req.body, {
+          excludeExtraneousValues: false,
+        });
       const courseBody = {
         id: id,
         ...course,
@@ -79,8 +90,7 @@ export class CourseController {
         couresSettings: { ...course.couresSettings, ...courseSettingsFromBody },
         status: "published",
       };
-      await this.courseService.updateCourse(courseBody);
-      
+      await this.courseService.updateCourse(courseBody);      
       // Auto-subscribe teacher to teacher-courseId topic when publishing
       const fcmToken = req.body.fcmToken as string | undefined;
       if (fcmToken && course.status !== "published") {
