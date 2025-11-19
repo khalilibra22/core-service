@@ -75,6 +75,9 @@ export class CourseModel {
   @Column({ nullable: true })
   thumbnail?: string;
 
+  @Column({ name: "group_id", nullable: true })
+  groupId?: string;
+
   @OneToOne(
     () => CourseSettingsModel,
     (courseSettings) => courseSettings.course,

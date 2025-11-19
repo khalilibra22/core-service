@@ -5,11 +5,15 @@ import { ExternalService } from "../interfaces/external-service.interface";
 export class HttpService implements ExternalService {
     private httpClient: RestApiSetup;
     private baseURL: string;
+    private chatHttpClient: RestApiSetup;
+    private chatBaseURL: string;
     
     constructor() {
         try {
             this.baseURL = (process.env.USER_SERVICE_URL || 'http://localhost:5000/v1')+'/inbounds';
             this.httpClient = new RestApiSetup(`${this.baseURL}`);
+            this.chatBaseURL = process.env.CHAT_SERVICE_URL || 'http://localhost:5002/v1';
+            this.chatHttpClient = new RestApiSetup(this.chatBaseURL);
             //this.httpClient.setAuthToken(process.env.USER_SERVICE_API_KEY || 'default-api-key-for-development');
         } catch (error) {
             logger.error({ err: error }, 'HttpService initialization failed');
@@ -118,6 +122,60 @@ export class HttpService implements ExternalService {
                 throw new Error(`User service is currently unavailable`);
             }
             throw new Error(`Health check failed: ${error?.message || error}`);
+        }
+    }
+
+    async createChatGroup(payload: { name?: string | null; type?: string | null; ownerId?: string | null; members?: string[] }): Promise<string | null> {
+        const safePayload: any = {
+            name: payload?.name?.trim(),
+            groupType: payload?.type,
+            userId: payload?.ownerId?.trim(),
+        };
+
+        // Add members array if provided and valid
+        if (payload?.members && Array.isArray(payload.members) && payload.members.length > 0) {
+            safePayload.members = payload.members;
+        }
+        try {
+            if (!safePayload.name || !safePayload.groupType || !safePayload.userId) {
+                throw new Error('Invalid chat group payload');
+            }
+
+            const response = await this.chatHttpClient.post(`/groups`, safePayload);
+            const groupId = (response?.data as { id: string })?.id;
+            if (!groupId) {
+                throw new Error('Chat group creation response missing group id');
+            }
+            return `${groupId}`;
+        } catch (error: any) {
+            logger.error({ err: error, payload: safePayload }, 'Failed to create chat group');
+            return null;
+        }
+    }
+
+    async joinChatGroup(groupId: string, studentId: string): Promise<boolean> {
+        try {
+            if (!groupId || typeof groupId !== 'string') {
+                throw new Error('Invalid groupId provided');
+            }
+            if (!studentId || typeof studentId !== 'string') {
+                throw new Error('Invalid studentId provided');
+            }
+
+            const response = await this.chatHttpClient.post(`/groups/${groupId}/join`, { userId: studentId });
+            return true;
+        } catch (error: any) {
+            logger.error({ err: error, groupId, studentId }, 'Failed to join chat group');
+            if (error?.response?.status === 404) {
+                throw new Error(`Chat group with ID ${groupId} not found`);
+            }
+            if (error?.response?.status === 409) {
+                throw new Error(`User is already a member of this chat group`);
+            }
+            if (error?.response?.status >= 500) {
+                throw new Error(`Chat service is currently unavailable`);
+            }
+            throw new Error(`Failed to join chat group: ${error?.message || error}`);
         }
     }
 }

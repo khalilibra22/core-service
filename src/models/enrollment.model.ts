@@ -42,6 +42,9 @@ export class EnrollmentModel {
   @Column({ name: "canceld_by", nullable: true })
   canceledBy?: string;
 
+  @Column({ name: "group_id", nullable: true })
+  groupId?: string;
+
   @OneToMany(() => SessionModel, (session) => session.enrollment, {
     cascade: true,
   })
