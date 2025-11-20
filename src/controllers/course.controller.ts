@@ -71,15 +71,6 @@ export class CourseController {
         }
       );
       delete req.body.ownerId; // ownerId is not allowed to be updated
-      
-        if(!course.groupId){
-          const groupId = await this.httpService.createChatGroup({
-            name: course.name,
-            type: course.type,
-            ownerId: course.ownerId,
-          });
-          req.body.groupId = groupId;
-        }
         const courseFromBody = plainToInstance(CourseModel, req.body, {
           excludeExtraneousValues: false,
         });
@@ -90,7 +81,18 @@ export class CourseController {
         couresSettings: { ...course.couresSettings, ...courseSettingsFromBody },
         status: "published",
       };
-      await this.courseService.updateCourse(courseBody);      
+      const updatedCourse = await this.courseService.updateCourse(courseBody);      
+        if(!course.groupId){
+          const groupId = await this.httpService.createChatGroup({
+            name: updatedCourse.name,
+            type: updatedCourse.type,
+            ownerId: updatedCourse.ownerId,
+          });
+          if(groupId){
+            updatedCourse.groupId = groupId;
+            await this.courseService.updateCourse(updatedCourse);
+          }
+        }
       // Auto-subscribe teacher to teacher-courseId topic when publishing
       const fcmToken = req.body.fcmToken as string | undefined;
       if (fcmToken && course.status !== "published") {
