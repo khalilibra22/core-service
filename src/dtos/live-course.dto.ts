@@ -154,4 +154,7 @@ export class LiveCourseDto {
   @Expose()
   @Transform(({ obj }) => obj.createdAt)
   creationDate?: Date;
+
+  @Expose()
+  groupId?: string;
 }

@@ -151,6 +151,9 @@ export class PrerecordedCourseDto {
   @Transform(({ obj }) => obj.last24hPendingStudentRequestsCount ?? 0)
   last24hPendingStudentRequestsCount?: number;
 
+  @Expose()
+  groupId?: string;
+
   @Expose({ name: "sessions" })
   @Type(() => RecordedSessionDto)
   sections?: RecordedSessionDto[];
