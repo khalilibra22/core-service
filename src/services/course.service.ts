@@ -66,7 +66,7 @@ export class CourseService {
         where: {
           id: id,
         },
-        relations: ["couresSettings","enrollments","sessions"],
+        relations: ["couresSettings", "enrollments", "sessions"],
         cache: {
           id: `course-${id}`,
           milliseconds: 300000, // 5 minutes
@@ -84,7 +84,7 @@ export class CourseService {
         where: {
           id: id,
         },
-        relations: ["couresSettings","enrollments","sessions", "sessions.lessons", "sessions.quizzes"],
+        relations: ["couresSettings", "enrollments", "sessions", "sessions.lessons", "sessions.quizzes"],
         cache: false,
       });
     } catch (error: any) {
@@ -648,7 +648,7 @@ export class CourseService {
           material: { id: In(materialIds) },
         },
       });
-      
+
       if (linksToDelete.length > 0) {
         const linkIds = linksToDelete.map((link: any) => link.id);
         await this.materialLinkRepo.softDelete(linkIds);
@@ -706,25 +706,25 @@ export class CourseService {
       throw new Error("Error updating lesson materials: " + error.message);
     }
   }
-    //removeMaterialsFromCourse(courseId, materialIds); soft delete the material links by updating deletedAt in a single query
-    async removeMaterialsFromCourse(courseId: string, materialIds: string[]): Promise<void> {
-      try {
-        // Use softDelete with find for better reliability
-        const linksToDelete = await this.materialLinkRepo.find({
-          where: {
-            course: { id: courseId },
-            material: { id: In(materialIds) },
-          },
-        });
-        
-        if (linksToDelete.length > 0) {
-          const linkIds = linksToDelete.map((link: any) => link.id);
-          await this.materialLinkRepo.softDelete(linkIds);
-        }
-      } catch (error: any) {
-        throw new Error("Error removing materials from course: " + error.message);
+  //removeMaterialsFromCourse(courseId, materialIds); soft delete the material links by updating deletedAt in a single query
+  async removeMaterialsFromCourse(courseId: string, materialIds: string[]): Promise<void> {
+    try {
+      // Use softDelete with find for better reliability
+      const linksToDelete = await this.materialLinkRepo.find({
+        where: {
+          course: { id: courseId },
+          material: { id: In(materialIds) },
+        },
+      });
+
+      if (linksToDelete.length > 0) {
+        const linkIds = linksToDelete.map((link: any) => link.id);
+        await this.materialLinkRepo.softDelete(linkIds);
       }
+    } catch (error: any) {
+      throw new Error("Error removing materials from course: " + error.message);
     }
+  }
 
   // Toggle share/unshare all course materials
   async setCourseMaterialsSharable(courseId: string, isSharable: boolean): Promise<void> {
@@ -832,7 +832,7 @@ export class CourseService {
         .andWhere("ml.lessonId = :lessonId", { lessonId })
         .andWhere("ml.deleted_at IS NULL")
         .getOne();
-      
+
       return materialLink;
     } catch (error: any) {
       throw new Error("Error fetching material link by material id and lesson id: " + error.message);
@@ -871,7 +871,7 @@ export class CourseService {
         .orderBy("course.createdAt", "DESC")
         .skip(skip)
         .take(limit);
-      
+
       const [data, total] = await query.getManyAndCount();
       return { data, total };
     } catch (error: any) {
@@ -943,9 +943,9 @@ export class CourseService {
     }
   }
 
-  async getStudentRequestsByOwnerId(ownerId: string): Promise<StudentRequestModel[]> {
+  async getStudentRequestsByOwnerId(ownerId: string, page: number = 1, limit: number = 10): Promise<{ data: StudentRequestModel[]; total: number }> {
     try {
-      return await this.studentRequestService.getStudentRequestsByOwnerId(ownerId);
+      return await this.studentRequestService.getStudentRequestsByOwnerId(ownerId, page, limit);
     } catch (error: any) {
       logger.error({ err: error, ownerId }, "getStudentRequestsByOwnerId failed");
       throw new Error("Error fetching student requests: " + error.message);
@@ -1083,7 +1083,7 @@ export class CourseService {
   async getCourseProgressSummary(courseId: string, studentId: string): Promise<any> {
     try {
       const progress = await this.getCourseProgress(courseId, studentId);
-      
+
       if (!progress) {
         return {
           percentComplete: 0,
