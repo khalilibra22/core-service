@@ -8,6 +8,7 @@ import { sessionRouter } from "../routes/v1/session.routes";
 import { settingRouter } from "../routes/v1/setting.routes";
 import { storageRouter } from "../routes/v1/storage.routes";
 import { notificationRouter } from "../routes/v1/notification.routes";
+import { studentRequestRouter } from "../routes/v1/student-request.routes";
 
 const app = express.Router();
 
@@ -20,5 +21,6 @@ app.use("/quizzes", quizRouter);
 app.use("/sessions", sessionRouter);
 app.use("/uploads", storageRouter);
 app.use("/notifications", notificationRouter);
+app.use("/student-requests", studentRequestRouter);
 
 export { app as appV1 };

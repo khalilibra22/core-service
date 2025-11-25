@@ -21,7 +21,7 @@ export class CourseController {
   private notificationService: NotificationService;
   private quizService: QuizService;
   private httpService: HttpService;
-  
+
   constructor() {
     this.courseService = new CourseService();
     this.notificationService = new NotificationService();
@@ -71,9 +71,9 @@ export class CourseController {
         }
       );
       delete req.body.ownerId; // ownerId is not allowed to be updated
-        const courseFromBody = plainToInstance(CourseModel, req.body, {
-          excludeExtraneousValues: false,
-        });
+      const courseFromBody = plainToInstance(CourseModel, req.body, {
+        excludeExtraneousValues: false,
+      });
       const courseBody = {
         id: id,
         ...course,
@@ -81,18 +81,18 @@ export class CourseController {
         couresSettings: { ...course.couresSettings, ...courseSettingsFromBody },
         status: "published",
       };
-      const updatedCourse = await this.courseService.updateCourse(courseBody);      
-        if(!course.groupId){
-          const groupId = await this.httpService.createChatGroup({
-            name: updatedCourse.name,
-            type: updatedCourse.type,
-            ownerId: updatedCourse.ownerId,
-          });
-          if(groupId){
-            updatedCourse.groupId = groupId;
-            await this.courseService.updateCourse(updatedCourse);
-          }
+      const updatedCourse = await this.courseService.updateCourse(courseBody);
+      if (!course.groupId) {
+        const groupId = await this.httpService.createChatGroup({
+          name: updatedCourse.name,
+          type: updatedCourse.type,
+          ownerId: updatedCourse.ownerId,
+        });
+        if (groupId) {
+          updatedCourse.groupId = groupId;
+          await this.courseService.updateCourse(updatedCourse);
         }
+      }
       // Auto-subscribe teacher to teacher-courseId topic when publishing
       const fcmToken = req.body.fcmToken as string | undefined;
       if (fcmToken && course.status !== "published") {
@@ -104,7 +104,7 @@ export class CourseController {
           req.log.warn({ err, teacherTopic }, "Failed to auto-subscribe teacher to teacher topic");
         }
       }
-      
+
       res.status(200).json({ message: "Course updated successfully" });
     } catch (error) {
       req.log.error({ err: error, courseId: req.params.id }, "updateCourse failed");
@@ -381,7 +381,7 @@ export class CourseController {
         page,
         limit
       );
-     
+
       let allCourses = courses;
       if (courseType === "live") {
         allCourses = courses.map(course => {
@@ -398,7 +398,7 @@ export class CourseController {
           };
         });
       }
-      
+
       if (courseType === "prerecorded") {
         allCourses = await Promise.all(
           courses.map(async (course) => {
@@ -427,7 +427,7 @@ export class CourseController {
           })
         );
       }
-      
+
       const courseDtos = await getCourseDto(allCourses, courseType);
       setPaginationHeaders(res, total, page, limit);
       res.status(200).json(courseDtos);
@@ -521,7 +521,7 @@ export class CourseController {
       ) {
         res.status(403).json({ error: "You are not the owner of this course" });
         return;
-      }      
+      }
       delete req.body.ownerId;
       const lessonBody: any = {
         ...req.body,
@@ -638,7 +638,7 @@ export class CourseController {
         return;
       }
       const lessons = await this.courseService.getLessonsBySessionId(sessionId);
-      
+
       // Transform materialLinks to materials for DTO
       const shapedLessons = lessons.map((l: any) => ({
         ...l,
@@ -673,7 +673,7 @@ export class CourseController {
         res.status(400).json({ error: "Session is not a prerecorded session" });
         return;
       }
-      
+
       // Transform materialLinks to materials for DTO
       const shapedSession = {
         ...sessionDetails,
@@ -682,7 +682,7 @@ export class CourseController {
           materials: (l.materialLinks ?? []).filter((link: any) => link?.material),
         })),
       };
-      
+
       const sessionDto = plainToInstance(RecordedSessionDto, shapedSession, {
         excludeExtraneousValues: true,
       });
@@ -717,26 +717,26 @@ export class CourseController {
       if (studentId) {
         const isPaid = course.couresSettings?.isPaid === true;
         const isFree = course.couresSettings?.isPaid === false;
-        
+
         // Get current view count once
         const userViewCount = await this.courseService.getUserCourseViewCount(courseId, studentId);
         // Check view limit based on course type
         if (isFree && userViewCount >= 4) {
-          res.status(403).json({ 
+          res.status(403).json({
             error: "You have reached the maximum number of views (4) for this free course",
             viewsCount: userViewCount
           });
           return;
         }
-        
+
         if (isPaid && userViewCount >= 16) {
-          res.status(403).json({ 
+          res.status(403).json({
             error: "You have reached the maximum number of views (16) for this paid course",
             viewsCount: userViewCount
           });
           return;
         }
-        
+
         // Record the view (wrapped in try-catch to not fail the request if recording fails)
         try {
           await this.courseService.createCourseView(course, studentId);
@@ -749,7 +749,7 @@ export class CourseController {
       const sections = await this.courseService.getPrerecordedCourseSections(
         courseId
       );
-      
+
       // Transform materialLinks to materials for DTO
       const shapedSections = sections.map(session => ({
         ...session,
@@ -758,7 +758,7 @@ export class CourseController {
           materials: (l.materialLinks ?? []).filter((link: any) => link?.material),
         })),
       }));
-      
+
       const sectionDtos = plainToInstance(RecordedSessionDto, shapedSections, {
         excludeExtraneousValues: true,
       });
@@ -780,10 +780,10 @@ export class CourseController {
       }
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
-      
+
       // Get optional search query parameter
       const searchQuery = req.query.q as string | undefined;
-      
+
       const { data: courses, total } = await this.courseService.searchCourses(
         courseType,
         page,
@@ -793,7 +793,7 @@ export class CourseController {
       const courseDtos = await getCourseDto(courses, courseType);
       setPaginationHeaders(res, total, page, limit);
       res.status(200).json(courseDtos);
-      
+
     } catch (error) {
       req.log.error({ err: error, courseType: req.query.type, page: req.query.page, limit: req.query.limit, searchQuery: req.query.q }, "searchCourses failed");
       res.status(500).json({ error: "Internal Server Error" });
@@ -862,7 +862,7 @@ export class CourseController {
   // get lesson materials
   getLessonMaterials = async (req: Request, res: Response): Promise<void> => {
     try {
-      const {lessonId} = req.params;
+      const { lessonId } = req.params;
       const materials = await this.courseService.getLessonMaterials(lessonId);
       const materialDtos = plainToInstance(MaterialDto, materials, {
         excludeExtraneousValues: true,
@@ -878,7 +878,7 @@ export class CourseController {
   // remove lesson materials
   removeLessonMaterials = async (req: Request, res: Response): Promise<void> => {
     try {
-      const {lessonId, id} = req.params;
+      const { lessonId, id } = req.params;
       const session = await this.courseService.getSessionById(id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
@@ -888,7 +888,7 @@ export class CourseController {
         res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
-      const {materialIds} = req.body;
+      const { materialIds } = req.body;
       await this.courseService.removeMaterialsFromLesson(lessonId, materialIds);
       res.status(200).json({ message: "Materials removed successfully" });
     }
@@ -901,8 +901,8 @@ export class CourseController {
   // remove course materials
   removeCourseMaterials = async (req: Request, res: Response): Promise<void> => {
     try {
-      const {id} = req.params;
-      const {materialIds} = req.body;
+      const { id } = req.params;
+      const { materialIds } = req.body;
       const course = await this.courseService.getCourseById(id);
       if (!course) {
         res.status(404).json({ error: "Course not found" });
@@ -959,7 +959,7 @@ export class CourseController {
         return;
       }
       const newValue = await this.courseService.toggleCourseMaterialSharable(courseId, materialId);
-      res.status(200).json({ 
+      res.status(200).json({
         message: `Course material ${newValue ? "shared" : "unshared"} successfully`,
         isSharable: newValue
       });
@@ -1003,7 +1003,7 @@ export class CourseController {
       const sessionId = req.params.id;
       const lessonId = req.params.lessonId;
       const materialId = req.params.materialId;
-      
+
       const session = await this.courseService.getSessionById(sessionId);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
@@ -1021,7 +1021,7 @@ export class CourseController {
       materialLink.isSharable = !materialLink.isSharable;
       await this.courseService.updateMaterialLinkById(materialLink);
       const newValue = materialLink.isSharable;
-      res.status(200).json({ 
+      res.status(200).json({
         message: `Lesson material ${newValue ? "shared" : "unshared"} successfully`,
         isSharable: newValue
       });
@@ -1058,7 +1058,7 @@ export class CourseController {
 
         // Check if course progression is at least 80%
         if (progressionPercent < 80) {
-          res.status(403).json({ 
+          res.status(403).json({
             error: "You must complete at least 80% of the course to request a certificate",
             progressionPercent: progressionPercent
           });
@@ -1068,10 +1068,10 @@ export class CourseController {
         // Calculate quiz progression and score
         try {
           const quizMetrics = await this.quizService.getCourseQuizProgressionAndScore(courseId, studentId);
-          
+
           // Check if quiz score is 100%
           if (quizMetrics.scorePercent < 100) {
-            res.status(403).json({ 
+            res.status(403).json({
               error: "You must achieve a score of 100% to request a certificate",
               progressionPercent: progressionPercent,
               scorePercent: quizMetrics.scorePercent,

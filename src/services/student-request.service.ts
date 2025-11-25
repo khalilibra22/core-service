@@ -60,41 +60,51 @@ export class StudentRequestService {
   }
 
   async getStudentRequestsByStudentId(
-    studentId: string
-  ): Promise<StudentRequestModel[]> {
+    studentId: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ data: StudentRequestModel[]; total: number }> {
     try {
-      return await this.studentRequestRepo.find({
+      const [data, total] = await this.studentRequestRepo.findAndCount({
         where: { studentId },
         relations: ["course"],
         order: { createdAt: "DESC" },
+        skip: (page - 1) * limit,
+        take: limit,
         cache: {
-          id: `student-requests-${studentId}`,
+          id: `student-requests-${studentId}-${page}-${limit}`,
           milliseconds: 300000, // 5 minutes
         },
       });
+      return { data, total };
     } catch (error) {
-      logger.error({ err: error, studentId }, "getStudentRequestsByStudentId failed");
+      logger.error({ err: error, studentId, page, limit }, "getStudentRequestsByStudentId failed");
       throw new Error("Error fetching student requests by student ID");
     }
   }
 
   async getStudentRequestsByOwnerId(
-    ownerId: string
-  ): Promise<StudentRequestModel[]> {
+    ownerId: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ data: StudentRequestModel[]; total: number }> {
     try {
-      return await this.studentRequestRepo.find({
+      const [data, total] = await this.studentRequestRepo.findAndCount({
         where: {
           course: { ownerId },
         },
         relations: ["course"],
         order: { createdAt: "DESC" },
+        skip: (page - 1) * limit,
+        take: limit,
         cache: {
-          id: `owner-student-requests-${ownerId}`,
+          id: `owner-student-requests-${ownerId}-${page}-${limit}`,
           milliseconds: 300000, // 5 minutes
         },
       });
+      return { data, total };
     } catch (error) {
-      logger.error({ err: error, ownerId }, "getStudentRequestsByOwnerId failed");
+      logger.error({ err: error, ownerId, page, limit }, "getStudentRequestsByOwnerId failed");
       throw new Error("Error fetching student requests by owner ID");
     }
   }

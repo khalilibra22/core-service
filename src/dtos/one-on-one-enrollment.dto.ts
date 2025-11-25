@@ -63,4 +63,7 @@ export class OneOnOneEnollmentDto {
   @Expose()
   @Transform(({ obj }) => obj.createdAt)
   enrollmentDate?: Date;
+
+  @Expose()
+  groupId?: string;
 }

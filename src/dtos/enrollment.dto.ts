@@ -67,4 +67,8 @@ export class EnrollmentDto {
   @Expose()
   @Transform(({ obj }) => obj.createdAt)
   enrollmentDate?: Date;
+
+  @Expose()
+  @Transform(({ obj }) => obj.course?.groupId ?? "")
+  groupId?: string;
 }
