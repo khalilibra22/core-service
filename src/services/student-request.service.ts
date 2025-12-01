@@ -186,5 +186,29 @@ export class StudentRequestService {
       throw new Error("Error checking certificate request status");
     }
   }
+
+  async getStudentCertificateRequestByCourseId(
+    studentId: string,
+    courseId: string
+  ): Promise<StudentRequestModel | null> {
+    try {
+      return await this.studentRequestRepo.findOne({
+        where: {
+          studentId,
+          course: { id: courseId },
+          type: "certificate",
+        },
+        relations: ["course"],
+        order: { createdAt: "DESC" },
+        cache: {
+          id: `student-certificate-request-${studentId}-${courseId}`,
+          milliseconds: 300000, // 5 minutes
+        },
+      });
+    } catch (error) {
+      logger.error({ err: error, studentId, courseId }, "getStudentCertificateRequestByCourseId failed");
+      throw new Error("Error fetching student certificate request");
+    }
+  }
 }
 

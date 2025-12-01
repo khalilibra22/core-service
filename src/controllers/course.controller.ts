@@ -15,18 +15,21 @@ import { StudentRequestDto } from "../dtos/student-request.dto";
 import { CourseProgressDto } from "../dtos/course-progress.dto";
 import { NotificationService } from "../services/notification.service";
 import { HttpService } from "../services/http.service";
+import { StudentRequestService } from "../services/student-request.service";
 
 export class CourseController {
   private courseService: CourseService;
   private notificationService: NotificationService;
   private quizService: QuizService;
   private httpService: HttpService;
+  private studentRequestService: StudentRequestService;
 
   constructor() {
     this.courseService = new CourseService();
     this.notificationService = new NotificationService();
     this.quizService = new QuizService();
     this.httpService = new HttpService();
+    this.studentRequestService = new StudentRequestService();
   }
 
   createDraftCourse = async (req: Request, res: Response): Promise<void> => {
@@ -1228,6 +1231,36 @@ export class CourseController {
       res.status(200).json(summary);
     } catch (error) {
       req.log.error({ err: error, courseId: req.params.id }, "getCourseStudentRequestSummary failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  getStudentCourseCertificateRequest = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const courseId = req.params.id;
+      const studentId = req.body.ownerId;
+
+      const course = await this.courseService.getCourseById(courseId);
+      if (!course) {
+        res.status(404).json({ error: "Course not found" });
+        return;
+      }
+
+      // Get certificate request directly from database
+      const certificateRequest = await this.studentRequestService.getStudentCertificateRequestByCourseId(
+        studentId,
+        courseId
+      );
+
+      if (!certificateRequest) {
+        res.status(404).json({ error: "No certificate request found for this course" });
+        return;
+      }
+
+      const requestDto = await enrichDto<StudentRequestDto>(StudentRequestDto, certificateRequest);
+      res.status(200).json(requestDto);
+    } catch (error) {
+      req.log.error({ err: error, courseId: req.params.id }, "getStudentCourseCertificateRequest failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
