@@ -75,13 +75,13 @@ export class EnrollmentController {
         course: course,
         type: "course",
       };
-      
+
       // Extract fcmToken before creating enrollment
       const fcmToken = req.body.fcmToken as string | undefined;
       delete enrollmentBody.fcmToken; // Remove from enrollment body
-      
+
       const enrollment = await this.enrollmentService.createEnrollment(enrollmentBody, fcmToken);
-      if(course.groupId){
+      if (course.groupId) {
         const isJoined = await this.externalService.joinChatGroup(course.groupId, studentId);
       }
       // Auto-subscribe to course notifications if fcmToken provided
@@ -94,7 +94,7 @@ export class EnrollmentController {
           req.log.warn({ err, topic }, "Failed to auto-subscribe to course topic");
         }
       }
-      
+
       res.status(201).json({
         message: "Enrollment created successfully",
         notificationTopics: {
@@ -154,7 +154,7 @@ export class EnrollmentController {
           ownerId: ownerId,
           members: [ownerId, teacherId], // Add both student and teacher as members
         });
-        
+
         if (groupId) {
           req.log.info({ groupId, studentId: ownerId, teacherId }, "Chat group created for one-on-one enrollment");
         } else {
@@ -173,10 +173,10 @@ export class EnrollmentController {
         groupId: groupId, // Include groupId in enrollment body
       } as any;
       const enrollment = await this.enrollmentService.createEnrollment(enrollmentBody);
-      
+
       // Topic for this one-on-one enrollment
       const topic = `oneonone-${enrollment.id}`;
-      
+
       // Optional auto-subscribe if fcmToken provided
       const stuedentFcmToken = req.body.fcmToken as string | undefined;
       if (stuedentFcmToken) {
@@ -199,14 +199,14 @@ export class EnrollmentController {
               tokens,
               title: "One-on-one Scheduled",
               body: "Your one-on-one sessions have been scheduled.",
-              data: { enrollmentId: String(enrollment.id), type: "oneonone_created"},
+              data: { enrollmentId: String(enrollment.id), type: "oneonone_created" },
             });
           }
           req.log.info({ teacherTopic, enrollmentId: enrollment.id }, "Notification sent to teacher");
         } catch (err) {
           req.log.warn({ err, teacherFcmToken: teacher.fcmToken }, "Failed to send notification to teacher");
         }
-      } 
+      }
       await this.externalService.updateAvailabilitiesToUnavailable(
         availabilityIdsArray
       );
@@ -299,7 +299,7 @@ export class EnrollmentController {
           const topic = await LruInMemoryCache.getUserTopic(
             enrollment?.sessions?.[0]?.topicId ?? 0
           );
-      req.log.info({ topic }, "Fetched topic for enrollment");
+          req.log.info({ topic }, "Fetched topic for enrollment");
           const enrollmentDto = {
             ...enrollment,
             studentFullname: student?.fullname ?? "keynotfound",
@@ -351,9 +351,18 @@ export class EnrollmentController {
   ): Promise<void> => {
     try {
       const studentId = req.body.ownerId;
+      const type = req.query.type as string | undefined;
+
+      // Validate type parameter if provided
+      const validTypes = ["one-on-one", "live", "group", "prerecorded"];
+      if (type && !validTypes.includes(type)) {
+        res.status(400).json({ error: "Invalid type. Must be one of: one-on-one, live, group, prerecorded" });
+        return;
+      }
+
       const coursesEnrollments =
         await this.enrollmentService.getStudentCoursesEnrollments(studentId);
-        // get courses enrollments with teacher details / student details
+      // get courses enrollments with teacher details / student details
       const coursesEnrollmentsWithDetails = await Promise.all(
         coursesEnrollments.map(async (enrollment) => {
           const teacher = await LruInMemoryCache.getUserDetails(
@@ -398,6 +407,9 @@ export class EnrollmentController {
       const groupEnrollments = coursesEnrollmentsWithDetails.filter(
         (enrollment) => enrollment.course?.type === "group"
       );
+      const prerecordedEnrollments = coursesEnrollmentsWithDetails.filter(
+        (enrollment) => enrollment.course?.type === "prerecorded"
+      );
       const allEnrollmentDtos = {
         "one-on-one": plainToInstance(
           OneOnOneEnollmentDto,
@@ -412,9 +424,17 @@ export class EnrollmentController {
         group: plainToInstance(EnrollmentDto, groupEnrollments, {
           excludeExtraneousValues: true,
         }),
+        prerecorded: plainToInstance(EnrollmentDto, prerecordedEnrollments, {
+          excludeExtraneousValues: true,
+        }),
       };
 
-      res.status(200).json(allEnrollmentDtos);
+      // If type filter is specified, return only that type
+      if (type) {
+        res.status(200).json(allEnrollmentDtos[type as keyof typeof allEnrollmentDtos]);
+      } else {
+        res.status(200).json(allEnrollmentDtos);
+      }
     } catch (error) {
       req.log.error({ err: error, studentId: req.body?.ownerId }, "getStudentEnrollments failed");
       res.status(500).json({ error: "Internal Server Error" });
@@ -498,9 +518,9 @@ export class EnrollmentController {
         await this.courseService.getOneOnOneSessionsByEnrollmentId(
           enrollmentId
         );
-        const sessionDtos = await Promise.all(sessions.map(async (session) => {
-          return await enrichDto<SessionDto>(SessionDto, session);
-        }));
+      const sessionDtos = await Promise.all(sessions.map(async (session) => {
+        return await enrichDto<SessionDto>(SessionDto, session);
+      }));
       res.status(200).json(sessionDtos);
     } catch (error) {
       req.log.error({ err: error, enrollmentId: req.params.id }, "getOneOnOneEnrollmentSessions failed");
@@ -534,7 +554,7 @@ export class EnrollmentController {
       };
       const refund = await this.feedbackService.createComplaint(refundBody);
       // TODO: add logic to send email to the teacher
-        //get student details
+      //get student details
       const student = await LruInMemoryCache.getUserDetails(refund.studentId ?? "keynotfound");
       const refundDto = plainToInstance(RefundDto, { ...refund, studentFullname: student?.fullname ?? "keynotfound" }, {
         excludeExtraneousValues: true,

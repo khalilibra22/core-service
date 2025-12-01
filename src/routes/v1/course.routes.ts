@@ -302,4 +302,11 @@ router.get(
   courseController.getCourseProgress
 );
 
+router.get(
+  "/:id/certificate-request",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("courses", "view"),
+  courseController.getStudentCourseCertificateRequest
+);
+
 export { router as courseRouter };

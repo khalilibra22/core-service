@@ -17,7 +17,7 @@ export class EnrollmentService {
   ): Promise<EnrollmentModel> {
     try {
       const savedEnrollment = await this.enrollmentRepo.save(enrollment);
-      
+
       // Publish enrollment.created event for course enrollments
       if (savedEnrollment.type === "course" && savedEnrollment.course?.id) {
         await publish("enrollment.created", {
@@ -28,7 +28,7 @@ export class EnrollmentService {
           fcmToken,
         });
       }
-      
+
       return savedEnrollment;
     } catch (error) {
       logger.error({ err: error }, "createEnrollment failed");
@@ -112,7 +112,7 @@ export class EnrollmentService {
         where: {
           studentId: studentId,
           type: "course",
-          course: { type: In(["live", "group"]) },
+          course: { type: In(["live", "group", "prerecorded"]) },
         },
         relations: ["course", "course.couresSettings", "course.sessions"], //group by createdAt , newest first
         order: { createdAt: "DESC" },
