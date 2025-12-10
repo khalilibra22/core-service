@@ -423,29 +423,21 @@ export class CourseService {
     type: string,
     page: number,
     limit: number,
-    searchQuery?: string
+    searchQuery?: string,
+    filters?: {
+      level?: string;
+      topicId?: number;
+      minPrice?: number;
+      maxPrice?: number;
+      isCertified?: boolean;
+      minDuration?: number;
+      maxDuration?: number;
+      minRating?: number;
+    }
   ): Promise<PaginatedResult<CourseModel>> {
     try {
       const skip = (page - 1) * limit;
 
-      // If no search query, use the original simple find
-      if (!searchQuery || searchQuery.trim() === "") {
-        const [data, total] = await this.courseRepo.findAndCount({
-          where: {
-            type: type,
-          },
-          relations: ["couresSettings", "enrollments", "sessions"],
-          skip: skip,
-          take: limit,
-          cache: {
-            id: `courses-${type}-${page}-${limit}`,
-            duration: 60000,
-          },
-        });
-        return { data, total };
-      }
-
-      // Use QueryBuilder for text search with Postgres full-text search
       const query = this.courseRepo
         .createQueryBuilder("course")
         .leftJoinAndSelect("course.couresSettings", "couresSettings")
@@ -454,16 +446,43 @@ export class CourseService {
         .where("course.type = :type", { type })
         .andWhere("course.deletedAt IS NULL");
 
-      // Sanitize search query - remove special chars that could break SQL
-      const sanitized = searchQuery.trim().replace(/[%_\\]/g, "\\$&");
-      const searchPattern = `%${sanitized}%`;
+      // Apply text search if provided
+      if (searchQuery && searchQuery.trim() !== "") {
+        const sanitized = searchQuery.trim().replace(/[%_\\]/g, "\\$&");
+        const searchPattern = `%${sanitized}%`;
+        query.andWhere(
+          "(course.name ILIKE :search OR course.description ILIKE :search OR course.language ILIKE :search OR couresSettings.syllabus ILIKE :search OR couresSettings.grade ILIKE :search)",
+          { search: searchPattern }
+        );
+      }
 
-      // Build comprehensive search across key text fields
-      // Using OR conditions for main searchable fields
-      query.andWhere(
-        "(course.name ILIKE :search OR course.description ILIKE :search OR course.language ILIKE :search OR couresSettings.syllabus ILIKE :search OR couresSettings.grade ILIKE :search)",
-        { search: searchPattern }
-      );
+      // Apply filters
+      if (filters) {
+        if (filters.level) {
+          query.andWhere("couresSettings.grade = :level", { level: filters.level });
+        }
+        if (filters.topicId) {
+          query.andWhere("couresSettings.topicId = :topicId", { topicId: filters.topicId });
+        }
+        if (filters.minPrice !== undefined) {
+          query.andWhere("course.sellingPrice >= :minPrice", { minPrice: filters.minPrice });
+        }
+        if (filters.maxPrice !== undefined) {
+          query.andWhere("course.sellingPrice <= :maxPrice", { maxPrice: filters.maxPrice });
+        }
+        if (filters.isCertified !== undefined) {
+          query.andWhere("couresSettings.isCertified = :isCertified", { isCertified: filters.isCertified });
+        }
+        if (filters.minDuration !== undefined) {
+          query.andWhere("course.duration >= :minDuration", { minDuration: filters.minDuration });
+        }
+        if (filters.maxDuration !== undefined) {
+          query.andWhere("course.duration <= :maxDuration", { maxDuration: filters.maxDuration });
+        }
+        if (filters.minRating !== undefined) {
+          query.andWhere("course.rating >= :minRating", { minRating: filters.minRating });
+        }
+      }
 
       query
         .orderBy("course.createdAt", "DESC")
@@ -473,7 +492,7 @@ export class CourseService {
       const [data, total] = await query.getManyAndCount();
       return { data, total };
     } catch (error: any) {
-      logger.error({ err: error, type, page, limit, searchQuery }, "searchCourses failed");
+      logger.error({ err: error, type, page, limit, searchQuery, filters }, "searchCourses failed");
       throw new Error("Error fetching courses: " + error.message);
     }
   }

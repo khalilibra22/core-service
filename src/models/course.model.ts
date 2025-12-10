@@ -63,6 +63,12 @@ export class CourseModel {
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
   sellingPrice?: number;
 
+  @Column({ nullable: true })
+  duration?: number;
+
+  @Column({ type: "decimal", precision: 2, scale: 1, default: 0 })
+  rating?: number;
+
   @Column({ default: false, name: "coupon_applicable" })
   couponApplicable?: boolean;
 
