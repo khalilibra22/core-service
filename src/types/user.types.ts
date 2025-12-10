@@ -5,6 +5,7 @@ export interface MinimalUser {
   phoneNumber: string;
   address: string;
   fcmToken: string;
+  profilePicture: string;
   role: number; // UserRole enum
 }
 

@@ -29,6 +29,10 @@ export class LiveCourseDto {
   ownerName?: string;
 
   @Expose()
+  @Transform(({ obj, options }) => options?.context?.userById?.[obj.ownerId]?.profilePicture)
+  ownerProfilePicture?: string;
+
+  @Expose()
   @Transform(
     () =>
       //random number between 1 and 5

@@ -433,6 +433,8 @@ export class CourseService {
       minDuration?: number;
       maxDuration?: number;
       minRating?: number;
+      isRemote?: boolean;
+      isAcademy?: boolean;
     }
   ): Promise<PaginatedResult<CourseModel>> {
     try {
@@ -481,6 +483,16 @@ export class CourseService {
         }
         if (filters.minRating !== undefined) {
           query.andWhere("course.rating >= :minRating", { minRating: filters.minRating });
+        }
+        if (filters.isRemote !== undefined) {
+          query.andWhere("course.isRemote = :isRemote", { isRemote: filters.isRemote });
+        }
+        if (filters.isAcademy !== undefined) {
+          if (filters.isAcademy) {
+            query.andWhere("course.instructorId IS NOT NULL");
+          } else {
+            query.andWhere("course.instructorId IS NULL");
+          }
         }
       }
 

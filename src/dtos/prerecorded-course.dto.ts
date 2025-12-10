@@ -26,6 +26,10 @@ export class PrerecordedCourseDto {
   @Transform(({ obj, options }) => options?.context?.userById?.[obj.ownerId]?.fullname)
   ownerName?: string;
 
+  @Expose()
+  @Transform(({ obj, options }) => options?.context?.userById?.[obj.ownerId]?.profilePicture)
+  ownerProfilePicture?: string;
+
 
   @Expose()
   price?: number;

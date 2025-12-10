@@ -15,6 +15,10 @@ export class GroupClassDto {
   ownerName?: string;
 
   @Expose()
+  @Transform(({ obj, options }) => options?.context?.userById?.[obj.ownerId]?.profilePicture)
+  ownerProfilePicture?: string;
+
+  @Expose()
   type?: string;
 
   @Expose()
