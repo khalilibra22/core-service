@@ -90,6 +90,7 @@ export class CourseController {
           name: updatedCourse.name,
           type: updatedCourse.type,
           ownerId: updatedCourse.ownerId,
+          profilePicture: updatedCourse.thumbnail,
         });
         if (groupId) {
           updatedCourse.groupId = groupId;
@@ -787,11 +788,35 @@ export class CourseController {
       // Get optional search query parameter
       const searchQuery = req.query.q as string | undefined;
 
+      // Extract filter parameters
+      const level = req.query.level as string | undefined;
+      const topicId = req.query.topicId ? parseInt(req.query.topicId as string) : undefined;
+      const minPrice = req.query.minPrice ? parseFloat(req.query.minPrice as string) : undefined;
+      const maxPrice = req.query.maxPrice ? parseFloat(req.query.maxPrice as string) : undefined;
+      const isCertified = req.query.isCertified === 'true' ? true : (req.query.isCertified === 'false' ? false : undefined);
+      const minDuration = req.query.minDuration ? parseFloat(req.query.minDuration as string) : undefined;
+      const maxDuration = req.query.maxDuration ? parseFloat(req.query.maxDuration as string) : undefined;
+      const minRating = req.query.minRating ? parseFloat(req.query.minRating as string) : undefined;
+      const isRemote = req.query.isRemote === 'true' ? true : (req.query.isRemote === 'false' ? false : undefined);
+      const isAcademy = req.query.isAcademy === 'true' ? true : (req.query.isAcademy === 'false' ? false : undefined);
+
       const { data: courses, total } = await this.courseService.searchCourses(
         courseType,
         page,
         limit,
-        searchQuery
+        searchQuery,
+        {
+          level,
+          topicId,
+          minPrice,
+          maxPrice,
+          isCertified,
+          minDuration,
+          maxDuration,
+          minRating,
+          isRemote,
+          isAcademy
+        }
       );
       const courseDtos = await getCourseDto(courses, courseType);
       setPaginationHeaders(res, total, page, limit);

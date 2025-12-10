@@ -7,10 +7,10 @@ export class HttpService implements ExternalService {
     private baseURL: string;
     private chatHttpClient: RestApiSetup;
     private chatBaseURL: string;
-    
+
     constructor() {
         try {
-            this.baseURL = (process.env.USER_SERVICE_URL || 'http://localhost:5000/v1')+'/inbounds';
+            this.baseURL = (process.env.USER_SERVICE_URL || 'http://localhost:5000/v1') + '/inbounds';
             this.httpClient = new RestApiSetup(`${this.baseURL}`);
             this.chatBaseURL = process.env.CHAT_SERVICE_URL || 'http://localhost:5002/v1';
             this.chatHttpClient = new RestApiSetup(this.chatBaseURL);
@@ -125,11 +125,12 @@ export class HttpService implements ExternalService {
         }
     }
 
-    async createChatGroup(payload: { name?: string | null; type?: string | null; ownerId?: string | null; members?: string[] }): Promise<string | null> {
+    async createChatGroup(payload: { name?: string | null; type?: string | null; ownerId?: string | null; members?: string[]; profilePicture?: string }): Promise<string | null> {
         const safePayload: any = {
             name: payload?.name?.trim(),
             groupType: payload?.type,
             userId: payload?.ownerId?.trim(),
+            profilePicture: payload?.profilePicture,
         };
 
         // Add members array if provided and valid
