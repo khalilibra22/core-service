@@ -10,6 +10,7 @@ const sharedFields = {
   name: Joi.string().required(),
   description: Joi.string().required(),
   topicId: Joi.number().required(),
+  subjectId: Joi.number().optional(),
   isPaid: Joi.boolean().required(),
   price: Joi.number().min(0).required(),
   sellingPrice: Joi.number().min(0).required(),
@@ -206,7 +207,7 @@ export const toggleLessonMaterialShareValidationSchema = Joi.object({
 // Student request validation schemas
 export const createStudentRequestValidationSchema = Joi.object({
   type: Joi.string()
-    .valid("certificate","general")
+    .valid("certificate", "general")
     .required()
     .messages({
       "any.only": "Type must be one of: certificate, general",
@@ -219,7 +220,7 @@ export const createStudentRequestValidationSchema = Joi.object({
 
 export const updateStudentRequestStatusValidationSchema = Joi.object({
   status: Joi.string()
-    .valid("pending", "preparing","dispatched","delivered" ,"rejected", "completed")
+    .valid("pending", "preparing", "dispatched", "delivered", "rejected", "completed")
     .required()
     .messages({
       "any.only": "Status must be one of: pending, preparing, dispatched, delivered, rejected, completed",
