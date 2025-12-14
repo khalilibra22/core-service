@@ -435,6 +435,9 @@ export class CourseService {
       minRating?: number;
       isRemote?: boolean;
       isAcademy?: boolean;
+      language?: string;
+      subjectId?: number;
+      startDate?: Date;
     }
   ): Promise<PaginatedResult<CourseModel>> {
     try {
@@ -493,6 +496,26 @@ export class CourseService {
           } else {
             query.andWhere("course.instructorId IS NULL");
           }
+        }
+        if (filters.language) {
+          query.andWhere("course.language = :language", { language: filters.language });
+        }
+        if (filters.subjectId) {
+          query.andWhere("course.subjectId = :subjectId", { subjectId: filters.subjectId });
+        }
+        if (filters.startDate) {
+          // Filter courses where the FIRST session date is >= startDate
+          // We use a subquery to find courses that satisfy the condition
+          query.andWhere((qb: any) => {
+            const subQuery = qb
+              .subQuery()
+              .select("s.courseId")
+              .from(SessionModel, "s")
+              .groupBy("s.courseId")
+              .having("MIN(s.date) >= :startDate")
+              .getQuery();
+            return `course.id IN ${subQuery}`;
+          }, { startDate: filters.startDate });
         }
       }
 

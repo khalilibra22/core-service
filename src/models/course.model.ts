@@ -84,6 +84,9 @@ export class CourseModel {
   @Column({ name: "group_id", nullable: true })
   groupId?: string;
 
+  @Column({ name: "subject_id", default: 1 })
+  subjectId?: number;
+
   @OneToOne(
     () => CourseSettingsModel,
     (courseSettings) => courseSettings.course,

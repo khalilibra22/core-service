@@ -799,6 +799,9 @@ export class CourseController {
       const minRating = req.query.minRating ? parseFloat(req.query.minRating as string) : undefined;
       const isRemote = req.query.isRemote === 'true' ? true : (req.query.isRemote === 'false' ? false : undefined);
       const isAcademy = req.query.isAcademy === 'true' ? true : (req.query.isAcademy === 'false' ? false : undefined);
+      const language = req.query.language as string | undefined;
+      const subjectId = req.query.subjectId ? parseInt(req.query.subjectId as string) : undefined;
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
 
       const { data: courses, total } = await this.courseService.searchCourses(
         courseType,
@@ -815,7 +818,10 @@ export class CourseController {
           maxDuration,
           minRating,
           isRemote,
-          isAcademy
+          isAcademy,
+          language,
+          subjectId,
+          startDate
         }
       );
       const courseDtos = await getCourseDto(courses, courseType);
