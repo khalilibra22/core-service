@@ -1,6 +1,6 @@
 // src/cache/LruCacheService.ts
 import { LRUCache } from "lru-cache";
-import { MinimalUser, UserTopic } from "../types/user.types";
+import { MinimalUser, UserTopic, Topic, Subject } from "../types/user.types";
 import { HttpService } from "../services/http.service";
 
 
@@ -14,7 +14,10 @@ export class LruInMemoryCache {
     ttl: parseInt(process.env.CACHE_TTL || "300000"), // 5 minutes
   });
   private static inflight = new Map<string, Promise<MinimalUser | null>>();
+
   private static topicInflight = new Map<string, Promise<UserTopic | null>>();
+  private static generalTopicInflight = new Map<string, Promise<Topic | null>>();
+  private static subjectInflight = new Map<string, Promise<Subject | null>>();
 
   static async getUserDetails(userId: string): Promise<MinimalUser | null> {
     try {
@@ -84,7 +87,7 @@ export class LruInMemoryCache {
         this.cache.set(key, null);
         return null;
       }
-      
+
       // Log other errors but still return null to prevent service disruption
       //console.error("Error in getUserDetails:", error);
       return null;
@@ -159,9 +162,123 @@ export class LruInMemoryCache {
         this.cache.set(key, null);
         return null;
       }
-      
+
       // Log other errors but still return null to prevent service disruption
       //console.error("Error in getUserTopic:", error);
+      return null;
+    }
+  }
+
+  static async getTopic(topicId: number): Promise<Topic | null> {
+    try {
+      const key = `general-topic-${topicId}`;
+
+      // Check memory cache
+      if (this.cache.has(key)) {
+        return this.cache.get(key);
+      }
+
+      // Reuse in-flight request for topics
+      if (this.generalTopicInflight.has(key)) {
+        const inflightPromise = this.generalTopicInflight.get(key)!;
+        return inflightPromise.catch((err) => {
+          this.generalTopicInflight.delete(key);
+          return null;
+        });
+      }
+
+      // Create the in-flight promise with timeout
+      const timeoutPromise = new Promise<null>((resolve) => {
+        setTimeout(() => {
+          this.generalTopicInflight.delete(key);
+          resolve(null);
+        }, 5000); // 5 second timeout
+      });
+
+      const servicePromise = this.externalService
+        .getTopic(topicId)
+        .then((topic: Topic) => {
+          this.cache.set(key, topic);
+          this.generalTopicInflight.delete(key);
+          return topic;
+        })
+        .catch((err: any) => {
+          this.generalTopicInflight.delete(key);
+          if (err?.code === 5 || err?.details?.includes('not found') || err?.response?.status === 404) {
+            this.cache.set(key, null);
+            return null;
+          }
+          this.cache.set(key, null);
+          return null;
+        });
+
+      const promise: Promise<Topic | null> = Promise.race([servicePromise, timeoutPromise]);
+
+      this.generalTopicInflight.set(key, promise);
+      return promise;
+    } catch (error: any) {
+      if (error?.code === 5 || error?.details?.includes('not found') || error?.response?.status === 404) {
+        const key = `general-topic-${topicId}`;
+        this.cache.set(key, null);
+        return null;
+      }
+      return null;
+    }
+  }
+
+  static async getSubject(subjectId: number): Promise<Subject | null> {
+    try {
+      const key = `subject-${subjectId}`;
+
+      // Check memory cache
+      if (this.cache.has(key)) {
+        return this.cache.get(key);
+      }
+
+      // Reuse in-flight request for subjects
+      if (this.subjectInflight.has(key)) {
+        const inflightPromise = this.subjectInflight.get(key)!;
+        return inflightPromise.catch((err) => {
+          this.subjectInflight.delete(key);
+          return null;
+        });
+      }
+
+      // Create the in-flight promise with timeout
+      const timeoutPromise = new Promise<null>((resolve) => {
+        setTimeout(() => {
+          this.subjectInflight.delete(key);
+          resolve(null);
+        }, 5000); // 5 second timeout
+      });
+
+      const servicePromise = this.externalService
+        .getSubject(subjectId)
+        .then((subject: Subject) => {
+          this.cache.set(key, subject);
+          this.subjectInflight.delete(key);
+          return subject;
+        })
+        .catch((err: any) => {
+          this.subjectInflight.delete(key);
+          if (err?.code === 5 || err?.details?.includes('not found') || err?.response?.status === 404) {
+            this.cache.set(key, null);
+            return null;
+          }
+          this.cache.set(key, null);
+          return null;
+        });
+
+      const promise: Promise<Subject | null> = Promise.race([servicePromise, timeoutPromise]);
+
+      this.subjectInflight.set(key, promise);
+      return promise;
+    } catch (error: any) {
+      if (error?.code === 5 || error?.details?.includes('not found') || error?.response?.status === 404) {
+        const key = `subject-${subjectId}`;
+        this.cache.set(key, null);
+        return null;
+      }
       return null;
     }
   }
@@ -172,6 +289,8 @@ export class LruInMemoryCache {
       this.cache.clear();
       this.inflight.clear();
       this.topicInflight.clear();
+      this.generalTopicInflight.clear();
+      this.subjectInflight.clear();
       //console.log("Cache cleared successfully");
     } catch (error) {
       //console.error("Error clearing cache:", error);
@@ -179,18 +298,22 @@ export class LruInMemoryCache {
     }
   }
 
-  static getCacheStats(): { 
-    cacheSize: number; 
-    maxSize: number; 
-    userInflight: number; 
-    topicInflight: number 
+  static getCacheStats(): {
+    cacheSize: number;
+    maxSize: number;
+    userInflight: number;
+    topicInflight: number;
+    generalTopicInflight: number;
+    subjectInflight: number;
   } {
     try {
       return {
         cacheSize: this.cache.size,
         maxSize: this.cache.max,
         userInflight: this.inflight.size,
-        topicInflight: this.topicInflight.size
+        topicInflight: this.topicInflight.size,
+        generalTopicInflight: this.generalTopicInflight.size,
+        subjectInflight: this.subjectInflight.size
       };
     } catch (error) {
       //console.error("Error getting cache stats:", error);
@@ -219,6 +342,26 @@ export class LruInMemoryCache {
     } catch (error) {
       //console.error("Error invalidating topic cache:", error);
       throw new Error(`Failed to invalidate topic cache for ${userTopicId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  static invalidateGeneralTopic(topicId: number): void {
+    try {
+      const key = `general-topic-${topicId}`;
+      this.cache.delete(key);
+      this.generalTopicInflight.delete(key);
+    } catch (error) {
+      throw new Error(`Failed to invalidate general topic cache for ${topicId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  static invalidateSubject(subjectId: number): void {
+    try {
+      const key = `subject-${subjectId}`;
+      this.cache.delete(key);
+      this.subjectInflight.delete(key);
+    } catch (error) {
+      throw new Error(`Failed to invalidate subject cache for ${subjectId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

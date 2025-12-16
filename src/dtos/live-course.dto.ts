@@ -33,6 +33,18 @@ export class LiveCourseDto {
   ownerProfilePicture?: string;
 
   @Expose()
+  @Transform(({ obj, options }) => options?.context?.userById?.[obj.ownerId]?.state)
+  state?: string;
+
+  @Expose()
+  @Transform(({ obj, options }) => options?.context?.userById?.[obj.ownerId]?.district)
+  district?: string;
+
+  @Expose()
+  @Transform(({ obj, options }) => options?.context?.userById?.[obj.ownerId]?.city)
+  city?: string;
+
+  @Expose()
   @Transform(
     () =>
       //random number between 1 and 5
@@ -95,11 +107,11 @@ export class LiveCourseDto {
   thumbnail?: string;
 
   @Expose()
-  @Transform(({ obj, options }) => options?.context?.topicById?.[obj?.couresSettings?.topicId]?.topic?.name)
+  @Transform(({ obj, options }) => obj.subject?.name || options?.context?.subjectById?.[obj?.subjectId]?.name)
   subject?: string;
 
   @Expose()
-  @Transform(({ obj, options }) => options?.context?.topicById?.[obj?.couresSettings?.topicId]?.topic?.name)
+  @Transform(({ obj, options }) => obj.topic?.name || options?.context?.topicById?.[obj?.couresSettings?.topicId]?.name)
   topic?: string;
 
   @Expose()
