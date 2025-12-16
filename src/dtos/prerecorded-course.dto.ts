@@ -30,6 +30,18 @@ export class PrerecordedCourseDto {
   @Transform(({ obj, options }) => options?.context?.userById?.[obj.ownerId]?.profilePicture)
   ownerProfilePicture?: string;
 
+  @Expose()
+  @Transform(({ obj, options }) => options?.context?.userById?.[obj.ownerId]?.state)
+  state?: string;
+
+  @Expose()
+  @Transform(({ obj, options }) => options?.context?.userById?.[obj.ownerId]?.district)
+  district?: string;
+
+  @Expose()
+  @Transform(({ obj, options }) => options?.context?.userById?.[obj.ownerId]?.city)
+  city?: string;
+
 
   @Expose()
   price?: number;
@@ -91,9 +103,9 @@ export class PrerecordedCourseDto {
   // @Transform(({ obj }) => obj.couresSettings?.topicId)
   // topicId?: number;
 
-  // @Expose()
-  // @Transform(({ obj, options }) => options?.context?.topicById?.[obj.topicId]?.topic?.name)
-  // topic?: string;
+  @Expose()
+  @Transform(({ obj, options }) => options?.context?.topicById?.[obj.topicId]?.topic?.name)
+  topic?: string;
 
   @Expose()
   @Transform(({ obj }) => obj.couresSettings?.objectives)
@@ -157,6 +169,12 @@ export class PrerecordedCourseDto {
 
   @Expose()
   groupId?: string;
+
+  @Expose()
+  @Transform(() =>
+    //random number between 100 and 1000
+    Math.floor(Math.random() * 1000) + 100)
+  duration?: number;
 
   @Expose({ name: "sessions" })
   @Type(() => RecordedSessionDto)

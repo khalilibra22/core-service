@@ -19,6 +19,18 @@ export class GroupClassDto {
   ownerProfilePicture?: string;
 
   @Expose()
+  @Transform(({ obj, options }) => options?.context?.userById?.[obj.ownerId]?.state)
+  state?: string;
+
+  @Expose()
+  @Transform(({ obj, options }) => options?.context?.userById?.[obj.ownerId]?.district)
+  district?: string;
+
+  @Expose()
+  @Transform(({ obj, options }) => options?.context?.userById?.[obj.ownerId]?.city)
+  city?: string;
+
+  @Expose()
   type?: string;
 
   @Expose()
