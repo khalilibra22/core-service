@@ -17,6 +17,11 @@ export interface Topic {
   name: string;
 }
 
+export interface Subject {
+  id: number;
+  name: string;
+}
+
 export interface UserTopic {
   id: string;
   topic: Topic;

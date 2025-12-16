@@ -70,11 +70,12 @@ export class GroupClassDto {
   language?: string;
 
   @Expose()
-  @Transform(({ obj, options }) => options?.context?.topicById?.[obj?.couresSettings?.topicId]?.topic?.name)
+  @Expose()
+  @Transform(({ obj, options }) => obj.subject?.name || options?.context?.subjectById?.[obj?.subjectId]?.name)
   subject?: string;
 
   @Expose()
-  @Transform(({ obj, options }) => options?.context?.topicById?.[obj?.couresSettings?.topicId]?.topic?.name)
+  @Transform(({ obj, options }) => obj.topic?.name || options?.context?.topicById?.[obj?.couresSettings?.topicId]?.name)
   topic?: string;
 
   @Expose()

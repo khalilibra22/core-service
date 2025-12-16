@@ -81,6 +81,46 @@ export class HttpService implements ExternalService {
         }
     }
 
+    async getTopic(topicId: number): Promise<any> {
+        try {
+            if (!topicId || typeof topicId !== 'number' || topicId <= 0) {
+                throw new Error('Invalid topicId provided');
+            }
+            // inbounds/topics/id
+            const response = await this.httpClient.get(`${this.baseURL}/topics/${topicId}`);
+            return response.data;
+        } catch (error: any) {
+            logger.error({ err: error, topicId }, 'Failed to get topic');
+            if (error?.response?.status === 404) {
+                throw new Error(`Topic with ID ${topicId} not found`);
+            }
+            if (error?.response?.status >= 500) {
+                throw new Error(`User service is currently unavailable`);
+            }
+            throw new Error(`Failed to get topic: ${error?.message || error}`);
+        }
+    }
+
+    async getSubject(subjectId: number): Promise<any> {
+        try {
+            if (!subjectId || typeof subjectId !== 'number' || subjectId <= 0) {
+                throw new Error('Invalid subjectId provided');
+            }
+            // inbounds/subjects/id
+            const response = await this.httpClient.get(`${this.baseURL}/subjects/${subjectId}`);
+            return response.data;
+        } catch (error: any) {
+            logger.error({ err: error, subjectId }, 'Failed to get subject');
+            if (error?.response?.status === 404) {
+                throw new Error(`Subject with ID ${subjectId} not found`);
+            }
+            if (error?.response?.status >= 500) {
+                throw new Error(`User service is currently unavailable`);
+            }
+            throw new Error(`Failed to get subject: ${error?.message || error}`);
+        }
+    }
+
     async checkAvailabilities(availabilityIds: string[]): Promise<any> {
         try {
             const response = await this.httpClient.post(`${this.baseURL}/availabilities/check`, { availabilityIds: availabilityIds });

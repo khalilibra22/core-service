@@ -11,7 +11,8 @@ import { Availability } from "../types/availability.types";
 import multer from "multer";
 import { Request, Response, NextFunction } from "express";
 import { LruInMemoryCache } from "../cache/lru-in-memory.cache";
-import { MinimalUser, UserTopic } from "../types/user.types";
+
+import { MinimalUser, Subject, Topic } from "../types/user.types";
 
 export interface PaginatedResult<T> {
   data: T[];
@@ -42,10 +43,19 @@ export const getCourseDto = async (
       )
     );
 
+    // Collect unique subject IDs
+    const subjectIds = Array.from(
+      new Set(
+        list.map(c => c.subjectId).filter(Boolean) as number[]
+      )
+    );
+
     // Batch fetch users and topics from cache
-    const [usersArr, topicsArr] = await Promise.all([
+
+    const [usersArr, topicsArr, subjectsArr] = await Promise.all([
       Promise.all(userIds.map(id => LruInMemoryCache.getUserDetails(id))),
-      Promise.all(topicIds.map(id => LruInMemoryCache.getUserTopic(id)))
+      Promise.all(topicIds.map(id => LruInMemoryCache.getTopic(id))),
+      Promise.all(subjectIds.map(id => LruInMemoryCache.getSubject(id)))
     ]);
 
     // Build lookup maps as plain objects (not Maps) for class-transformer compatibility
@@ -54,14 +64,19 @@ export const getCourseDto = async (
       userById[userIds[i]] = u;
     });
 
-    const topicById: Record<number, UserTopic | null> = {};
+    const topicById: Record<number, Topic | null> = {};
     topicsArr.forEach((t, i) => {
       topicById[topicIds[i]] = t;
     });
 
+    const subjectById: Record<number, Subject | null> = {};
+    subjectsArr.forEach((s, i) => {
+      subjectById[subjectIds[i]] = s;
+    });
+
     const options = {
       excludeExtraneousValues: true,
-      context: { userById, topicById }
+      context: { userById, topicById, subjectById }
     };
 
     switch (type) {
@@ -78,13 +93,13 @@ export const getCourseDto = async (
     try {
       const { logger } = require("./logger");
       logger.error({ err: error }, "Error enriching course DTO from cache");
-    } catch (_) {}
+    } catch (_) { }
     // Fallback: return DTO without enrichment
     return plainToInstance(
-      type === "group" ? GroupClassDto : 
-      type === "live" ? LiveCourseDto : 
-      type === "prerecorded" ? PrerecordedCourseDto : MinimalCourseDto, 
-      courses, 
+      type === "group" ? GroupClassDto :
+        type === "live" ? LiveCourseDto :
+          type === "prerecorded" ? PrerecordedCourseDto : MinimalCourseDto,
+      courses,
       { excludeExtraneousValues: true }
     );
   }
@@ -104,11 +119,11 @@ export const getSessionDto = async (
 
     // Batch fetch topics from cache
     const topicsArr = await Promise.all(
-      topicIds.map(id => LruInMemoryCache.getUserTopic(id))
+      topicIds.map(id => LruInMemoryCache.getTopic(id))
     );
 
     // Build lookup as plain object
-    const topicById: Record<number, UserTopic | null> = {};
+    const topicById: Record<number, Topic | null> = {};
     topicsArr.forEach((t, i) => {
       topicById[topicIds[i]] = t;
     });
@@ -130,7 +145,7 @@ export const getSessionDto = async (
     try {
       const { logger } = require("./logger");
       logger.error({ err: error }, "Error enriching session DTO from cache");
-    } catch (_) {}
+    } catch (_) { }
     // Fallback: return DTO without enrichment
     return plainToInstance(
       type === "prerecorded" ? RecordedSessionDto : SessionDto,
@@ -144,17 +159,18 @@ export const getSessionDto = async (
 export async function enrichDto<T>(
   DtoClass: any,
   data: any | any[],
-  options?: { userIdFields?: string[]; topicIdFields?: string[] }
+  options?: { userIdFields?: string[]; topicIdFields?: string[]; subjectIdFields?: string[] }
 ): Promise<T> {
   try {
     const list = Array.isArray(data) ? data : [data];
     const userIdFields = options?.userIdFields ?? ['studentId', 'teacherId', 'userId', 'ownerId'];
     const topicIdFields = options?.topicIdFields ?? ['topicId'];
+    const subjectIdFields = options?.subjectIdFields ?? ['subjectId'];
 
     // Collect unique user IDs
     const userIds = Array.from(
       new Set(
-        list.flatMap(item => 
+        list.flatMap(item =>
           userIdFields.map(field => item?.[field]).filter(Boolean) as string[]
         )
       )
@@ -169,10 +185,20 @@ export async function enrichDto<T>(
       )
     );
 
+    // Collect unique subject IDs
+    const subjectIds = Array.from(
+      new Set(
+        list.flatMap(item =>
+          subjectIdFields.map(field => item?.[field]).filter(Boolean) as number[]
+        )
+      )
+    );
+
     // Batch fetch users and topics from cache
-    const [usersArr, topicsArr] = await Promise.all([
+    const [usersArr, topicsArr, subjectsArr] = await Promise.all([
       userIds.length > 0 ? Promise.all(userIds.map(id => LruInMemoryCache.getUserDetails(id))) : [],
-      topicIds.length > 0 ? Promise.all(topicIds.map(id => LruInMemoryCache.getUserTopic(id))) : []
+      topicIds.length > 0 ? Promise.all(topicIds.map(id => LruInMemoryCache.getTopic(id))) : [],
+      subjectIds.length > 0 ? Promise.all(subjectIds.map(id => LruInMemoryCache.getSubject(id))) : []
     ]);
 
     // Build lookup as plain objects
@@ -181,20 +207,25 @@ export async function enrichDto<T>(
       userById[userIds[i]] = u;
     });
 
-    const topicById: Record<number, UserTopic | null> = {};
+    const topicById: Record<number, Topic | null> = {};
     topicsArr.forEach((t, i) => {
       topicById[topicIds[i]] = t;
     });
 
+    const subjectById: Record<number, Subject | null> = {};
+    subjectsArr.forEach((s, i) => {
+      subjectById[subjectIds[i]] = s;
+    });
+
     return plainToInstance(DtoClass, data, {
       excludeExtraneousValues: true,
-      context: { userById, topicById }
+      context: { userById, topicById, subjectById }
     }) as T;
   } catch (error) {
     try {
       const { logger } = require("./logger");
       logger.error({ err: error }, "Error enriching DTO from cache");
-    } catch (_) {}
+    } catch (_) { }
     // Fallback: return DTO without enrichment
     return plainToInstance(DtoClass, data, {
       excludeExtraneousValues: true
@@ -280,7 +311,7 @@ export function generateSessionsFromAvailabilities(
     try {
       const { logger } = require("./logger");
       logger.error({ err: error }, "Error generating sessions");
-    } catch (_) {}
+    } catch (_) { }
     throw new Error("Failed to generate sessions from availabilities");
   }
 }
