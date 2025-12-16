@@ -24,7 +24,7 @@ export class SessionDto {
   topicId?: number;
 
   @Expose()
-  @Transform(({ obj, options }) => options?.context?.topicById?.[obj?.topicId]?.topic?.name)
+  @Transform(({ obj, options }) => options?.context?.topicById?.[obj?.topicId]?.name)
   topicName?: string;
 
   @Expose()
