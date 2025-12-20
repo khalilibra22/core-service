@@ -453,12 +453,31 @@ export class CourseService {
 
       // Apply text search if provided
       if (searchQuery && searchQuery.trim() !== "") {
-        const sanitized = searchQuery.trim().replace(/[%_\\]/g, "\\$&");
-        const searchPattern = `%${sanitized}%`;
-        query.andWhere(
-          "(course.name ILIKE :search OR course.description ILIKE :search OR course.language ILIKE :search OR couresSettings.syllabus ILIKE :search OR couresSettings.grade ILIKE :search)",
-          { search: searchPattern }
-        );
+        const terms = searchQuery.trim().split(/\s+/).filter(t => t.length > 0);
+        // Support both stemming (exact word) and prefix matching (partial word)
+        // for each term: "(word | word:*)"
+        // Joining terms with "&" for AND logic
+        const formattedQuery = terms.map(t => {
+          // Escape special characters for tsquery
+          const escaped = t.replace(/[:&|!()*]/g, '');
+          return escaped ? `(${escaped} | ${escaped}:*)` : '';
+        }).filter(Boolean).join(" & ");
+
+        if (formattedQuery) {
+          const vectorContent = `
+            coalesce("course"."name", '') || ' ' || 
+            coalesce("course"."description", '') || ' ' || 
+            coalesce("course"."language", '') || ' ' || 
+            coalesce("couresSettings"."syllabus", '') || ' ' || 
+            coalesce("couresSettings"."grade", '')
+          `;
+
+          query.andWhere(
+            `(to_tsvector('arabic', ${vectorContent}) @@ to_tsquery('arabic', :searchQuery) OR 
+              to_tsvector('english', ${vectorContent}) @@ to_tsquery('english', :searchQuery))`,
+            { searchQuery: formattedQuery }
+          );
+        }
       }
 
       // Apply filters
