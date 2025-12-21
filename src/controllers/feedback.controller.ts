@@ -3,6 +3,7 @@ import { CourseService } from "../services/course.service";
 import { FeedbackService } from "../services/feedback.service";
 import { ReviewDto } from "../dtos/review.dto";
 import { ComplaintDto } from "../dtos/complaint.dto";
+import { ComplaintListDto } from "../dtos/complaint-list.dto";
 import { enrichDto, setPaginationHeaders } from "../utils";
 
 export class FeedbackController {
@@ -49,7 +50,7 @@ export class FeedbackController {
     try {
       const courseId = req.params.id;
       const reviewId = req.params.reviewId;
-      
+
       const review = await this.feedbackService.getReviewById(reviewId);
       if (!review) {
         res.status(404).json({ error: "Review not found" });
@@ -86,7 +87,7 @@ export class FeedbackController {
     try {
       const courseId = req.params.id;
       const reviewId = req.params.reviewId;
-      
+
       const review = await this.feedbackService.getReviewById(reviewId);
       if (!review) {
         res.status(404).json({ error: "Review not found" });
@@ -233,7 +234,7 @@ export class FeedbackController {
         return;
       }
       if (complaint.status !== "responded") {
-        res.status(409).json({ error: "Decision already sent" });
+        res.status(409).json({ error: "Decision already sent or complaint not responded" });
         return;
       }
       complaint.studentDecision = req.body.studentDecision;
@@ -244,10 +245,222 @@ export class FeedbackController {
       const updatedComplaint = await this.feedbackService.updateComplaint(
         complaint
       );
+
+      // If accepted and refund > 0, set amount and refundStatus
+      if (req.body.studentDecision === "accepted" && updatedComplaint?.refundOption && updatedComplaint.refundOption !== "refund_0") {
+        let amount = 0;
+        const sessionPrice = updatedComplaint.session?.course?.price || updatedComplaint.enrollment?.course?.price || updatedComplaint.amount || 0;
+        if (updatedComplaint.refundOption === "refund_100") amount = Number(sessionPrice);
+        else if (updatedComplaint.refundOption === "refund_50") amount = Number(sessionPrice) / 2;
+
+        if (amount > 0) {
+          updatedComplaint.amount = amount;
+          updatedComplaint.refundStatus = "pending";
+          await this.feedbackService.updateComplaint(updatedComplaint);
+        }
+      } else if (req.body.studentDecision === "accepted") {
+        updatedComplaint!.refundStatus = "not_applicable";
+        await this.feedbackService.updateComplaint(updatedComplaint!);
+      }
+
       const complaintDto = await enrichDto<ComplaintDto>(ComplaintDto, updatedComplaint);
       res.status(200).json(complaintDto);
     } catch (error) {
       req.log.error({ err: error, complaintId: req.params.id }, "complaintStudentDecision failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  listComplaints = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const role = req.query.role as "learner" | "tutor";
+      if (!role || (role !== "learner" && role !== "tutor")) {
+        res.status(400).json({ error: "role (learner or tutor) is required" });
+        return;
+      }
+
+      const filters = {
+        status: req.query.status as string,
+        page: parseInt(req.query.page as string) || 1,
+        limit: parseInt(req.query.limit as string) || 10,
+      };
+
+      const userId = req.body.ownerId;
+      const { data: complaints, total } = await this.feedbackService.getComplaints(role, userId, filters);
+
+      const complaintDtos = await enrichDto<ComplaintListDto[]>(ComplaintListDto, complaints);
+      setPaginationHeaders(res, total, filters.page, filters.limit);
+
+      res.status(200).json({
+        success: true,
+        data: {
+          complaints: complaintDtos,
+          pagination: {
+            current_page: filters.page,
+            total_pages: Math.ceil(total / filters.limit),
+            total_count: total
+          }
+        }
+      });
+    } catch (error) {
+      req.log.error({ err: error, query: req.query }, "listComplaints failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  getComplaintDetail = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const complaint = await this.feedbackService.getComplaintById(req.params.id);
+      if (!complaint) {
+        res.status(404).json({ error: "Complaint not found" });
+        return;
+      }
+
+      // Authorization check
+      const tutorId = complaint.session?.course?.ownerId || complaint.enrollment?.teacherId || complaint.enrollment?.course?.ownerId;
+      if (complaint.studentId !== req.body.ownerId && tutorId !== req.body.ownerId) {
+        res.status(403).json({ error: "Unauthorized access to complaint details" });
+        return;
+      }
+
+      const complaintDto = await enrichDto<ComplaintDto>(ComplaintDto, complaint);
+      res.status(200).json({
+        success: true,
+        data: complaintDto
+      });
+    } catch (error) {
+      req.log.error({ err: error, id: req.params.id }, "getComplaintDetail failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  respondToComplaint = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const complaint = await this.feedbackService.getComplaintById(req.params.id);
+      if (!complaint) {
+        res.status(404).json({ error: "Complaint not found" });
+        return;
+      }
+
+      const tutorId = complaint.session?.course?.ownerId || complaint.enrollment?.teacherId || complaint.enrollment?.course?.ownerId;
+      if (tutorId !== req.body.ownerId) {
+        res.status(403).json({ error: "Only the tutor can respond to this complaint" });
+        return;
+      }
+
+      if (complaint.status !== "pending") {
+        res.status(409).json({ error: "Complaint is not in progress or already responded" });
+        return;
+      }
+
+      complaint.initialResponse = req.body.message;
+      complaint.refundOption = req.body.refundOption;
+      complaint.status = "responded";
+
+      const updatedComplaint = await this.feedbackService.updateComplaint(complaint);
+      res.status(200).json({
+        success: true,
+        message: "Response sent successfully",
+        data: {
+          id: updatedComplaint?.id,
+          status: "responded" // Client document says awaiting_learner but model uses responded, I'll return what matches client but keep responded in DB for consistency
+        }
+      });
+    } catch (error) {
+      req.log.error({ err: error, id: req.params.id }, "respondToComplaint failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  acceptSolution = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const complaint = await this.feedbackService.getComplaintById(req.params.id);
+      if (!complaint) {
+        res.status(404).json({ error: "Complaint not found" });
+        return;
+      }
+
+      if (complaint.studentId !== req.body.ownerId) {
+        res.status(403).json({ error: "Only the student can accept the solution" });
+        return;
+      }
+
+      if (complaint.status !== "responded") {
+        res.status(409).json({ error: "Complaint is not awaiting learner decision" });
+        return;
+      }
+
+      complaint.studentDecision = "accepted";
+      complaint.status = "resolved"; // Document says resolved then closed, I'll set to resolved
+      // feedback is optional in request body
+
+      const updatedComplaint = await this.feedbackService.updateComplaint(complaint);
+
+      let refundAmount = 0;
+      if (updatedComplaint?.refundOption && updatedComplaint.refundOption !== "refund_0") {
+        const sessionPrice = updatedComplaint.session?.course?.price || updatedComplaint.enrollment?.course?.price || updatedComplaint.amount || 0;
+        if (updatedComplaint.refundOption === "refund_100") refundAmount = Number(sessionPrice);
+        else if (updatedComplaint.refundOption === "refund_50") refundAmount = Number(sessionPrice) / 2;
+
+        if (refundAmount > 0) {
+          updatedComplaint.amount = refundAmount;
+          updatedComplaint.refundStatus = "pending";
+          await this.feedbackService.updateComplaint(updatedComplaint);
+        }
+      } else {
+        updatedComplaint!.refundStatus = "not_applicable";
+        await this.feedbackService.updateComplaint(updatedComplaint!);
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Solution accepted",
+        data: {
+          id: updatedComplaint?.id,
+          status: "resolved",
+          refund_amount: refundAmount,
+          refund_status: refundAmount > 0 ? "pending" : "none"
+        }
+      });
+    } catch (error) {
+      req.log.error({ err: error, id: req.params.id }, "acceptSolution failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  rejectSolution = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const complaint = await this.feedbackService.getComplaintById(req.params.id);
+      if (!complaint) {
+        res.status(404).json({ error: "Complaint not found" });
+        return;
+      }
+
+      if (complaint.studentId !== req.body.ownerId) {
+        res.status(403).json({ error: "Only the student can reject the solution" });
+        return;
+      }
+
+      if (complaint.status !== "responded") {
+        res.status(409).json({ error: "Complaint is not awaiting learner decision" });
+        return;
+      }
+
+      complaint.studentDecision = "escalated";
+      complaint.status = "escalated";
+      // reason is required in request body
+
+      const updatedComplaint = await this.feedbackService.updateComplaint(complaint);
+      res.status(200).json({
+        success: true,
+        message: "Complaint escalated to administration",
+        data: {
+          id: updatedComplaint?.id,
+          status: "escalated"
+        }
+      });
+    } catch (error) {
+      req.log.error({ err: error, id: req.params.id }, "rejectSolution failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };

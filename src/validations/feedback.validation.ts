@@ -12,11 +12,14 @@ export const complaintValdationSchema = Joi.object({
   ownerId: Joi.string().uuid().optional(),
   reason: Joi.string().required(),
   type: Joi.string().required(),
+  description: Joi.string().optional(),
+  attachments: Joi.array().items(Joi.string()).optional(),
 });
 
 export const complaintInitialResponseSchema = Joi.object({
   ownerId: Joi.string().uuid().optional(),
   initialResponse: Joi.string().min(5).required(),
+  refundOption: Joi.string().valid("refund_100", "refund_50", "refund_0").required(),
 });
 
 export const resolveComplaintSchema = Joi.object({

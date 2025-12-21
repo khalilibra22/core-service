@@ -50,8 +50,37 @@ export class ComplaintModel {
   adminResponse?: string;
 
   // --- Complaint status workflow ---
-  @Column({ default: "pending" })
-  status?: "pending" | "responded" | "resolved" | "escalated";
+  @Column({
+    type: "enum",
+    enum: ["pending", "responded", "resolved", "escalated", "closed"],
+    default: "pending",
+  })
+  status?: "pending" | "responded" | "resolved" | "escalated" | "closed";
+
+  @Column({ name: "description", type: "text", nullable: true })
+  description?: string;
+
+  @Column({ name: "attachments", type: "json", nullable: true })
+  attachments?: string[];
+
+  @Column({ name: "deadline", type: "timestamp", nullable: true })
+  deadline?: Date;
+
+  @Column({
+    name: "refund_option",
+    type: "enum",
+    enum: ["refund_100", "refund_50", "refund_0"],
+    nullable: true,
+  })
+  refundOption?: "refund_100" | "refund_50" | "refund_0";
+
+  @Column({
+    name: "refund_status",
+    type: "enum",
+    enum: ["not_applicable", "pending", "completed", "failed"],
+    default: "not_applicable",
+  })
+  refundStatus?: "not_applicable" | "pending" | "completed" | "failed";
 
   @Column({ name: "resolved_by", nullable: true })
   resolvedBy?: string; // ID of user who resolved the complaint (e.g., admin or support staff)

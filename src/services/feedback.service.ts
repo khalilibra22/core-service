@@ -58,6 +58,10 @@ export class FeedbackService {
 
   async createComplaint(complaint: ComplaintModel): Promise<ComplaintModel> {
     try {
+      // Set deadline for 72 hours if not set
+      if (!complaint.deadline) {
+        complaint.deadline = new Date(Date.now() + 72 * 60 * 60 * 1000);
+      }
       return await this.complaintRepo.save(complaint);
     } catch (error) {
       logger.error({ err: error }, "createComplaint failed");
@@ -114,12 +118,11 @@ export class FeedbackService {
   async getComplaintById(id: string): Promise<ComplaintModel | null> {
     try {
       return await this.complaintRepo.findOne({
-        where: {
-          id: id,
-        },
+        where: { id },
+        relations: ["session", "session.course", "enrollment", "enrollment.course"],
         cache: {
-          id: `complaint-${id}`,
-          milliseconds: 300000, // 5 minutes
+          id: `complaint-detailed-${id}`,
+          milliseconds: 60000, // 1 min for detailed view
         },
       });
     } catch (error) {
@@ -158,12 +161,51 @@ export class FeedbackService {
     }
   }
 
+  async getComplaints(
+    role: "learner" | "tutor",
+    userId: string,
+    filters: { status?: string; page?: number; limit?: number }
+  ): Promise<PaginatedResult<ComplaintModel>> {
+    try {
+      const { status, page = 1, limit = 10 } = filters;
+      const query = this.complaintRepo
+        .createQueryBuilder("complaint")
+        .leftJoinAndSelect("complaint.session", "session")
+        .leftJoinAndSelect("session.course", "course")
+        .leftJoinAndSelect("complaint.enrollment", "enrollment")
+        .leftJoinAndSelect("enrollment.course", "eCourse");
+
+      if (role === "learner") {
+        query.where("complaint.studentId = :userId", { userId });
+      } else {
+        // Tutor can be owner of session.course or enrollment.teacherId
+        query.where("course.ownerId = :userId OR enrollment.teacherId = :userId OR eCourse.ownerId = :userId", { userId });
+      }
+
+      if (status) {
+        query.andWhere("complaint.status = :status", { status });
+      }
+
+      const [data, total] = await query
+        .orderBy("complaint.createdAt", "DESC")
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { data, total };
+    } catch (error) {
+      logger.error({ err: error, role, userId, filters }, "getComplaints failed");
+      throw new Error("Error fetching complaints list");
+    }
+  }
+
   async getComplaintsByStudentId(studentId: string): Promise<ComplaintModel[]> {
     try {
       return await this.complaintRepo.find({
         where: {
           studentId: studentId,
         },
+        relations: ["session", "session.course", "enrollment", "enrollment.course"],
         cache: {
           id: `student-complaints-${studentId}`,
           milliseconds: 300000, // 5 minutes
@@ -285,8 +327,7 @@ export class FeedbackService {
       logger.error({ err: error, teacherId }, "getAllReviewsByTeacherId failed");
       // Preserve error context
       throw new Error(
-        `Error fetching reviews for teacher ${teacherId}: ${
-          error instanceof Error ? error.message : error
+        `Error fetching reviews for teacher ${teacherId}: ${error instanceof Error ? error.message : error
         }`
       );
     }

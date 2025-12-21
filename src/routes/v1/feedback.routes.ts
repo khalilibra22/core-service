@@ -14,6 +14,14 @@ const router = express.Router();
 const feedbackController = new FeedbackController();
 
 router.post(
+  "/complaints/:id/respond",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("complaints", "respond_complaints"),
+  ValidationMiddleware.validate(complaintInitialResponseSchema),
+  feedbackController.respondToComplaint
+);
+
+router.post(
   "/complaints/:id/initial-response",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("complaints", "respond_complaints"),
@@ -38,9 +46,37 @@ router.post(
   feedbackController.complaintStudentDecision
 );
 
-// get all complaints
+router.post(
+  "/complaints/:id/accept",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("complaints", "complain"),
+  feedbackController.acceptSolution
+);
+
+router.post(
+  "/complaints/:id/reject",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("complaints", "complain"),
+  feedbackController.rejectSolution
+);
+
+// get all complaints (new Specification)
 router.get(
   "/complaints",
+  AuthMiddleware.verifyToken,
+  feedbackController.listComplaints
+);
+
+// get complaint detail (new Specification)
+router.get(
+  "/complaints/:id",
+  AuthMiddleware.verifyToken,
+  feedbackController.getComplaintDetail
+);
+
+// get all complaints (old route - might be used by admin panel)
+router.get(
+  "/complaints/all",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("complaints", "manage_all_complaints"),
   feedbackController.getAllComplaints
