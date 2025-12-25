@@ -67,6 +67,58 @@ router.get(
   feedbackController.listComplaints
 );
 
+// Tutor endpoints
+router.get(
+  "/complaints/tutor/stats",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("complaints", "respond_complaints"),
+  feedbackController.getTutorIssueStats
+);
+
+router.get(
+  "/complaints/tutor",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("complaints", "respond_complaints"),
+  feedbackController.listComplaints // Already handles tutor role via query/body
+);
+
+router.post(
+  "/complaints/:id/tutor-reply",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("complaints", "respond_complaints"),
+  feedbackController.respondToComplaint
+);
+
+// Learner endpoints
+router.post(
+  "/complaints/:id/learner-decision",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("complaints", "complain"),
+  feedbackController.complaintStudentDecision // Or accept/reject logic
+);
+
+// Admin Dispute Center
+router.get(
+  "/complaints/admin/stats",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("complaints", "manage_all_complaints"),
+  feedbackController.getAdminDisputeStats
+);
+
+router.get(
+  "/complaints/admin/disputes",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("complaints", "manage_all_complaints"),
+  feedbackController.getAllComplaints // Or specialized admin list
+);
+
+router.post(
+  "/complaints/admin/disputes/:id/decision",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("complaints", "manage_all_complaints"),
+  feedbackController.adminDecision
+);
+
 // get complaint detail (new Specification)
 router.get(
   "/complaints/:id",

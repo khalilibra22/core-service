@@ -336,34 +336,40 @@ export class FeedbackController {
 
   respondToComplaint = async (req: Request, res: Response): Promise<void> => {
     try {
-      const complaint = await this.feedbackService.getComplaintById(req.params.id);
-      if (!complaint) {
+      const complaintById = await this.feedbackService.getComplaintById(req.params.id);
+      if (!complaintById) {
         res.status(404).json({ error: "Complaint not found" });
         return;
       }
 
-      const tutorId = complaint.session?.course?.ownerId || complaint.enrollment?.teacherId || complaint.enrollment?.course?.ownerId;
+      const tutorId = complaintById.session?.course?.ownerId || complaintById.enrollment?.teacherId || complaintById.enrollment?.course?.ownerId;
       if (tutorId !== req.body.ownerId) {
         res.status(403).json({ error: "Only the tutor can respond to this complaint" });
         return;
       }
 
-      if (complaint.status !== "pending") {
+      if (complaintById.status !== "pending") {
         res.status(409).json({ error: "Complaint is not in progress or already responded" });
         return;
       }
 
-      complaint.initialResponse = req.body.message;
-      complaint.refundOption = req.body.refundOption;
-      complaint.status = "responded";
+      complaintById.initialResponse = req.body.message;
+      complaintById.refundOption = req.body.proposedRefund ? `refund_${req.body.proposedRefund}` as any : req.body.refundOption;
+      complaintById.status = "pending_learner";
 
-      const updatedComplaint = await this.feedbackService.updateComplaint(complaint);
+      await this.feedbackService.addTimelineEvent(complaintById.id!, {
+        action: "TUTOR_REPLY",
+        actor: "TUTOR",
+        message: req.body.message,
+      });
+
+      const updatedComplaint = await this.feedbackService.updateComplaint(complaintById);
       res.status(200).json({
         success: true,
         message: "Response sent successfully",
         data: {
           id: updatedComplaint?.id,
-          status: "responded" // Client document says awaiting_learner but model uses responded, I'll return what matches client but keep responded in DB for consistency
+          status: "pending_learner"
         }
       });
     } catch (error) {
@@ -374,33 +380,39 @@ export class FeedbackController {
 
   acceptSolution = async (req: Request, res: Response): Promise<void> => {
     try {
-      const complaint = await this.feedbackService.getComplaintById(req.params.id);
-      if (!complaint) {
+      const complaintById = await this.feedbackService.getComplaintById(req.params.id);
+      if (!complaintById) {
         res.status(404).json({ error: "Complaint not found" });
         return;
       }
 
-      if (complaint.studentId !== req.body.ownerId) {
+      if (complaintById.studentId !== req.body.ownerId) {
         res.status(403).json({ error: "Only the student can accept the solution" });
         return;
       }
 
-      if (complaint.status !== "responded") {
+      if (complaintById.status !== "pending_learner") {
         res.status(409).json({ error: "Complaint is not awaiting learner decision" });
         return;
       }
 
-      complaint.studentDecision = "accepted";
-      complaint.status = "resolved"; // Document says resolved then closed, I'll set to resolved
-      // feedback is optional in request body
+      complaintById.studentDecision = "accepted";
+      complaintById.status = "resolved";
 
-      const updatedComplaint = await this.feedbackService.updateComplaint(complaint);
+      await this.feedbackService.addTimelineEvent(complaintById.id!, {
+        action: "LEARNER_DECISION",
+        actor: "LEARNER",
+        message: "Solution accepted",
+      });
+
+      const updatedComplaint = await this.feedbackService.updateComplaint(complaintById);
 
       let refundAmount = 0;
       if (updatedComplaint?.refundOption && updatedComplaint.refundOption !== "refund_0") {
         const sessionPrice = updatedComplaint.session?.course?.price || updatedComplaint.enrollment?.course?.price || updatedComplaint.amount || 0;
         if (updatedComplaint.refundOption === "refund_100") refundAmount = Number(sessionPrice);
         else if (updatedComplaint.refundOption === "refund_50") refundAmount = Number(sessionPrice) / 2;
+        // Support custom refundAmount if set in proposedRefund or similar logic
 
         if (refundAmount > 0) {
           updatedComplaint.amount = refundAmount;
@@ -430,27 +442,32 @@ export class FeedbackController {
 
   rejectSolution = async (req: Request, res: Response): Promise<void> => {
     try {
-      const complaint = await this.feedbackService.getComplaintById(req.params.id);
-      if (!complaint) {
+      const complaintById = await this.feedbackService.getComplaintById(req.params.id);
+      if (!complaintById) {
         res.status(404).json({ error: "Complaint not found" });
         return;
       }
 
-      if (complaint.studentId !== req.body.ownerId) {
+      if (complaintById.studentId !== req.body.ownerId) {
         res.status(403).json({ error: "Only the student can reject the solution" });
         return;
       }
 
-      if (complaint.status !== "responded") {
+      if (complaintById.status !== "pending_learner") {
         res.status(409).json({ error: "Complaint is not awaiting learner decision" });
         return;
       }
 
-      complaint.studentDecision = "escalated";
-      complaint.status = "escalated";
-      // reason is required in request body
+      complaintById.studentDecision = "escalated";
+      complaintById.status = "escalated";
 
-      const updatedComplaint = await this.feedbackService.updateComplaint(complaint);
+      await this.feedbackService.addTimelineEvent(complaintById.id!, {
+        action: "LEARNER_DECISION",
+        actor: "LEARNER",
+        message: req.body.reason || "Solution rejected, escalating to admin",
+      });
+
+      const updatedComplaint = await this.feedbackService.updateComplaint(complaintById);
       res.status(200).json({
         success: true,
         message: "Complaint escalated to administration",
@@ -461,6 +478,68 @@ export class FeedbackController {
       });
     } catch (error) {
       req.log.error({ err: error, id: req.params.id }, "rejectSolution failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  getTutorIssueStats = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const tutorId = req.body.ownerId;
+      const stats = await this.feedbackService.getTutorIssueStats(tutorId);
+      res.status(200).json(stats);
+    } catch (error) {
+      req.log.error({ err: error, tutorId: req.body.ownerId }, "getTutorIssueStats failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  getAdminDisputeStats = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const stats = await this.feedbackService.getAdminDisputeStats();
+      res.status(200).json(stats);
+    } catch (error) {
+      req.log.error({ err: error }, "getAdminDisputeStats failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  adminDecision = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const complaintId = req.params.id;
+      const complaint = await this.feedbackService.getComplaintById(complaintId);
+      if (!complaint) {
+        res.status(404).json({ error: "Complaint not found" });
+        return;
+      }
+
+      if (complaint.status !== "escalated") {
+        res.status(409).json({ error: "Complaint is not escalated" });
+        return;
+      }
+
+      complaint.adminResponse = req.body.note;
+      complaint.status = "closed";
+      complaint.resolvedBy = req.body.ownerId;
+
+      if (req.body.decision === "REFUND") {
+        complaint.amount = req.body.refundAmount;
+        complaint.refundStatus = "pending";
+        // Logic to trigger real refund via PaymentService would go here
+      }
+
+      await this.feedbackService.addTimelineEvent(complaintId, {
+        action: "ADMIN_DECISION",
+        actor: "ADMIN",
+        message: req.body.note || `Decision: ${req.body.decision}`,
+      });
+
+      const updatedComplaint = await this.feedbackService.updateComplaint(complaint);
+      res.status(200).json({
+        status: "CLOSED",
+        refundProcessed: req.body.decision === "REFUND",
+      });
+    } catch (error) {
+      req.log.error({ err: error, id: req.params.id }, "adminDecision failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };

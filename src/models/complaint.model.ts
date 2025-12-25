@@ -28,8 +28,25 @@ export class ComplaintModel {
   @Column({ name: "student_id" })
   studentId?: string;
 
-  @Column({ name: "complaint_type", default: "general" })
-  type?: string; // Type of complaint (e.g., general, technical, content-related, etc.)
+  @Column({ name: "order_id", nullable: true })
+  orderId?: string;
+
+  @Column({
+    name: "complaint_type",
+    type: "enum",
+    enum: [
+      "general",
+      "technical",
+      "content-related",
+      "LATE_START",
+      "NO_SHOW",
+      "TECHNICAL_ISSUE",
+      "TEACHING_QUALITY",
+      "REFUND_REQUEST",
+    ],
+    default: "general",
+  })
+  type?: string; // Type of complaint
 
   @Column({ name: "reason" })
   reason?: string;
@@ -52,10 +69,25 @@ export class ComplaintModel {
   // --- Complaint status workflow ---
   @Column({
     type: "enum",
-    enum: ["pending", "responded", "resolved", "escalated", "closed"],
+    enum: [
+      "pending",
+      "responded",
+      "resolved",
+      "escalated",
+      "closed",
+      "pending_learner",
+      "rejected",
+    ],
     default: "pending",
   })
-  status?: "pending" | "responded" | "resolved" | "escalated" | "closed";
+  status?:
+    | "pending"
+    | "responded"
+    | "resolved"
+    | "escalated"
+    | "closed"
+    | "pending_learner"
+    | "rejected";
 
   @Column({ name: "description", type: "text", nullable: true })
   description?: string;
@@ -65,6 +97,12 @@ export class ComplaintModel {
 
   @Column({ name: "deadline", type: "timestamp", nullable: true })
   deadline?: Date;
+
+  @Column({ name: "auto_escalate_at", type: "timestamp", nullable: true })
+  autoEscalateAt?: Date;
+
+  @Column({ name: "timeline", type: "json", nullable: true })
+  timeline?: any[];
 
   @Column({
     name: "refund_option",

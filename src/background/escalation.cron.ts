@@ -36,6 +36,15 @@ export const startEscalationCron = () => {
             for (const complaint of complaintsToEscalate) {
                 complaint.status = "escalated";
                 complaint.adminResponse = "Automatically escalated after 72 hours of inactivity from tutor.";
+
+                if (!complaint.timeline) complaint.timeline = [];
+                complaint.timeline.push({
+                    action: "ESCALATED",
+                    actor: "SYSTEM",
+                    message: "Automatically escalated due to 72h inactivity",
+                    at: new Date().toISOString()
+                });
+
                 await complaintRepo.save(complaint);
                 logger.info(`Escalated complaint ID: ${complaint.id}`);
             }

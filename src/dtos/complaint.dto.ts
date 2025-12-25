@@ -87,11 +87,24 @@ export class ComplaintDto {
   @Expose()
   status?: string;
 
+  @Expose({ name: "order_id" })
+  orderId?: string;
+
+  @Expose({ name: "issue_type" })
+  @Transform(({ obj }) => obj.type)
+  issueType?: string;
+
   @Expose({ name: "created_at" })
   createdAt?: string;
 
   @Expose()
   deadline?: string;
+
+  @Expose({ name: "auto_escalate_at" })
+  autoEscalateAt?: string;
+
+  @Expose()
+  timeline?: any[];
 
   @Expose({ name: "refund_amount" })
   @Transform(({ obj }) => obj.amount || 0)
