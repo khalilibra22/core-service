@@ -194,12 +194,11 @@ export class FeedbackService {
   }
 
   async getComplaints(
-    role: "learner" | "tutor",
     userId: string,
-    filters: { status?: string; page?: number; limit?: number }
+    filters: { status?: string; page?: number; limit?: number; role?: "learner" | "tutor" }
   ): Promise<PaginatedResult<ComplaintModel>> {
     try {
-      const { status, page = 1, limit = 10 } = filters;
+      const { status, page = 1, limit = 10, role } = filters;
       const query = this.complaintRepo
         .createQueryBuilder("complaint")
         .leftJoinAndSelect("complaint.session", "session")
@@ -209,9 +208,13 @@ export class FeedbackService {
 
       if (role === "learner") {
         query.where("complaint.studentId = :userId", { userId });
+      } else if (role === "tutor") {
+        query.where("(course.ownerId = :userId OR enrollment.teacherId = :userId OR eCourse.ownerId = :userId)", { userId });
       } else {
-        // Tutor can be owner of session.course or enrollment.teacherId
-        query.where("course.ownerId = :userId OR enrollment.teacherId = :userId OR eCourse.ownerId = :userId", { userId });
+        query.where(
+          "(complaint.studentId = :userId OR course.ownerId = :userId OR enrollment.teacherId = :userId OR eCourse.ownerId = :userId)",
+          { userId }
+        );
       }
 
       if (status) {
@@ -226,7 +229,7 @@ export class FeedbackService {
 
       return { data, total };
     } catch (error) {
-      logger.error({ err: error, role, userId, filters }, "getComplaints failed");
+      logger.error({ err: error, userId, filters }, "getComplaints failed");
       throw new Error("Error fetching complaints list");
     }
   }

@@ -2,10 +2,13 @@ import express from "express";
 import { FeedbackController } from "../../controllers/feedback.controller";
 import { ValidationMiddleware } from "../../utils/validation.middleware";
 import {
-  complaintInitialResponseSchema,
+  tutorReplySchema,
+  complaintValdationSchema,
+  issueValidationSchema,
   resolveComplaintSchema,
   reviewValdationSchema,
   studentDecisionComplaintSchema,
+  adminDecisionSchema,
 } from "../../validations/feedback.validation";
 import { AuthMiddleware } from "../../utils/auth.middleware";
 
@@ -17,7 +20,7 @@ router.post(
   "/complaints/:id/respond",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("complaints", "respond_complaints"),
-  ValidationMiddleware.validate(complaintInitialResponseSchema),
+  ValidationMiddleware.validate(tutorReplySchema),
   feedbackController.respondToComplaint
 );
 
@@ -25,7 +28,7 @@ router.post(
   "/complaints/:id/initial-response",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("complaints", "respond_complaints"),
-  ValidationMiddleware.validate(complaintInitialResponseSchema),
+  ValidationMiddleware.validate(tutorReplySchema),
   feedbackController.addComplaintInitialResponse
 );
 
@@ -38,33 +41,20 @@ router.post(
   feedbackController.complaintAdminResolve
 );
 
-router.post(
-  "/complaints/:id/student-decision",
-  AuthMiddleware.verifyToken,
-  AuthMiddleware.authorize("complaints", "complain"),
-  ValidationMiddleware.validate(studentDecisionComplaintSchema),
-  feedbackController.complaintStudentDecision
-);
 
-router.post(
-  "/complaints/:id/accept",
-  AuthMiddleware.verifyToken,
-  AuthMiddleware.authorize("complaints", "complain"),
-  feedbackController.acceptSolution
-);
-
-router.post(
-  "/complaints/:id/reject",
-  AuthMiddleware.verifyToken,
-  AuthMiddleware.authorize("complaints", "complain"),
-  feedbackController.rejectSolution
-);
-
-// get all complaints (new Specification)
+// Issue / Complaint endpoints
 router.get(
   "/complaints",
   AuthMiddleware.verifyToken,
   feedbackController.listComplaints
+);
+
+router.post(
+  "/complaints",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("complaints", "complain"),
+  ValidationMiddleware.validate(issueValidationSchema),
+  feedbackController.createComplaint
 );
 
 // Tutor endpoints
@@ -81,11 +71,11 @@ router.get(
   AuthMiddleware.authorize("complaints", "respond_complaints"),
   feedbackController.listComplaints // Already handles tutor role via query/body
 );
-
 router.post(
   "/complaints/:id/tutor-reply",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("complaints", "respond_complaints"),
+  ValidationMiddleware.validate(tutorReplySchema),
   feedbackController.respondToComplaint
 );
 
@@ -94,7 +84,8 @@ router.post(
   "/complaints/:id/learner-decision",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("complaints", "complain"),
-  feedbackController.complaintStudentDecision // Or accept/reject logic
+  ValidationMiddleware.validate(studentDecisionComplaintSchema),
+  feedbackController.learnerDecision
 );
 
 // Admin Dispute Center
@@ -116,6 +107,7 @@ router.post(
   "/complaints/admin/disputes/:id/decision",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("complaints", "manage_all_complaints"),
+  ValidationMiddleware.validate(adminDecisionSchema),
   feedbackController.adminDecision
 );
 

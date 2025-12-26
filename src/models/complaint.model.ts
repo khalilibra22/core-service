@@ -4,12 +4,14 @@ import {
   DeleteDateColumn,
   Entity,
   Index,
+  JoinColumn, // Added JoinColumn import
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
 import { SessionModel } from "./session.model";
 import { EnrollmentModel } from "./enrollment.model";
+import { CourseModel } from "./course.model"; // Added CourseModel import
 
 @Entity("complaints")
 @Index("IDX_complaints_student_id", ["studentId"])
@@ -28,8 +30,8 @@ export class ComplaintModel {
   @Column({ name: "student_id" })
   studentId?: string;
 
-  @Column({ name: "order_id", nullable: true })
-  orderId?: string;
+  @Column({ name: "reference_id", nullable: true })
+  referenceId?: string; // General reference (Order ID, Transaction ID, etc.)
 
   @Column({
     name: "complaint_type",
@@ -48,7 +50,7 @@ export class ComplaintModel {
   })
   type?: string; // Type of complaint
 
-  @Column({ name: "reason" })
+  @Column({ name: "reason", nullable: true })
   reason?: string;
 
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
@@ -128,6 +130,10 @@ export class ComplaintModel {
 
   @ManyToOne(() => EnrollmentModel, (enrollment) => enrollment.refunds)
   enrollment?: EnrollmentModel;
+
+  @ManyToOne(() => CourseModel)
+  @JoinColumn({ name: "course_id" })
+  course?: CourseModel;
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;

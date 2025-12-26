@@ -44,6 +44,13 @@ export class ComplaintListDto {
     @Expose()
     status?: string;
 
+    @Expose({ name: "issue_type" })
+    @Transform(({ obj }) => obj.type)
+    issueType?: string;
+
+    @Expose({ name: "reference_id" })
+    referenceId?: string;
+
     @Expose({ name: "created_at" })
     createdAt?: string;
 

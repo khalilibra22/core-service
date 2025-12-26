@@ -26,6 +26,14 @@ export class ComplaintDto {
   @Expose()
   id?: string;
 
+  @Expose({ name: "course_id" })
+  @Transform(({ obj }) => obj.course?.id)
+  courseId?: string;
+
+  @Expose({ name: "course_name" })
+  @Transform(({ obj }) => obj.course?.name)
+  courseName?: string;
+
   @Expose({ name: "session_id" })
   @Transform(({ obj }) => obj.session?.id)
   sessionId?: string;
@@ -87,8 +95,8 @@ export class ComplaintDto {
   @Expose()
   status?: string;
 
-  @Expose({ name: "order_id" })
-  orderId?: string;
+  @Expose({ name: "reference_id" })
+  referenceId?: string;
 
   @Expose({ name: "issue_type" })
   @Transform(({ obj }) => obj.type)

@@ -16,11 +16,31 @@ export const complaintValdationSchema = Joi.object({
   attachments: Joi.array().items(Joi.string()).optional(),
 });
 
-export const complaintInitialResponseSchema = Joi.object({
+export const issueValidationSchema = Joi.object({
   ownerId: Joi.string().uuid().optional(),
-  initialResponse: Joi.string().min(5).required(),
-  refundOption: Joi.string().valid("refund_100", "refund_50", "refund_0").required(),
+  referenceId: Joi.string().optional(),
+  sessionId: Joi.string().optional(),
+  enrollmentId: Joi.string().optional(),
+  courseId: Joi.string().optional(),
+  issueType: Joi.string()
+    .valid(
+      "LATE_START",
+      "NO_SHOW",
+      "TECHNICAL_ISSUE",
+      "TEACHING_QUALITY",
+      "REFUND_REQUEST"
+    )
+    .required(),
+  description: Joi.string().required(),
+  attachments: Joi.array().items(Joi.string()).optional(),
 });
+
+export const tutorReplySchema = Joi.object({
+  ownerId: Joi.string().uuid().optional(),
+  message: Joi.string().min(5).required(),
+  proposedRefund: Joi.number().valid(0, 50, 100).optional(),
+  refundOption: Joi.string().valid("refund_100", "refund_50", "refund_0").optional(),
+}).or("proposedRefund", "refundOption");
 
 export const resolveComplaintSchema = Joi.object({
   adminResponse: Joi.string().required(),
@@ -29,5 +49,17 @@ export const resolveComplaintSchema = Joi.object({
 
 export const studentDecisionComplaintSchema = Joi.object({
   studentDecision: Joi.string().valid("accepted", "escalated").required(),
+  reason: Joi.string().optional(),
+  ownerId: Joi.string().uuid().optional(),
+});
+
+export const adminDecisionSchema = Joi.object({
+  decision: Joi.string().valid("REFUND", "REJECT", "RESOLVE").required(),
+  note: Joi.string().optional(),
+  refundAmount: Joi.number().min(0).when("decision", {
+    is: "REFUND",
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
   ownerId: Joi.string().uuid().optional(),
 });
