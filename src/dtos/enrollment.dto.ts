@@ -71,4 +71,19 @@ export class EnrollmentDto {
   @Expose()
   @Transform(({ obj }) => obj.course?.groupId ?? "")
   groupId?: string;
+
+  @Expose()
+  amount?: number;
+
+  @Expose()
+  currency?: string;
+
+  @Expose()
+  paymentId?: string;
+
+  @Expose()
+  paymentProvider?: string;
+
+  @Expose()
+  paymentStatus?: string;
 }

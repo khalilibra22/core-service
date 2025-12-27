@@ -19,6 +19,7 @@ import { MaterialLinkModel } from "./material-link.model";
 import { StudentRequestModel } from "./student-request.model";
 import { CourseViewModel } from "./course-view.model";
 import { CourseProgressModel } from "./course-progress.model";
+import { ComplaintModel } from "./complaint.model";
 
 @Entity("courses")
 @Index("IDX_courses_type", ["type"])
@@ -120,6 +121,9 @@ export class CourseModel {
 
   @OneToMany(() => CourseProgressModel, (progress) => progress.course)
   courseProgress?: CourseProgressModel[];
+
+  @OneToMany(() => ComplaintModel, (complaint) => complaint.course)
+  complaints?: ComplaintModel[];
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;

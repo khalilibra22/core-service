@@ -45,6 +45,21 @@ export class EnrollmentModel {
   @Column({ name: "group_id", nullable: true })
   groupId?: string;
 
+  @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+  amount?: number;
+
+  @Column({ default: "DZD" })
+  currency?: string;
+
+  @Column({ name: "payment_id", nullable: true })
+  paymentId?: string;
+
+  @Column({ name: "payment_provider", nullable: true })
+  paymentProvider?: string;
+
+  @Column({ name: "payment_status", nullable: true })
+  paymentStatus?: string;
+
   @OneToMany(() => SessionModel, (session) => session.enrollment, {
     cascade: true,
   })

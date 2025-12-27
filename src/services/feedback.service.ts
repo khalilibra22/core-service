@@ -58,11 +58,47 @@ export class FeedbackService {
 
   async createComplaint(complaint: ComplaintModel): Promise<ComplaintModel> {
     try {
+      // Set deadline for 72 hours from now for tutor response
+      if (!complaint.autoEscalateAt) {
+        complaint.autoEscalateAt = new Date(Date.now() + 72 * 60 * 60 * 1000);
+      }
+
+      // Initialize timeline
+      complaint.timeline = [
+        {
+          action: "CREATED",
+          actor: "LEARNER",
+          message: complaint.description || "Issue reported",
+          at: new Date().toISOString(),
+        },
+      ];
+
+      // Keep legacy deadline for backward compatibility if needed, or unify
+      if (!complaint.deadline) {
+        complaint.deadline = complaint.autoEscalateAt;
+      }
+
       return await this.complaintRepo.save(complaint);
     } catch (error) {
       logger.error({ err: error }, "createComplaint failed");
       throw new Error("Error creating complaint");
     }
+  }
+
+  async addTimelineEvent(
+    complaintId: string,
+    event: { action: string; actor: string; message: string }
+  ): Promise<ComplaintModel | null> {
+    const complaint = await this.getComplaintById(complaintId);
+    if (!complaint) return null;
+
+    if (!complaint.timeline) complaint.timeline = [];
+    complaint.timeline.push({
+      ...event,
+      at: new Date().toISOString(),
+    });
+
+    return await this.complaintRepo.save(complaint);
   }
 
   async getAllReviews(): Promise<ReviewModel[]> {
@@ -114,12 +150,11 @@ export class FeedbackService {
   async getComplaintById(id: string): Promise<ComplaintModel | null> {
     try {
       return await this.complaintRepo.findOne({
-        where: {
-          id: id,
-        },
+        where: { id },
+        relations: ["session", "session.course", "enrollment", "enrollment.course"],
         cache: {
-          id: `complaint-${id}`,
-          milliseconds: 300000, // 5 minutes
+          id: `complaint-detailed-${id}`,
+          milliseconds: 60000, // 1 min for detailed view
         },
       });
     } catch (error) {
@@ -158,12 +193,54 @@ export class FeedbackService {
     }
   }
 
+  async getComplaints(
+    userId: string,
+    filters: { status?: string; page?: number; limit?: number; role?: "learner" | "tutor" }
+  ): Promise<PaginatedResult<ComplaintModel>> {
+    try {
+      const { status, page = 1, limit = 10, role } = filters;
+      const query = this.complaintRepo
+        .createQueryBuilder("complaint")
+        .leftJoinAndSelect("complaint.session", "session")
+        .leftJoinAndSelect("session.course", "course")
+        .leftJoinAndSelect("complaint.enrollment", "enrollment")
+        .leftJoinAndSelect("enrollment.course", "eCourse");
+
+      if (role === "learner") {
+        query.where("complaint.studentId = :userId", { userId });
+      } else if (role === "tutor") {
+        query.where("(course.ownerId = :userId OR enrollment.teacherId = :userId OR eCourse.ownerId = :userId)", { userId });
+      } else {
+        query.where(
+          "(complaint.studentId = :userId OR course.ownerId = :userId OR enrollment.teacherId = :userId OR eCourse.ownerId = :userId)",
+          { userId }
+        );
+      }
+
+      if (status) {
+        query.andWhere("complaint.status = :status", { status });
+      }
+
+      const [data, total] = await query
+        .orderBy("complaint.createdAt", "DESC")
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { data, total };
+    } catch (error) {
+      logger.error({ err: error, userId, filters }, "getComplaints failed");
+      throw new Error("Error fetching complaints list");
+    }
+  }
+
   async getComplaintsByStudentId(studentId: string): Promise<ComplaintModel[]> {
     try {
       return await this.complaintRepo.find({
         where: {
           studentId: studentId,
         },
+        relations: ["session", "session.course", "enrollment", "enrollment.course"],
         cache: {
           id: `student-complaints-${studentId}`,
           milliseconds: 300000, // 5 minutes
@@ -285,8 +362,7 @@ export class FeedbackService {
       logger.error({ err: error, teacherId }, "getAllReviewsByTeacherId failed");
       // Preserve error context
       throw new Error(
-        `Error fetching reviews for teacher ${teacherId}: ${
-          error instanceof Error ? error.message : error
+        `Error fetching reviews for teacher ${teacherId}: ${error instanceof Error ? error.message : error
         }`
       );
     }
@@ -342,6 +418,118 @@ export class FeedbackService {
     } catch (error) {
       logger.error({ err: error, id }, "getRefundComplaintById failed");
       throw new Error("Error fetching complaint by ID");
+    }
+  }
+
+  async getTutorIssueStats(tutorId: string) {
+    try {
+      const stats = await this.complaintRepo
+        .createQueryBuilder("complaint")
+        .leftJoin("complaint.session", "session")
+        .leftJoin("session.course", "course")
+        .leftJoin("complaint.enrollment", "enrollment")
+        .select("complaint.status", "status")
+        .addSelect("COUNT(*)", "count")
+        .where("course.ownerId = :tutorId OR enrollment.teacherId = :tutorId", { tutorId })
+        .groupBy("complaint.status")
+        .getRawMany();
+
+      const result = {
+        total: 0,
+        inProgress: 0,
+        escalated: 0,
+        resolved: 0,
+        closed: 0,
+      };
+
+      stats.forEach((s: { status: string; count: string }) => {
+        const count = parseInt(s.count);
+        result.total += count;
+        if (s.status === "pending") result.inProgress += count;
+        else if (s.status === "escalated") result.escalated += count;
+        else if (s.status === "resolved") result.resolved += count;
+        else if (s.status === "closed") result.closed += count;
+      });
+
+      return result;
+    } catch (error) {
+      logger.error({ err: error, tutorId }, "getTutorIssueStats failed");
+      throw new Error("Error calculating tutor issue statistics");
+    }
+  }
+
+  async getAdminDisputeStats() {
+    try {
+      // Calculate actionRequired (escalated), autoEscalated, resolvedCases, totalRefunded
+      // This is dynamic, so we perform counts.
+      const stats = await this.complaintRepo
+        .createQueryBuilder("complaint")
+        .select("complaint.status", "status")
+        .addSelect("COUNT(*)", "count")
+        .addSelect("SUM(CASE WHEN complaint.refund_status = 'completed' THEN complaint.amount ELSE 0 END)", "totalRefunded")
+        .groupBy("complaint.status")
+        .getRawMany();
+
+      const result = {
+        actionRequired: 0,
+        autoEscalated: 0,
+        resolvedCases: 0,
+        resolutionRate: 0,
+        avgResolutionTimeHours: 24, // Placeholder or calculate from timeline
+        totalRefunded: 0,
+      };
+
+      let totalCases = 0;
+      stats.forEach((s: { status: string; count: string; totalRefunded: string }) => {
+        const count = parseInt(s.count);
+        totalCases += count;
+        result.totalRefunded += parseFloat(s.totalRefunded || "0");
+
+        if (s.status === "escalated") result.actionRequired += count;
+        if (s.status === "resolved") result.resolvedCases += count;
+      });
+
+      if (totalCases > 0) {
+        result.resolutionRate = Math.round((result.resolvedCases / totalCases) * 100);
+      }
+
+      // autoEscalated: check timeline for actor === 'SYSTEM' and action === 'ESCALATED'
+      const autoEscalatedCount = await this.complaintRepo
+        .createQueryBuilder("complaint")
+        .where("complaint.timeline::text LIKE :pattern", { pattern: '%"actor":"SYSTEM","action":"ESCALATED"%' })
+        .getCount();
+      result.autoEscalated = autoEscalatedCount;
+
+      return result;
+    } catch (error) {
+      logger.error({ err: error }, "getAdminDisputeStats failed");
+      throw new Error("Error calculating admin dispute statistics");
+    }
+  }
+
+  async getAdminDisputes(filters: { status?: string; service?: string; reporter?: string; page?: number; limit?: number }) {
+    try {
+      const { status, page = 1, limit = 10 } = filters;
+      const query = this.complaintRepo
+        .createQueryBuilder("complaint")
+        .leftJoinAndSelect("complaint.session", "session")
+        .leftJoinAndSelect("session.course", "course")
+        .leftJoinAndSelect("complaint.enrollment", "enrollment")
+        .leftJoinAndSelect("enrollment.course", "eCourse");
+
+      if (status) query.andWhere("complaint.status = :status", { status });
+      // Filter by service name or reporter name would require joining with user names or searching course titles
+      // For now, simple status filtering.
+
+      const [data, total] = await query
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { data, total };
+    } catch (error) {
+      logger.error({ err: error, filters }, "getAdminDisputes failed");
+      throw new Error("Error fetching admin disputes");
     }
   }
 }

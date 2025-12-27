@@ -74,6 +74,8 @@ export class EnrollmentController {
         studentId: studentId,
         course: course,
         type: "course",
+        amount: course.price || 0,
+        currency: "DZD",
       };
 
       // Extract fcmToken before creating enrollment
@@ -165,12 +167,17 @@ export class EnrollmentController {
         // Don't fail enrollment creation if chat group creation fails
       }
 
+      const userTopic = await LruInMemoryCache.getUserTopic(topicId);
+      const amount = (userTopic?.price || 0) * sessionsNumber;
+
       const enrollmentBody = {
         studentId: ownerId,
         teacherId: teacherId,
         sessions: sessions,
         type: "one-on-one",
         groupId: groupId, // Include groupId in enrollment body
+        amount: amount,
+        currency: "DZD",
       } as any;
       const enrollment = await this.enrollmentService.createEnrollment(enrollmentBody);
 

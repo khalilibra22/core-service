@@ -4,12 +4,14 @@ import {
   DeleteDateColumn,
   Entity,
   Index,
+  JoinColumn, // Added JoinColumn import
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
 import { SessionModel } from "./session.model";
 import { EnrollmentModel } from "./enrollment.model";
+import { CourseModel } from "./course.model"; // Added CourseModel import
 
 @Entity("complaints")
 @Index("IDX_complaints_student_id", ["studentId"])
@@ -28,10 +30,27 @@ export class ComplaintModel {
   @Column({ name: "student_id" })
   studentId?: string;
 
-  @Column({ name: "complaint_type", default: "general" })
-  type?: string; // Type of complaint (e.g., general, technical, content-related, etc.)
+  @Column({ name: "reference_id", nullable: true })
+  referenceId?: string; // General reference (Order ID, Transaction ID, etc.)
 
-  @Column({ name: "reason" })
+  @Column({
+    name: "complaint_type",
+    type: "enum",
+    enum: [
+      "general",
+      "technical",
+      "content-related",
+      "LATE_START",
+      "NO_SHOW",
+      "TECHNICAL_ISSUE",
+      "TEACHING_QUALITY",
+      "REFUND_REQUEST",
+    ],
+    default: "general",
+  })
+  type?: string; // Type of complaint
+
+  @Column({ name: "reason", nullable: true })
   reason?: string;
 
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
@@ -50,8 +69,58 @@ export class ComplaintModel {
   adminResponse?: string;
 
   // --- Complaint status workflow ---
-  @Column({ default: "pending" })
-  status?: "pending" | "responded" | "resolved" | "escalated";
+  @Column({
+    type: "enum",
+    enum: [
+      "pending",
+      "responded",
+      "resolved",
+      "escalated",
+      "closed",
+      "pending_learner",
+      "rejected",
+    ],
+    default: "pending",
+  })
+  status?:
+    | "pending"
+    | "responded"
+    | "resolved"
+    | "escalated"
+    | "closed"
+    | "pending_learner"
+    | "rejected";
+
+  @Column({ name: "description", type: "text", nullable: true })
+  description?: string;
+
+  @Column({ name: "attachments", type: "json", nullable: true })
+  attachments?: string[];
+
+  @Column({ name: "deadline", type: "timestamp", nullable: true })
+  deadline?: Date;
+
+  @Column({ name: "auto_escalate_at", type: "timestamp", nullable: true })
+  autoEscalateAt?: Date;
+
+  @Column({ name: "timeline", type: "json", nullable: true })
+  timeline?: any[];
+
+  @Column({
+    name: "refund_option",
+    type: "enum",
+    enum: ["refund_100", "refund_50", "refund_0"],
+    nullable: true,
+  })
+  refundOption?: "refund_100" | "refund_50" | "refund_0";
+
+  @Column({
+    name: "refund_status",
+    type: "enum",
+    enum: ["not_applicable", "pending", "completed", "failed"],
+    default: "not_applicable",
+  })
+  refundStatus?: "not_applicable" | "pending" | "completed" | "failed";
 
   @Column({ name: "resolved_by", nullable: true })
   resolvedBy?: string; // ID of user who resolved the complaint (e.g., admin or support staff)
@@ -61,6 +130,10 @@ export class ComplaintModel {
 
   @ManyToOne(() => EnrollmentModel, (enrollment) => enrollment.refunds)
   enrollment?: EnrollmentModel;
+
+  @ManyToOne(() => CourseModel)
+  @JoinColumn({ name: "course_id" })
+  course?: CourseModel;
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;
