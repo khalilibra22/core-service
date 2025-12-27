@@ -282,7 +282,7 @@ export class FeedbackController {
         // Process refund logic
         if (complaint.refundOption && complaint.refundOption !== "refund_0") {
           let refundAmount = 0;
-          const sessionPrice = complaint.session?.course?.price || complaint.enrollment?.course?.price || complaint.amount || 0;
+          const sessionPrice = complaint.enrollment?.amount || complaint.session?.course?.price || complaint.enrollment?.course?.price || complaint.amount || 0;
           if (complaint.refundOption === "refund_100") refundAmount = Number(sessionPrice);
           else if (complaint.refundOption === "refund_50") refundAmount = Number(sessionPrice) / 2;
 
@@ -447,7 +447,7 @@ export class FeedbackController {
       complaint.resolvedBy = req.body.ownerId;
 
       if (req.body.decision === "REFUND") {
-        complaint.amount = req.body.refundAmount;
+        complaint.amount = req.body.refundAmount ?? complaint.enrollment?.amount ?? 0;
         complaint.refundStatus = "pending";
         // Logic to trigger real refund via PaymentService would go here
       }
