@@ -65,7 +65,7 @@ export class ComplaintDto {
     return {
       id: obj.studentId,
       name: user?.fullname,
-      avatar: user?.avatar,
+      avatar: user?.profilePicture,
     };
   })
   learner?: UserMiniDto;
@@ -78,7 +78,7 @@ export class ComplaintDto {
     return {
       id: tutorId,
       name: user?.fullname,
-      avatar: user?.avatar,
+      avatar: user?.profilePicture,
     };
   })
   tutor?: UserMiniDto;
