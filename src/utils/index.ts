@@ -167,11 +167,16 @@ export async function enrichDto<T>(
     const topicIdFields = options?.topicIdFields ?? ['topicId'];
     const subjectIdFields = options?.subjectIdFields ?? ['subjectId'];
 
+    // Helper to get value from nested path
+    const getNestedValue = (obj: any, path: string) => {
+      return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+    };
+
     // Collect unique user IDs
     const userIds = Array.from(
       new Set(
         list.flatMap(item =>
-          userIdFields.map(field => item?.[field]).filter(Boolean) as string[]
+          userIdFields.map(field => getNestedValue(item, field)).filter(Boolean) as string[]
         )
       )
     );
@@ -180,7 +185,7 @@ export async function enrichDto<T>(
     const topicIds = Array.from(
       new Set(
         list.flatMap(item =>
-          topicIdFields.map(field => item?.[field]).filter(Boolean) as number[]
+          topicIdFields.map(field => getNestedValue(item, field)).filter(Boolean) as number[]
         )
       )
     );
@@ -189,7 +194,7 @@ export async function enrichDto<T>(
     const subjectIds = Array.from(
       new Set(
         list.flatMap(item =>
-          subjectIdFields.map(field => item?.[field]).filter(Boolean) as number[]
+          subjectIdFields.map(field => getNestedValue(item, field)).filter(Boolean) as number[]
         )
       )
     );

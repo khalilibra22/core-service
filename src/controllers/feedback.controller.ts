@@ -203,7 +203,13 @@ export class FeedbackController {
       const updatedComplaint = await this.feedbackService.updateComplaint(
         complaint
       );
-      const complaintDto = await enrichDto<ComplaintDto>(ComplaintDto, updatedComplaint);
+      const userIdFields = [
+        'studentId',
+        'session.course.ownerId',
+        'enrollment.teacherId',
+        'enrollment.course.ownerId'
+      ];
+      const complaintDto = await enrichDto<ComplaintDto>(ComplaintDto, updatedComplaint, { userIdFields });
       res.status(200).json(complaintDto);
     } catch (error) {
       req.log.error({ err: error, complaintId: req.params.id }, "addComplaintInitialResponse failed");
@@ -241,7 +247,13 @@ export class FeedbackController {
       const updatedComplaint = await this.feedbackService.updateComplaint(
         complaintBody
       );
-      const complaintDto = await enrichDto<ComplaintDto>(ComplaintDto, updatedComplaint);
+      const userIdFields = [
+        'studentId',
+        'session.course.ownerId',
+        'enrollment.teacherId',
+        'enrollment.course.ownerId'
+      ];
+      const complaintDto = await enrichDto<ComplaintDto>(ComplaintDto, updatedComplaint, { userIdFields });
       res.status(200).json(complaintDto);
     } catch (error) {
       req.log.error({ err: error, complaintId: req.params.id }, "complaintAdminResolve failed");
@@ -273,10 +285,12 @@ export class FeedbackController {
 
       if (studentDecision === "accepted") {
         complaint.status = "resolved";
-        await this.feedbackService.addTimelineEvent(complaint.id!, {
+        if (!complaint.timeline) complaint.timeline = [];
+        complaint.timeline.push({
           action: "LEARNER_DECISION",
           actor: "LEARNER",
           message: "Solution accepted",
+          at: new Date().toISOString(),
         });
 
         // Process refund logic
@@ -295,16 +309,17 @@ export class FeedbackController {
         }
       } else {
         complaint.status = "escalated";
-        await this.feedbackService.addTimelineEvent(complaint.id!, {
+        if (!complaint.timeline) complaint.timeline = [];
+        complaint.timeline.push({
           action: "LEARNER_DECISION",
           actor: "LEARNER",
           message: reason || "Solution rejected, escalating to admin",
+          at: new Date().toISOString(),
         });
       }
 
       const updatedComplaint = await this.feedbackService.updateComplaint(complaint);
       res.status(200).json({
-        success: true,
         message: studentDecision === "accepted" ? "Solution accepted" : "Complaint escalated",
         data: {
           id: updatedComplaint?.id,
@@ -329,7 +344,14 @@ export class FeedbackController {
       const userId = req.body.ownerId;
       const { data: complaints, total } = await this.feedbackService.getComplaints(userId, filters);
 
-      const complaintDtos = await enrichDto<ComplaintListDto[]>(ComplaintListDto, complaints);
+      const userIdFields = [
+        'studentId',
+        'session.course.ownerId',
+        'enrollment.teacherId',
+        'enrollment.course.ownerId'
+      ];
+
+      const complaintDtos = await enrichDto<ComplaintListDto[]>(ComplaintListDto, complaints, { userIdFields });
       setPaginationHeaders(res, total, filters.page, filters.limit);
 
       res.status(200).json(complaintDtos);
@@ -354,7 +376,13 @@ export class FeedbackController {
         return;
       }
 
-      const complaintDto = await enrichDto<ComplaintDto>(ComplaintDto, complaint);
+      const userIdFields = [
+        'studentId',
+        'session.course.ownerId',
+        'enrollment.teacherId',
+        'enrollment.course.ownerId'
+      ];
+      const complaintDto = await enrichDto<ComplaintDto>(ComplaintDto, complaint, { userIdFields });
       res.status(200).json(complaintDto);
     } catch (error) {
       req.log.error({ err: error, id: req.params.id }, "getComplaintDetail failed");
@@ -385,15 +413,16 @@ export class FeedbackController {
       complaintById.refundOption = req.body.proposedRefund ? `refund_${req.body.proposedRefund}` as any : req.body.refundOption;
       complaintById.status = "pending_learner";
 
-      await this.feedbackService.addTimelineEvent(complaintById.id!, {
+      if (!complaintById.timeline) complaintById.timeline = [];
+      complaintById.timeline.push({
         action: "TUTOR_REPLY",
         actor: "TUTOR",
         message: req.body.message,
+        at: new Date().toISOString(),
       });
 
       const updatedComplaint = await this.feedbackService.updateComplaint(complaintById);
       res.status(200).json({
-        success: true,
         message: "Response sent successfully",
         data: {
           id: updatedComplaint?.id,
@@ -452,10 +481,12 @@ export class FeedbackController {
         // Logic to trigger real refund via PaymentService would go here
       }
 
-      await this.feedbackService.addTimelineEvent(complaintId, {
+      if (!complaint.timeline) complaint.timeline = [];
+      complaint.timeline.push({
         action: "ADMIN_DECISION",
         actor: "ADMIN",
         message: req.body.note || `Decision: ${req.body.decision}`,
+        at: new Date().toISOString(),
       });
 
       const updatedComplaint = await this.feedbackService.updateComplaint(complaint);
