@@ -207,7 +207,8 @@ export class FeedbackController {
         'studentId',
         'session.course.ownerId',
         'enrollment.teacherId',
-        'enrollment.course.ownerId'
+        'enrollment.course.ownerId',
+        'course.ownerId'
       ];
       const complaintDto = await enrichDto<ComplaintDto>(ComplaintDto, updatedComplaint, { userIdFields });
       res.status(200).json(complaintDto);
@@ -251,7 +252,8 @@ export class FeedbackController {
         'studentId',
         'session.course.ownerId',
         'enrollment.teacherId',
-        'enrollment.course.ownerId'
+        'enrollment.course.ownerId',
+        'course.ownerId'
       ];
       const complaintDto = await enrichDto<ComplaintDto>(ComplaintDto, updatedComplaint, { userIdFields });
       res.status(200).json(complaintDto);
@@ -348,7 +350,8 @@ export class FeedbackController {
         'studentId',
         'session.course.ownerId',
         'enrollment.teacherId',
-        'enrollment.course.ownerId'
+        'enrollment.course.ownerId',
+        'course.ownerId'
       ];
 
       const complaintDtos = await enrichDto<ComplaintListDto[]>(ComplaintListDto, complaints, { userIdFields });
@@ -380,7 +383,8 @@ export class FeedbackController {
         'studentId',
         'session.course.ownerId',
         'enrollment.teacherId',
-        'enrollment.course.ownerId'
+        'enrollment.course.ownerId',
+        'course.ownerId'
       ];
       const complaintDto = await enrichDto<ComplaintDto>(ComplaintDto, complaint, { userIdFields });
       res.status(200).json(complaintDto);

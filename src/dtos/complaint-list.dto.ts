@@ -21,17 +21,17 @@ export class ComplaintListDto {
     learnerId?: string;
 
     @Expose({ name: "learner_name" })
-    @Transform(({ obj, options }) => options?.context?.userById?.[obj?.studentId]?.fullname)
+    @Transform(({ obj, options }) => options?.context?.userById?.[obj?.studentId]?.fullname || "Unknown Learner")
     learnerName?: string;
 
     @Expose({ name: "tutor_id" })
-    @Transform(({ obj }) => obj.session?.course?.ownerId || obj.enrollment?.teacherId || obj.enrollment?.course?.ownerId)
+    @Transform(({ obj }) => obj.session?.course?.ownerId || obj.enrollment?.teacherId || obj.enrollment?.course?.ownerId || obj.course?.ownerId)
     tutorId?: string;
 
     @Expose({ name: "tutor_name" })
     @Transform(({ obj, options }) => {
-        const tutorId = obj.session?.course?.ownerId || obj.enrollment?.teacherId || obj.enrollment?.course?.ownerId;
-        return options?.context?.userById?.[tutorId]?.fullname;
+        const tutorId = obj.session?.course?.ownerId || obj.enrollment?.teacherId || obj.enrollment?.course?.ownerId || obj.course?.ownerId;
+        return options?.context?.userById?.[tutorId]?.fullname || "Unknown Tutor";
     })
     tutorName?: string;
 
