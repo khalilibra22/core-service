@@ -559,6 +559,7 @@ export class CourseService {
             teacherId: teacherId,
           },
         },
+        relations: ["materialLinks", "materialLinks.material"],
         cache: {
           id: `teacher-one-on-one-sessions-${teacherId}`,
           milliseconds: 300000, // 5 minutes
@@ -579,6 +580,7 @@ export class CourseService {
             id: enrollmentId,
           },
         },
+        relations: ["materialLinks", "materialLinks.material"],
         cache: {
           id: `enrollment-sessions-${enrollmentId}`,
           milliseconds: 300000, // 5 minutes
@@ -711,6 +713,54 @@ export class CourseService {
     }
   }
 
+  async addMaterialsToSession(
+    sessionId: string,
+    materialIds: string[]
+  ): Promise<void> {
+    try {
+      if (!materialIds?.length) return;
+
+      await this.materialLinkRepo
+        .createQueryBuilder()
+        .insert()
+        .into(MaterialLinkModel)
+        .values(
+          materialIds.map((materialId) => ({
+            session: { id: sessionId },
+            material: { id: materialId },
+          }))
+        )
+        .orIgnore()
+        .execute();
+    } catch (error: any) {
+      throw new Error("Error adding materials to session: " + error.message);
+    }
+  }
+
+  async addMaterialsToEnrollment(
+    enrollmentId: string,
+    materialIds: string[]
+  ): Promise<void> {
+    try {
+      if (!materialIds?.length) return;
+
+      await this.materialLinkRepo
+        .createQueryBuilder()
+        .insert()
+        .into(MaterialLinkModel)
+        .values(
+          materialIds.map((materialId) => ({
+            enrollment: { id: enrollmentId },
+            material: { id: materialId },
+          }))
+        )
+        .orIgnore()
+        .execute();
+    } catch (error: any) {
+      throw new Error("Error adding materials to enrollment: " + error.message);
+    }
+  }
+
   //removeMaterialsFromLesson(lessonId, materialIds)
   async removeMaterialsFromLesson(lessonId: string, materialIds: string[]): Promise<void> {
     try {
@@ -734,7 +784,6 @@ export class CourseService {
   // Update lesson materials (replaces all materials)
   async updateLessonMaterials(lessonId: string, materialIds: string[]): Promise<void> {
     try {
-      // Efficient set-based approach: single lightweight query for current IDs
       const rows = await this.materialLinkRepo
         .createQueryBuilder("ml")
         .select("ml.materialId", "materialId")
@@ -745,11 +794,9 @@ export class CourseService {
       const current = new Set<string>(rows.map((r: any) => r.materialId as string));
       const desired = new Set<string>(materialIds ?? []);
 
-      // Compute diff in memory
       const toRemove = Array.from(current).filter((id) => !desired.has(id));
       const toAdd = Array.from(desired).filter((id) => !current.has(id));
 
-      // Bulk soft-delete removals
       if (toRemove.length > 0) {
         await this.materialLinkRepo
           .createQueryBuilder()
@@ -760,7 +807,6 @@ export class CourseService {
           .execute();
       }
 
-      // Bulk insert additions with orIgnore
       if (toAdd.length > 0) {
         await this.materialLinkRepo
           .createQueryBuilder()
@@ -777,6 +823,94 @@ export class CourseService {
       }
     } catch (error: any) {
       throw new Error("Error updating lesson materials: " + error.message);
+    }
+  }
+
+  async updateSessionMaterials(sessionId: string, materialIds: string[]): Promise<void> {
+    try {
+      const rows = await this.materialLinkRepo
+        .createQueryBuilder("ml")
+        .select("ml.materialId", "materialId")
+        .where("ml.sessionId = :sessionId", { sessionId })
+        .andWhere("ml.deleted_at IS NULL")
+        .getRawMany();
+
+      const current = new Set<string>(rows.map((r: any) => r.materialId as string));
+      const desired = new Set<string>(materialIds ?? []);
+
+      const toRemove = Array.from(current).filter((id) => !desired.has(id));
+      const toAdd = Array.from(desired).filter((id) => !current.has(id));
+
+      if (toRemove.length > 0) {
+        await this.materialLinkRepo
+          .createQueryBuilder()
+          .softDelete()
+          .where("sessionId = :sessionId", { sessionId })
+          .andWhere("materialId IN (:...ids)", { ids: toRemove })
+          .andWhere("deleted_at IS NULL")
+          .execute();
+      }
+
+      if (toAdd.length > 0) {
+        await this.materialLinkRepo
+          .createQueryBuilder()
+          .insert()
+          .into(MaterialLinkModel)
+          .values(
+            toAdd.map((materialId) => ({
+              session: { id: sessionId },
+              material: { id: materialId },
+            }))
+          )
+          .orIgnore()
+          .execute();
+      }
+    } catch (error: any) {
+      throw new Error("Error updating session materials: " + error.message);
+    }
+  }
+
+  async updateEnrollmentMaterials(enrollmentId: string, materialIds: string[]): Promise<void> {
+    try {
+      const rows = await this.materialLinkRepo
+        .createQueryBuilder("ml")
+        .select("ml.materialId", "materialId")
+        .where("ml.enrollmentId = :enrollmentId", { enrollmentId })
+        .andWhere("ml.deleted_at IS NULL")
+        .getRawMany();
+
+      const current = new Set<string>(rows.map((r: any) => r.materialId as string));
+      const desired = new Set<string>(materialIds ?? []);
+
+      const toRemove = Array.from(current).filter((id) => !desired.has(id));
+      const toAdd = Array.from(desired).filter((id) => !current.has(id));
+
+      if (toRemove.length > 0) {
+        await this.materialLinkRepo
+          .createQueryBuilder()
+          .softDelete()
+          .where("enrollmentId = :enrollmentId", { enrollmentId })
+          .andWhere("materialId IN (:...ids)", { ids: toRemove })
+          .andWhere("deleted_at IS NULL")
+          .execute();
+      }
+
+      if (toAdd.length > 0) {
+        await this.materialLinkRepo
+          .createQueryBuilder()
+          .insert()
+          .into(MaterialLinkModel)
+          .values(
+            toAdd.map((materialId) => ({
+              enrollment: { id: enrollmentId },
+              material: { id: materialId },
+            }))
+          )
+          .orIgnore()
+          .execute();
+      }
+    } catch (error: any) {
+      throw new Error("Error updating enrollment materials: " + error.message);
     }
   }
   //removeMaterialsFromCourse(courseId, materialIds); soft delete the material links by updating deletedAt in a single query

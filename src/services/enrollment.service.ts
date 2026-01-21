@@ -61,7 +61,7 @@ export class EnrollmentService {
           teacherId: teacherId,
           type: "one-on-one",
         },
-        relations: ["sessions"],
+        relations: ["sessions", "materialLinks", "materialLinks.material"],
         cache: {
           id: `teacher-one-on-one-enrollments-${teacherId}`,
           milliseconds: 300000, // 5 minutes
@@ -133,7 +133,7 @@ export class EnrollmentService {
     try {
       return await this.enrollmentRepo.find({
         where: { studentId: studentId, type: "one-on-one" },
-        relations: ["sessions"],
+        relations: ["sessions", "materialLinks", "materialLinks.material"],
         order: { createdAt: "DESC" },
         cache: {
           id: `student-one-on-one-enrollments-${studentId}`,

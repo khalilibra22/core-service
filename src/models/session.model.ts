@@ -15,6 +15,7 @@ import { ComplaintModel } from "./complaint.model";
 import { LessonModel } from "./lesson.model";
 import { QuizModel } from "./quiz.model";
 import { EnrollmentModel } from "./enrollment.model";
+import { MaterialLinkModel } from "./material-link.model";
 
 @Entity("sessions")
 @Index("IDX_sessions_date", ["date"])
@@ -82,6 +83,11 @@ export class SessionModel {
 
   @OneToMany(() => QuizModel, (quiz) => quiz.session)
   quizzes?: QuizModel[]; // for prerecorded sessions
+
+  @OneToMany(() => MaterialLinkModel, (link) => link.session, {
+    cascade: true,
+  })
+  materialLinks?: MaterialLinkModel[];
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;

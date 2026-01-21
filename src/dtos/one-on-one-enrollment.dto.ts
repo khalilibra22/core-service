@@ -1,4 +1,5 @@
-import { Expose, Transform } from "class-transformer";
+import { Expose, Transform, Type } from "class-transformer";
+import { MaterialDto } from "./material.dto";
 
 export class OneOnOneEnollmentDto {
   @Expose()
@@ -65,5 +66,11 @@ export class OneOnOneEnollmentDto {
   enrollmentDate?: Date;
 
   @Expose()
+  @Expose()
   groupId?: string;
+
+  @Expose()
+  @Type(() => MaterialDto)
+  @Transform(({ obj }) => obj.materialLinks)
+  materials?: MaterialDto[];
 }

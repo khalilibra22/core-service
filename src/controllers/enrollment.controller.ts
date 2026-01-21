@@ -518,7 +518,7 @@ export class EnrollmentController {
       ) {
         res
           .status(403)
-          .json({ error: "You are not authorized to cancel this enrollment" });
+          .json({ error: "You are not authorized to view sessions for this enrollment" });
         return;
       }
       const sessions =
@@ -531,6 +531,90 @@ export class EnrollmentController {
       res.status(200).json(sessionDtos);
     } catch (error) {
       req.log.error({ err: error, enrollmentId: req.params.id }, "getOneOnOneEnrollmentSessions failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  addMaterialsToOneOnOneEnrollment = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const enrollmentId = req.params.id;
+      const { materialIds } = req.body;
+      const enrollment = await this.enrollmentService.getEnrollmentById(enrollmentId);
+      if (!enrollment) {
+        res.status(404).json({ error: "Enrollment not found" });
+        return;
+      }
+      if (enrollment.teacherId !== req.body.ownerId) {
+        res.status(403).json({ error: "Only the teacher can add materials" });
+        return;
+      }
+      await this.courseService.addMaterialsToEnrollment(enrollmentId, materialIds);
+      res.status(200).json({ message: "Materials added to enrollment successfully" });
+    } catch (error: any) {
+      req.log.error({ err: error, enrollmentId: req.params.id }, "addMaterialsToOneOnOneEnrollment failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  updateEnrollmentMaterials = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const enrollmentId = req.params.id;
+      const { materialIds } = req.body;
+      const enrollment = await this.enrollmentService.getEnrollmentById(enrollmentId);
+      if (!enrollment) {
+        res.status(404).json({ error: "Enrollment not found" });
+        return;
+      }
+      if (enrollment.teacherId !== req.body.ownerId) {
+        res.status(403).json({ error: "Only the teacher can update materials" });
+        return;
+      }
+      await this.courseService.updateEnrollmentMaterials(enrollmentId, materialIds);
+      res.status(200).json({ message: "Enrollment materials updated successfully" });
+    } catch (error: any) {
+      req.log.error({ err: error, enrollmentId: req.params.id }, "updateEnrollmentMaterials failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  addMaterialsToSession = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const sessionId = req.params.sessionId;
+      const { materialIds } = req.body;
+      const session = await this.courseService.getSessionById(sessionId);
+      if (!session) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+      if (session.enrollment?.teacherId !== req.body.ownerId) {
+        res.status(403).json({ error: "Only the teacher can add materials" });
+        return;
+      }
+      await this.courseService.addMaterialsToSession(sessionId, materialIds);
+      res.status(200).json({ message: "Materials added to session successfully" });
+    } catch (error: any) {
+      req.log.error({ err: error, sessionId: req.params.sessionId }, "addMaterialsToSession failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  updateSessionMaterials = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const sessionId = req.params.sessionId;
+      const { materialIds } = req.body;
+      const session = await this.courseService.getSessionById(sessionId);
+      if (!session) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+      if (session.enrollment?.teacherId !== req.body.ownerId) {
+        res.status(403).json({ error: "Only the teacher can update materials" });
+        return;
+      }
+      await this.courseService.updateSessionMaterials(sessionId, materialIds);
+      res.status(200).json({ message: "Session materials updated successfully" });
+    } catch (error: any) {
+      req.log.error({ err: error, sessionId: req.params.sessionId }, "updateSessionMaterials failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
