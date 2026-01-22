@@ -25,6 +25,9 @@ export class SessionTimeChangeRequestModel {
   @Column({ type: "timestamp", nullable: true })
   requestedTime?: Date;
 
+  @Column({ nullable: true })
+  availabilityId?: string;
+
   @Column({ default: "pending" })
   status?: string; // Status of the request (e.g., pending, approved, rejected)
 

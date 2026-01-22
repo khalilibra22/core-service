@@ -1,4 +1,5 @@
-import { Expose, Transform } from "class-transformer";
+import { Expose, Transform, Type } from "class-transformer";
+import { MaterialDto } from "./material.dto";
 
 export class SessionDto {
   @Expose()
@@ -33,7 +34,14 @@ export class SessionDto {
   @Expose()
   status?: string;
 
+  @Expose()
   url?: string;
 
+  @Expose()
   videoUrl?: string;
+
+  @Expose()
+  @Type(() => MaterialDto)
+  @Transform(({ obj }) => obj.materialLinks)
+  materials?: MaterialDto[];
 }

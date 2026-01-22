@@ -64,7 +64,7 @@ export class ComplaintDto {
     const user = options?.context?.userById?.[obj?.studentId];
     return {
       id: obj.studentId,
-      name: user?.fullname,
+      name: user?.fullname || "Unknown Learner",
       avatar: user?.profilePicture,
     };
   })
@@ -73,11 +73,11 @@ export class ComplaintDto {
   @Expose()
   @Type(() => UserMiniDto)
   @Transform(({ obj, options }) => {
-    const tutorId = obj.session?.course?.ownerId || obj.enrollment?.teacherId;
+    const tutorId = obj.session?.course?.ownerId || obj.enrollment?.teacherId || obj.enrollment?.course?.ownerId || obj.course?.ownerId;
     const user = options?.context?.userById?.[tutorId];
     return {
       id: tutorId,
-      name: user?.fullname,
+      name: user?.fullname || "Unknown Tutor",
       avatar: user?.profilePicture,
     };
   })

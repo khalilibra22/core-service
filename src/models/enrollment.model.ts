@@ -12,6 +12,7 @@ import {
 import { CourseModel } from "./course.model";
 import { ComplaintModel } from "./complaint.model";
 import { SessionModel } from "./session.model";
+import { MaterialLinkModel } from "./material-link.model";
 
 @Entity("enrollments")
 @Index("IDX_enrollments_student_id", ["studentId"])
@@ -70,6 +71,11 @@ export class EnrollmentModel {
 
   @OneToMany(() => ComplaintModel, (refund) => refund.enrollment)
   refunds?: ComplaintModel[];
+
+  @OneToMany(() => MaterialLinkModel, (link) => link.enrollment, {
+    cascade: true,
+  })
+  materialLinks?: MaterialLinkModel[];
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt?: Date;

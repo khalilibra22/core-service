@@ -11,14 +11,26 @@ import {
 import { MaterialModel } from "./material.model";
 import { CourseModel } from "./course.model";
 import { LessonModel } from "./lesson.model";
+import { SessionModel } from "./session.model";
+import { EnrollmentModel } from "./enrollment.model";
 
 @Index("IDX_material_links_course_active", ["course"], { where: "deleted_at IS NULL" })
 @Index("IDX_material_links_lesson_active", ["lesson"], { where: "deleted_at IS NULL" })
+@Index("IDX_material_links_session_active", ["session"], { where: "deleted_at IS NULL" })
+@Index("IDX_material_links_enrollment_active", ["enrollment"], { where: "deleted_at IS NULL" })
 @Index("UQ_material_links_course_material_active", ["course", "material"], {
   unique: true,
   where: "deleted_at IS NULL",
 })
 @Index("UQ_material_links_lesson_material_active", ["lesson", "material"], {
+  unique: true,
+  where: "deleted_at IS NULL",
+})
+@Index("UQ_material_links_session_material_active", ["session", "material"], {
+  unique: true,
+  where: "deleted_at IS NULL",
+})
+@Index("UQ_material_links_enrollment_material_active", ["enrollment", "material"], {
   unique: true,
   where: "deleted_at IS NULL",
 })
@@ -53,6 +65,18 @@ export class MaterialLinkModel {
     onDelete: "CASCADE",
   })
   lesson?: LessonModel;
+
+  @ManyToOne(() => SessionModel, {
+    nullable: true,
+    onDelete: "CASCADE",
+  })
+  session?: SessionModel;
+
+  @ManyToOne(() => EnrollmentModel, {
+    nullable: true,
+    onDelete: "CASCADE",
+  })
+  enrollment?: EnrollmentModel;
 
   @CreateDateColumn({ name: "created_at", type: "timestamp" })
   createdAt?: Date;

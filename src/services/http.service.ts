@@ -170,8 +170,11 @@ export class HttpService implements ExternalService {
             name: payload?.name?.trim(),
             groupType: payload?.type,
             userId: payload?.ownerId?.trim(),
-            profilePicture: payload?.profilePicture,
         };
+
+        if (payload?.profilePicture) {
+            safePayload.profilePicture = payload.profilePicture;
+        }
 
         // Add members array if provided and valid
         if (payload?.members && Array.isArray(payload.members) && payload.members.length > 0) {

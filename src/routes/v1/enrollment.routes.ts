@@ -71,6 +71,34 @@ router.get(
 );
 
 router.post(
+  "/one-on-one/:id/materials",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("enrollments", "manage_enrollments"),
+  enrollmentController.addMaterialsToOneOnOneEnrollment
+);
+
+router.put(
+  "/one-on-one/:id/materials",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("enrollments", "manage_enrollments"),
+  enrollmentController.updateEnrollmentMaterials
+);
+
+router.post(
+  "/one-on-one/:id/sessions/:sessionId/materials",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("enrollments", "manage_enrollments"),
+  enrollmentController.addMaterialsToSession
+);
+
+router.put(
+  "/one-on-one/:id/sessions/:sessionId/materials",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("enrollments", "manage_enrollments"),
+  enrollmentController.updateSessionMaterials
+);
+
+router.post(
   "/:id/refunds",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("complaints", "complain"),
