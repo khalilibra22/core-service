@@ -66,7 +66,6 @@ export class OneOnOneEnollmentDto {
   enrollmentDate?: Date;
 
   @Expose()
-  @Expose()
   groupId?: string;
 
   @Expose()

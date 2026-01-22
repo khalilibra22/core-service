@@ -150,8 +150,13 @@ export class EnrollmentController {
       // Create chat group for one-on-one enrollment before creating enrollment
       let groupId: string | null = null;
       try {
+        const student = await LruInMemoryCache.getUserDetails(ownerId);
+        const teacher = await LruInMemoryCache.getUserDetails(teacherId);
+        const studentName = student?.fullname || ownerId;
+        const teacherName = teacher?.fullname || teacherId;
+
         groupId = await this.externalService.createChatGroup({
-          name: `One-on-One - ${ownerId}-${teacherId}`,
+          name: `1 on 1 with ${teacherName} & ${studentName}`,
           type: "one-on-one",
           ownerId: ownerId,
           members: [ownerId, teacherId], // Add both student and teacher as members
