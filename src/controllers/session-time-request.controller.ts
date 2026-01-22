@@ -186,4 +186,33 @@ export class SessionTimeRequestController {
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
+
+  getSessionTimeRequests = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { sessionId, status } = req.query as any;
+      const userId = req.body.ownerId; // From token
+      const requests = await this.sessionTimeRequestService.getAllSessionTimeRequests({
+        sessionId,
+        status,
+        userId,
+      });
+
+      const requestDtos = await Promise.all(
+        requests.map(async (request) => {
+          return await enrichDto<SessionTimeChangeRequestDto>(
+            SessionTimeChangeRequestDto,
+            request
+          );
+        })
+      );
+
+      res.status(200).json(requestDtos);
+    } catch (error) {
+      req.log.error({ err: error }, "getSessionTimeRequests failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
 }

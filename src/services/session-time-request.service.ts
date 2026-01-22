@@ -44,18 +44,45 @@ export class SessionTimeRequestService {
     }
   }
 
-  // Get all session time change requests
-  async getAllSessionTimeRequests(): Promise<SessionTimeChangeRequestModel[]> {
+  // Get all session time change requests with optional filters
+  async getAllSessionTimeRequests(filters?: {
+    sessionId?: string;
+    status?: string;
+    userId?: string;
+  }): Promise<SessionTimeChangeRequestModel[]> {
     try {
+      let where: any;
+      if (filters?.userId) {
+        where = [
+          { userId: filters.userId },
+          { session: { enrollment: { teacherId: filters.userId } } },
+        ];
+
+        // Apply additional filters to both OR conditions
+        if (filters.sessionId || filters.status) {
+          where = where.map((condition: any) => ({
+            ...condition,
+            ...(filters.sessionId ? { session: { ...condition.session, id: filters.sessionId } } : {}),
+            ...(filters.status ? { status: filters.status } : {}),
+          }));
+        }
+      } else {
+        where = {};
+        if (filters?.sessionId) where.session = { id: filters.sessionId };
+        if (filters?.status) where.status = filters.status;
+      }
+
       return await this.sessionTimeRequestRepo.find({
-        relations: ["session"],
+        where,
+        relations: ["session", "session.enrollment"],
+        order: { createdAt: "DESC" },
         cache: {
-          id: "all-session-time-requests",
+          id: `filtered-session-time-requests-${JSON.stringify(filters)}`,
           milliseconds: 300000, // 5 minutes
         },
       });
     } catch (error) {
-      logger.error({ err: error }, "getAllSessionTimeRequests failed");
+      logger.error({ err: error, filters }, "getAllSessionTimeRequests failed");
       throw new Error("Error fetching session time change requests");
     }
   }
