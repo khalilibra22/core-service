@@ -5,6 +5,7 @@ import { plainToInstance } from "class-transformer";
 import { SessionTimeChangeRequestDto } from "../dtos/session-time-change-request.dto";
 import { enrichDto } from "../utils";
 import { HttpService } from "../services/http.service";
+import { UserRole } from "../enums/user-roles.enum";
 
 export class SessionTimeRequestController {
   private sessionTimeRequestService: SessionTimeRequestService;
@@ -57,34 +58,46 @@ export class SessionTimeRequestController {
     res: Response
   ): Promise<void> => {
     try {
-      const { availabilityId, reason, ownerId } = req.body;
+      const { availabilityId, reason, ownerId, userRole } = req.body;
       const session = await this.courseService.getSessionById(req.params.id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
       }
 
-      if (ownerId !== session.enrollment?.studentId) {
-        res.status(403).json({ error: "Only the student can request a time change" });
+      const isStudent = userRole === UserRole.STUDENT;
+      const isTeacher = userRole === UserRole.TEACHER || userRole === UserRole.ACADEMY_TEACHER || userRole === UserRole.ACADEMY;
+
+      if (
+        (isStudent && ownerId !== session.enrollment?.studentId) ||
+        (isTeacher && ownerId !== session.enrollment?.teacherId) ||
+        (!isStudent && !isTeacher)
+      ) {
+        res.status(403).json({ error: "You are not authorized to request a time change for this session" });
         return;
       }
 
-      if (!availabilityId) {
-        res.status(400).json({ error: "Availability ID is required" });
-        return;
-      }
+      let requestedDate: Date | undefined;
 
-      const availabilities = await this.externalService.checkAvailabilities([availabilityId]);
-      if (!availabilities || availabilities.length === 0) {
-        res.status(404).json({ error: "Availability not found or not available" });
-        return;
-      }
+      // If student is requesting, they MUST provide availabilityId
+      if (isStudent) {
+        if (!availabilityId) {
+          res.status(400).json({ error: "Availability ID is required" });
+          return;
+        }
 
-      const availability = availabilities[0];
-      const requestedDate = this.getNextOccurrence(
-        availability.dayOfWeek,
-        availability.startTime
-      );
+        const availabilities = await this.externalService.checkAvailabilities([availabilityId]);
+        if (!availabilities || availabilities.length === 0) {
+          res.status(404).json({ error: "Availability not found or not available" });
+          return;
+        }
+
+        const availability = availabilities[0];
+        requestedDate = this.getNextOccurrence(
+          availability.dayOfWeek,
+          availability.startTime
+        );
+      }
 
       const sessionTimeRequestBody = {
         session: session,
@@ -115,7 +128,7 @@ export class SessionTimeRequestController {
     res: Response
   ): Promise<void> => {
     try {
-      const { status, ownerId } = req.body;
+      const { status, ownerId, availabilityId, userRole } = req.body;
       const sessionTimeRequest =
         await this.sessionTimeRequestService.getSessionTimeRequestById(
           req.params.id
@@ -126,8 +139,23 @@ export class SessionTimeRequestController {
         return;
       }
 
-      if (ownerId !== sessionTimeRequest?.session?.enrollment?.teacherId) {
-        res.status(403).json({ error: "Only the teacher can treat this request" });
+      const isStudent = userRole === UserRole.STUDENT;
+      const isTeacher = userRole === UserRole.TEACHER || userRole === UserRole.ACADEMY_TEACHER || userRole === UserRole.ACADEMY;
+
+      if (!isStudent && !isTeacher) {
+        res.status(403).json({ error: "You are not authorized" });
+        return;
+      }
+
+      // Authorization: Check if user is part of the enrollment and NOT the requester
+      if (ownerId === sessionTimeRequest.userId) {
+        res.status(403).json({ error: "You cannot treat your own request" });
+        return;
+      }
+
+      const enrollment = sessionTimeRequest.session?.enrollment;
+      if (ownerId !== enrollment?.studentId && ownerId !== enrollment?.teacherId) {
+        res.status(403).json({ error: "You are not part of this enrollment" });
         return;
       }
 
@@ -139,14 +167,17 @@ export class SessionTimeRequestController {
       }
 
       if (status === "approved") {
-        if (!sessionTimeRequest.availabilityId) {
-          res.status(400).json({ error: "Request is missing availability ID" });
+        // If teacher requested, student must provide availabilityId now
+        const effectiveAvailabilityId = sessionTimeRequest.availabilityId || availabilityId;
+
+        if (!effectiveAvailabilityId) {
+          res.status(400).json({ error: "Availability ID is required to approve" });
           return;
         }
 
         // Check if availability is still valid
         const availabilities = await this.externalService.checkAvailabilities([
-          sessionTimeRequest.availabilityId,
+          effectiveAvailabilityId,
         ]);
         if (!availabilities || availabilities.length === 0) {
           res
@@ -166,9 +197,10 @@ export class SessionTimeRequestController {
           sessionTimeRequest.session.date = finalScheduledTime;
         }
         sessionTimeRequest.requestedTime = finalScheduledTime;
+        sessionTimeRequest.availabilityId = effectiveAvailabilityId;
 
         await this.externalService.updateAvailabilitiesToUnavailable([
-          sessionTimeRequest.availabilityId,
+          effectiveAvailabilityId,
         ]);
       }
 

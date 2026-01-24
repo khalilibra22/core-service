@@ -133,7 +133,7 @@ export const certificateValidationSchema = Joi.object({
 });
 
 export const timeChangeRequestValidationSchema = Joi.object({
-  availabilityId: Joi.string().required(),
+  availabilityId: Joi.string().optional(),
   reason: Joi.string().required(),
   ownerId: Joi.string().uuid().optional(),
 });
@@ -146,6 +146,7 @@ export const courseCancellationValidationSchema = Joi.object({
 export const timeChangeRequestStatusSchema = Joi.object({
   status: Joi.string().valid("approved", "rejected").required(),
   ownerId: Joi.string().uuid().optional(),
+  availabilityId: Joi.string().optional(),
 });
 
 export const lessonValidationSchema = Joi.alternatives()
