@@ -7,6 +7,7 @@ import { OneOnOneEnollmentDto } from "../dtos/one-on-one-enrollment.dto";
 import { enrichDto, generateSessionsFromAvailabilities, getCourseDto, setPaginationHeaders } from "../utils";
 import { SessionDto } from "../dtos/session.dto";
 import { RefundDto } from "../dtos/refund.dto";
+import { MaterialDto } from "../dtos/material.dto";
 import { FeedbackService } from "../services/feedback.service";
 import { LruInMemoryCache } from "../cache/lru-in-memory.cache";
 import { HttpService } from "../services/http.service";
@@ -813,6 +814,41 @@ export class EnrollmentController {
       res.status(200).json(courseDtos);
     } catch (error) {
       req.log.error({ err: error, studentId: req.body?.ownerId, type: req.query?.type }, "getStudentEnrolledCourses failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  getEnrollmentMaterials = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const enrollmentId = req.params.id;
+      const enrollment = await this.enrollmentService.getEnrollmentWithMaterials(enrollmentId);
+
+      if (!enrollment) {
+        res.status(404).json({ error: "Enrollment not found" });
+        return;
+      }
+
+      if (enrollment.type !== "one-on-one") {
+        res.status(400).json({ error: "This endpoint is only for one-on-one enrollments" });
+        return;
+      }
+
+      const isStudent = enrollment.studentId === req.body.ownerId;
+      const isTeacher = enrollment.teacherId === req.body.ownerId;
+
+      if (!isStudent && !isTeacher) {
+        res.status(403).json({ error: "You are not authorized to view these materials" });
+        return;
+      }
+
+      const materialLinks = enrollment.materialLinks || [];
+      const materialDtos = materialLinks.map((link) =>
+        plainToInstance(MaterialDto, link, { excludeExtraneousValues: true })
+      );
+
+      res.status(200).json(materialDtos);
+    } catch (error: any) {
+      req.log.error({ err: error, enrollmentId: req.params.id }, "getEnrollmentMaterials failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
