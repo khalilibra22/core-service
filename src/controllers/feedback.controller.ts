@@ -1,24 +1,22 @@
 import { Request, Response } from "express";
+import { injectable, inject } from "tsyringe";
 import { CourseService } from "../services/course.service";
 import { FeedbackService } from "../services/feedback.service";
 import { EnrollmentService } from "../services/enrollment.service";
+import { SessionService } from "../services/session.service";
 import { ReviewDto } from "../dtos/review.dto";
 import { ComplaintDto } from "../dtos/complaint.dto";
 import { ComplaintListDto } from "../dtos/complaint-list.dto";
 import { enrichDto, setPaginationHeaders } from "../utils";
-import { SessionService } from "../services/session.service";
 
+@injectable()
 export class FeedbackController {
-  private feedbackService: FeedbackService;
-  private courseService: CourseService;
-  private enrollmentService: EnrollmentService;
-  private sessionService: SessionService;
-  constructor() {
-    this.feedbackService = new FeedbackService();
-    this.courseService = new CourseService();
-    this.enrollmentService = new EnrollmentService();
-    this.sessionService = new SessionService();
-  }
+  constructor(
+    @inject(FeedbackService) private feedbackService: FeedbackService,
+    @inject(CourseService) private courseService: CourseService,
+    @inject(EnrollmentService) private enrollmentService: EnrollmentService,
+    @inject(SessionService) private sessionService: SessionService
+  ) { }
 
   createCourseReview = async (req: Request, res: Response): Promise<void> => {
     try {

@@ -1,21 +1,20 @@
 import { Request, Response } from "express";
+import { injectable, inject } from "tsyringe";
 import { CourseService } from "../services/course.service";
 import { QuizService } from "../services/quiz.service";
+import { SessionService } from "../services/session.service";
 import { plainToInstance } from "class-transformer";
 import { QuizDto } from "../dtos/quiz.dto";
 import { QuestionDto } from "../dtos/question.dto";
 import { QuizAttemptDto } from "../dtos/quiz-attempt.dto";
-import { SessionService } from "../services/session.service";
 
+@injectable()
 export class QuizController {
-  private quizService: QuizService;
-  private courseService: CourseService;
-  private sessionService: SessionService;
-  constructor() {
-    this.quizService = new QuizService();
-    this.courseService = new CourseService();
-    this.sessionService = new SessionService();
-  }
+  constructor(
+    @inject(QuizService) private quizService: QuizService,
+    @inject(CourseService) private courseService: CourseService,
+    @inject(SessionService) private sessionService: SessionService
+  ) { }
 
   createQuiz = async (req: Request, res: Response): Promise<void> => {
     try {

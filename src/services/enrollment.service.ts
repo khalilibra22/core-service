@@ -1,16 +1,16 @@
 import { In, Repository } from "typeorm";
+import { injectable, inject } from "tsyringe";
 import { AppDataSource } from "../config/database";
 import { EnrollmentModel } from "../models/enrollment.model";
 import { logger } from "../utils/logger";
 import { publish } from "../events";
 import { CACHE_KEYS, CACHE_TTL } from "../config/constants";
 
+@injectable()
 export class EnrollmentService {
-  private enrollmentRepo: Repository<EnrollmentModel>;
-
-  constructor(repo?: Repository<EnrollmentModel>) {
-    this.enrollmentRepo = repo || AppDataSource.getRepository(EnrollmentModel);
-  }
+  constructor(
+    @inject("EnrollmentRepository") private enrollmentRepo: Repository<EnrollmentModel>
+  ) { }
 
   async createEnrollment(
     enrollment: EnrollmentModel,

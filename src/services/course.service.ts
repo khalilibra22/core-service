@@ -10,33 +10,25 @@ import { MaterialLinkModel } from "../models/material-link.model";
 import { StudentRequestModel } from "../models/student-request.model";
 import { CourseViewModel } from "../models/course-view.model";
 import { CourseProgressModel } from "../models/course-progress.model";
-import { In, IsNull } from "typeorm";
+import { In, IsNull, Repository } from "typeorm";
 import { StudentRequestService } from "./student-request.service";
 import { PaginatedResult } from "../utils";
+import { injectable, inject } from "tsyringe";
 
+@injectable()
 export class CourseService {
-  courseRepo: any;
-  courseSettingsRepo: any;
-  sessionRepo: any;
-  certificateRepo: any;
-  lessonRepo: any;
-  materialRepo: any;
-  materialLinkRepo: any;
-  courseViewRepo: any;
-  courseProgressRepo: any;
-  studentRequestService: StudentRequestService;
-  constructor() {
-    this.courseRepo = AppDataSource.getRepository(CourseModel);
-    this.courseSettingsRepo = AppDataSource.getRepository(CourseSettingsModel);
-    this.sessionRepo = AppDataSource.getRepository(SessionModel);
-    this.certificateRepo = AppDataSource.getRepository(CertificateModel);
-    this.lessonRepo = AppDataSource.getRepository(LessonModel);
-    this.materialRepo = AppDataSource.getRepository(MaterialModel);
-    this.materialLinkRepo = AppDataSource.getRepository(MaterialLinkModel);
-    this.courseViewRepo = AppDataSource.getRepository(CourseViewModel);
-    this.courseProgressRepo = AppDataSource.getRepository(CourseProgressModel);
-    this.studentRequestService = new StudentRequestService();
-  }
+  constructor(
+    @inject("CourseRepository") private courseRepo: Repository<CourseModel>,
+    @inject("CourseSettingsRepository") private courseSettingsRepo: Repository<CourseSettingsModel>,
+    @inject("SessionRepository") private sessionRepo: Repository<SessionModel>,
+    @inject("CertificateRepository") private certificateRepo: Repository<CertificateModel>,
+    @inject("LessonRepository") private lessonRepo: Repository<LessonModel>,
+    @inject("MaterialRepository") private materialRepo: Repository<MaterialModel>,
+    @inject("MaterialLinkRepository") private materialLinkRepo: Repository<MaterialLinkModel>,
+    @inject("CourseViewRepository") private courseViewRepo: Repository<CourseViewModel>,
+    @inject("CourseProgressRepository") private courseProgressRepo: Repository<CourseProgressModel>,
+    @inject(StudentRequestService) private studentRequestService: StudentRequestService
+  ) { }
 
   async createCourse(course: CourseModel): Promise<CourseModel> {
     try {
@@ -656,13 +648,12 @@ export class CourseService {
         }
       } else {
         // Create new progress
-        progress = this.courseProgressRepo.create({
-          course,
-          studentId,
-          percentComplete: percentComplete ?? 0,
-          lastSession,
-          lastLesson,
-        });
+        progress = new CourseProgressModel();
+        progress.course = course;
+        progress.studentId = studentId;
+        progress.percentComplete = percentComplete ?? 0;
+        progress.lastSession = lastSession || undefined;
+        progress.lastLesson = lastLesson || undefined;
       }
 
       return await this.courseProgressRepo.save(progress);

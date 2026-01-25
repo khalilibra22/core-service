@@ -1,5 +1,9 @@
 import express from "express";
+import { container } from "../../container";
 import { CourseController } from "../../controllers/course.controller";
+import { CourseSessionController } from "../../controllers/course-session.controller";
+import { CourseMaterialController } from "../../controllers/course-material.controller";
+import { CourseCertificateController } from "../../controllers/course-certificate.controller";
 import { FeedbackController } from "../../controllers/feedback.controller";
 import { EnrollmentController } from "../../controllers/enrollment.controller";
 import { ValidationMiddleware } from "../../utils/validation.middleware";
@@ -22,16 +26,19 @@ import { AuthMiddleware } from "../../utils/auth.middleware";
 
 const router = express.Router();
 
-const courseController = new CourseController();
-const feedbackController = new FeedbackController();
-const enrollmentController = new EnrollmentController();
+const courseController = container.resolve(CourseController);
+const sessionController = container.resolve(CourseSessionController);
+const materialController = container.resolve(CourseMaterialController);
+const certificateController = container.resolve(CourseCertificateController);
+const feedbackController = container.resolve(FeedbackController);
+const enrollmentController = container.resolve(EnrollmentController);
 
 router.post(
   "/",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
   ValidationMiddleware.validate(createCourseValidationSchema),
-  courseController.createDraftCourse
+  (req, res) => courseController.createDraftCourse(req, res)
 );
 
 //update course
@@ -40,7 +47,7 @@ router.put(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
   ValidationMiddleware.validate(courseValidationSchema),
-  courseController.updateCourse
+  (req, res) => courseController.updateCourse(req, res)
 );
 
 router.put(
@@ -48,7 +55,7 @@ router.put(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
   ValidationMiddleware.validate(courseValidationSchema),
-  async (req, res) => await courseController.updateDraftCourse(req, res)
+  (req, res) => courseController.updateDraftCourse(req, res)
 );
 
 //delete course
@@ -56,7 +63,7 @@ router.delete(
   "/:id",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
-  courseController.deleteCourse
+  (req, res) => courseController.deleteCourse(req, res)
 );
 
 // get course by id
@@ -64,7 +71,7 @@ router.get(
   "/:id/details",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "view"),
-  courseController.getCourseById
+  (req, res) => courseController.getCourseById(req, res)
 );
 
 router.post(
@@ -72,7 +79,7 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "manage_sessions"),
   ValidationMiddleware.validate(sessionValidationSchema),
-  courseController.createCourseSession
+  (req, res) => sessionController.createCourseSession(req, res)
 );
 
 //update session
@@ -81,7 +88,7 @@ router.put(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "manage_sessions"),
   ValidationMiddleware.validate(sessionValidationSchema),
-  courseController.updateCourseSession
+  (req, res) => sessionController.updateCourseSession(req, res)
 );
 
 // delete session
@@ -89,7 +96,7 @@ router.delete(
   "/:id/sessions/:sessionId",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "manage_sessions"),
-  courseController.deleteCourseSession
+  (req, res) => sessionController.deleteCourseSession(req, res)
 );
 
 //create a review
@@ -132,7 +139,7 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
   ValidationMiddleware.validate(certificateValidationSchema),
-  courseController.createCertificate
+  (req, res) => certificateController.createCertificate(req, res)
 );
 
 // Create course enrollment
@@ -141,7 +148,7 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("enrollments", "enroll_course"),
   ValidationMiddleware.validate(enrollmentValidationsSchema),
-  enrollmentController.createEnrollment
+  (req, res) => enrollmentController.createEnrollment(req, res)
 );
 
 // get course by id
@@ -150,7 +157,7 @@ router.patch(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
   ValidationMiddleware.validate(courseMaterialsSchema),
-  courseController.addCourseMaterials
+  (req, res) => materialController.addCourseMaterials(req, res)
 );
 
 // get course materials
@@ -158,7 +165,7 @@ router.get(
   "/:id/materials",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "view"),
-  courseController.getCourseMaterials
+  (req, res) => materialController.getCourseMaterials(req, res)
 );
 
 // remove course materials
@@ -167,7 +174,7 @@ router.delete(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
   ValidationMiddleware.validate(removeMaterialsSchema),
-  courseController.removeCourseMaterials
+  (req, res) => materialController.removeCourseMaterials(req, res)
 );
 
 // toggle share/unshare all course materials
@@ -176,7 +183,7 @@ router.patch(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
   ValidationMiddleware.validate(toggleLessonMaterialShareValidationSchema),
-  courseController.toggleCourseMaterialsShare
+  (req, res) => materialController.toggleCourseMaterialsShare(req, res)
 );
 
 // toggle share/unshare one course material
@@ -184,7 +191,7 @@ router.patch(
   "/:id/materials/:materialId/share",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
-  courseController.toggleCourseMaterialShare
+  (req, res) => materialController.toggleCourseMaterialShare(req, res)
 );
 
 // Get all course sessions
@@ -192,7 +199,7 @@ router.get(
   "/:id/sessions",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "view"),
-  courseController.getCourseSessions
+  (req, res) => sessionController.getCourseSessions(req, res)
 );
 
 // Get all prerecorded course sections
@@ -200,7 +207,7 @@ router.get(
   "/:id/prerecorded-sections",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("sessions", "view"),
-  courseController.getPrerecordedCourseSections
+  (req, res) => sessionController.getPrerecordedCourseSections(req, res)
 );
 
 //cancel course
@@ -209,21 +216,21 @@ router.patch(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "cancel_course"),
   ValidationMiddleware.validate(courseCancellationValidationSchema),
-  courseController.cancelCourse
+  (req, res) => courseController.cancelCourse(req, res)
 );
 
 router.get(
   "/:id/enrollments",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("enrollments", "manage_enrollments"),
-  enrollmentController.getCourseEnrollments
+  (req, res) => enrollmentController.getCourseEnrollments(req, res)
 );
 
 router.get(
   "/teachers/:id",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "view"),
-  courseController.getCoursesByTeacherId
+  (req, res) => courseController.getCoursesByTeacherId(req, res)
 );
 
 // get all live courses
@@ -231,14 +238,14 @@ router.get(
   "/live",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_all_courses"),
-  courseController.getAllLiveCourses
+  (req, res) => courseController.getAllLiveCourses(req, res)
 );
 
 router.get(
   "/group",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_all_courses"),
-  courseController.getAllGroupCourses
+  (req, res) => courseController.getAllGroupCourses(req, res)
 );
 
 // get all prerecorded courses
@@ -246,13 +253,13 @@ router.get(
   "/prerecorded",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_all_courses"),
-  courseController.getAllPrerecordedCourses
+  (req, res) => courseController.getAllPrerecordedCourses(req, res)
 );
 
 router.get(
   "/",
   //AuthMiddleware.verifyToken,
-  courseController.searchCourses
+  (req, res) => courseController.searchCourses(req, res)
 );
 
 // Student request routes
@@ -261,21 +268,21 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "view"),
   ValidationMiddleware.validate(createStudentRequestValidationSchema),
-  courseController.createStudentRequest
+  (req, res) => courseController.createStudentRequest(req, res)
 );
 
 router.get(
   "/:id/requests",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
-  courseController.getCourseStudentRequests
+  (req, res) => courseController.getCourseStudentRequests(req, res)
 );
 
 router.get(
   "/:id/requests/summary",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
-  courseController.getCourseStudentRequestSummary
+  (req, res) => courseController.getCourseStudentRequestSummary(req, res)
 );
 
 router.patch(
@@ -283,7 +290,7 @@ router.patch(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "manage_courses"),
   ValidationMiddleware.validate(updateStudentRequestStatusValidationSchema),
-  courseController.updateStudentRequestStatus
+  (req, res) => courseController.updateStudentRequestStatus(req, res)
 );
 
 // Course progress routes
@@ -292,21 +299,21 @@ router.patch(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "view"),
   ValidationMiddleware.validate(updateCourseProgressValidationSchema),
-  courseController.updateCourseProgress
+  (req, res) => courseController.updateCourseProgress(req, res)
 );
 
 router.get(
   "/:id/progress",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "view"),
-  courseController.getCourseProgress
+  (req, res) => courseController.getCourseProgress(req, res)
 );
 
 router.get(
   "/:id/certificate-request",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("courses", "view"),
-  courseController.getStudentCourseCertificateRequest
+  (req, res) => courseController.getStudentCourseCertificateRequest(req, res)
 );
 
 export { router as courseRouter };

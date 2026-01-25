@@ -16,36 +16,21 @@ import { EnrollmentOrchestratorService } from "../services/enrollment-orchestrat
 import { DtoAssemblerService } from "../services/dto-assembler.service";
 import { SessionService } from "../services/session.service";
 import { MaterialService } from "../services/material.service";
+import { injectable, inject } from "tsyringe";
 
+@injectable()
 export class EnrollmentController {
-  private enrollmentService: EnrollmentService;
-  private courseService: CourseService;
-  private sessionService: SessionService;
-  private materialService: MaterialService;
-  private externalService: HttpService;
-  private feedbackService: FeedbackService;
-  private notificationService: NotificationService;
-  private enrollmentOrchestrator: EnrollmentOrchestratorService;
-  private dtoAssembler: DtoAssemblerService;
-
-  constructor() {
-    this.enrollmentService = new EnrollmentService();
-    this.courseService = new CourseService();
-    this.sessionService = new SessionService();
-    this.materialService = new MaterialService();
-    this.externalService = new HttpService();
-    this.feedbackService = new FeedbackService();
-    this.notificationService = new NotificationService();
-    this.dtoAssembler = new DtoAssemblerService();
-
-    this.enrollmentOrchestrator = new EnrollmentOrchestratorService(
-      this.enrollmentService,
-      this.courseService,
-      this.sessionService,
-      this.externalService,
-      this.notificationService
-    );
-  }
+  constructor(
+    @inject(EnrollmentService) private enrollmentService: EnrollmentService,
+    @inject(CourseService) private courseService: CourseService,
+    @inject(SessionService) private sessionService: SessionService,
+    @inject(MaterialService) private materialService: MaterialService,
+    @inject(HttpService) private externalService: HttpService,
+    @inject(FeedbackService) private feedbackService: FeedbackService,
+    @inject(NotificationService) private notificationService: NotificationService,
+    @inject(EnrollmentOrchestratorService) private enrollmentOrchestrator: EnrollmentOrchestratorService,
+    @inject(DtoAssemblerService) private dtoAssembler: DtoAssemblerService
+  ) { }
 
   createEnrollment = async (req: Request, res: Response): Promise<void> => {
     try {

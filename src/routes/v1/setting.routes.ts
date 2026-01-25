@@ -3,10 +3,11 @@ import { SettingController } from "../../controllers/setting.controller";
 import { ValidationMiddleware } from "../../utils/validation.middleware";
 import { AuthMiddleware } from "../../utils/auth.middleware";
 import { settingValidationSchema } from "../../validations/settings.validation";
+import { container } from "tsyringe";
 
 const router = express.Router();
 
-const settingController = new SettingController();
+const settingController = container.resolve(SettingController);
 
 router.put(
   "/",

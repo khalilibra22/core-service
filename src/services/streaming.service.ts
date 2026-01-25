@@ -1,7 +1,9 @@
 import crypto from "crypto";
 import axios from "axios";
+import { injectable } from "tsyringe";
 import { logger } from "../utils/logger";
 
+@injectable()
 export class StreamingService {
   private bunnyApiUrl: string;
   private bunnySecret: string;

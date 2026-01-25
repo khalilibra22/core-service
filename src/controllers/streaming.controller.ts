@@ -1,18 +1,16 @@
 import { Request, Response } from "express";
+import { injectable, inject } from "tsyringe";
 import { CourseService } from "../services/course.service";
 import { StreamingService } from "../services/streaming.service";
 import { SessionService } from "../services/session.service";
 
+@injectable()
 export class StreamingServiceController {
-  private streamingService: StreamingService;
-  private courseService: CourseService;
-  private sessionService: SessionService;
-
-  constructor() {
-    this.streamingService = new StreamingService();
-    this.courseService = new CourseService();
-    this.sessionService = new SessionService();
-  }
+  constructor(
+    @inject(StreamingService) private streamingService: StreamingService,
+    @inject(CourseService) private courseService: CourseService,
+    @inject(SessionService) private sessionService: SessionService
+  ) { }
 
   createVideoEntry = async (req: Request, res: Response): Promise<void> => {
     try {

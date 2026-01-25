@@ -12,9 +12,11 @@ import {
 } from "../../validations/feedback.validation";
 import { AuthMiddleware } from "../../utils/auth.middleware";
 
+import { container } from "../../container";
+
 const router = express.Router();
 
-const feedbackController = new FeedbackController();
+const feedbackController = container.resolve(FeedbackController);
 
 router.post(
   "/complaints/:id/respond",

@@ -1,13 +1,11 @@
 import { Repository } from "typeorm";
 import { AppDataSource } from "../config/database";
 import { CertificateModel } from "../models/certificate.model";
+import { injectable, inject } from "tsyringe";
 
+@injectable()
 export class CertificateService {
-    private certificateRepo: Repository<CertificateModel>;
-
-    constructor(repo?: Repository<CertificateModel>) {
-        this.certificateRepo = repo || AppDataSource.getRepository(CertificateModel);
-    }
+    constructor(@inject("CertificateRepository") private certificateRepo: Repository<CertificateModel>) { }
 
     async createCertificate(
         certificate: CertificateModel

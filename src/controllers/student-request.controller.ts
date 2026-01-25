@@ -1,15 +1,15 @@
 import { Request, Response } from "express";
+import { injectable, inject } from "tsyringe";
 import { StudentRequestService } from "../services/student-request.service";
 import { plainToInstance } from "class-transformer";
 import { StudentRequestDto } from "../dtos/student-request.dto";
 import { setPaginationHeaders } from "../utils";
 
+@injectable()
 export class StudentRequestController {
-    private studentRequestService: StudentRequestService;
-
-    constructor() {
-        this.studentRequestService = new StudentRequestService();
-    }
+    constructor(
+        @inject(StudentRequestService) private studentRequestService: StudentRequestService
+    ) { }
 
     createStudentRequest = async (req: Request, res: Response): Promise<void> => {
         try {

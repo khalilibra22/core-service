@@ -1,9 +1,13 @@
 import { Request, Response } from "express";
 import { NotificationService } from "../services/notification.service";
 import { logger } from "../utils/logger";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class NotificationController {
-  private service = new NotificationService();
+  constructor(
+    @inject(NotificationService) private service: NotificationService
+  ) { }
 
   sendToTokens = async (req: Request, res: Response) => {
     try {

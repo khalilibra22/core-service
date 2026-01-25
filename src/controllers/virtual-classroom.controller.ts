@@ -1,19 +1,16 @@
 import { Request, Response } from "express";
+import { injectable, inject } from "tsyringe";
 import { VirtualClassroomService } from "../interfaces/virtual-classroom-service.interface";
-import { CourseService } from "../services/course.service";
 import { SessionService } from "../services/session.service";
 import { publish } from "../events";
+import { BigBlueButtonService } from "../services/big-blue-button.service";
 
+@injectable()
 export class VirtualClassroomController {
-  private virtualClassroomService: VirtualClassroomService;
-  private courseService: CourseService;
-  private sessionService: SessionService;
-
-  constructor(virtualClassroomService: VirtualClassroomService) {
-    this.virtualClassroomService = virtualClassroomService;
-    this.courseService = new CourseService();
-    this.sessionService = new SessionService();
-  }
+  constructor(
+    @inject(BigBlueButtonService) private virtualClassroomService: VirtualClassroomService,
+    @inject(SessionService) private sessionService: SessionService
+  ) { }
 
   launchMeeting = async (req: Request, res: Response): Promise<void> => {
     try {

@@ -4,6 +4,7 @@ import { SessionModel } from "../models/session.model";
 import { logger } from "../utils/logger";
 import { CACHE_KEYS, CACHE_TTL } from "../config/constants";
 import { Availability } from "../types/availability.types";
+import { injectable, inject } from "tsyringe";
 
 const dayOfWeekMap: Record<string, number> = {
     sunday: 0,
@@ -15,12 +16,9 @@ const dayOfWeekMap: Record<string, number> = {
     saturday: 6,
 };
 
+@injectable()
 export class SessionService {
-    private sessionRepo: Repository<SessionModel>;
-
-    constructor(repo?: Repository<SessionModel>) {
-        this.sessionRepo = repo || AppDataSource.getRepository(SessionModel);
-    }
+    constructor(@inject("SessionRepository") private sessionRepo: Repository<SessionModel>) { }
 
     generateSessionsFromAvailabilities(
         availabilities: Availability[],

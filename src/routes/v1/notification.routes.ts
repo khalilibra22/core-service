@@ -7,9 +7,11 @@ import {
   sendToTopicSchema,
   topicSubscriptionSchema,
 } from "../../validations/notification.validation";
+import { container } from "tsyringe";
 
 const router = express.Router();
-const controller = new NotificationController();
+const controller = container.resolve(NotificationController);
+
 
 // Send to a set of tokens (stateless)
 router.post(

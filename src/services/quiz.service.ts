@@ -1,22 +1,20 @@
 import { AppDataSource } from "../config/database";
+import { injectable, inject } from "tsyringe";
+import { Repository } from "typeorm";
 import { logger } from "../utils/logger";
 import { AnswerModel } from "../models/answer.model";
 import { QuestionModel } from "../models/question.model";
 import { QuizModel } from "../models/quiz.model";
 import { QuizAttemptModel } from "../models/quiz-attempt.model";
 
+@injectable()
 export class QuizService {
-  quizRepo: any;
-  questionRepo: any;
-  answerRepo: any;
-  quizAttemptRepo: any;
-
-  constructor() {
-    this.quizRepo = AppDataSource.getRepository(QuizModel);
-    this.questionRepo = AppDataSource.getRepository(QuestionModel);
-    this.answerRepo = AppDataSource.getRepository(AnswerModel);
-    this.quizAttemptRepo = AppDataSource.getRepository(QuizAttemptModel);
-  }
+  constructor(
+    @inject("QuizRepository") private quizRepo: Repository<QuizModel>,
+    @inject("QuestionRepository") private questionRepo: Repository<QuestionModel>,
+    @inject("AnswerRepository") private answerRepo: Repository<AnswerModel>,
+    @inject("QuizAttemptRepository") private quizAttemptRepo: Repository<QuizAttemptModel>
+  ) { }
 
   async createQuiz(quiz: QuizModel): Promise<QuizModel> {
     try {
@@ -258,7 +256,7 @@ export class QuizService {
       });
 
       const totalQuizzes = quizzes.length;
-      
+
       if (totalQuizzes === 0) {
         return {
           scorePercent: 0,
@@ -276,11 +274,11 @@ export class QuizService {
       // For each quiz, get the best completed attempt for this student
       for (const quiz of quizzes) {
         const bestAttempt = await this.getStudentBestAttempt(quiz.id!, studentId);
-        
+
         if (bestAttempt && bestAttempt.isCompleted) {
           completedQuizzes++;
           totalScore += bestAttempt.score || 0;
-          
+
           // Use maxScore from attempt if available, otherwise calculate from questions
           if (bestAttempt.maxScore) {
             totalMaxScore += bestAttempt.maxScore;

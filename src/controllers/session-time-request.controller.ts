@@ -1,25 +1,22 @@
 import { Request, Response } from "express";
+import { injectable, inject } from "tsyringe";
 import { SessionTimeRequestService } from "../services/session-time-request.service";
 import { CourseService } from "../services/course.service";
+import { SessionService } from "../services/session.service";
+import { HttpService } from "../services/http.service";
 import { plainToInstance } from "class-transformer";
 import { SessionTimeChangeRequestDto } from "../dtos/session-time-change-request.dto";
 import { enrichDto } from "../utils";
-import { HttpService } from "../services/http.service";
 import { UserRole } from "../enums/user-roles.enum";
-import { SessionService } from "../services/session.service";
 
+@injectable()
 export class SessionTimeRequestController {
-  private sessionTimeRequestService: SessionTimeRequestService;
-  private courseService: CourseService;
-  private sessionService: SessionService;
-  private externalService: HttpService;
-
-  constructor() {
-    this.sessionTimeRequestService = new SessionTimeRequestService();
-    this.courseService = new CourseService();
-    this.sessionService = new SessionService();
-    this.externalService = new HttpService();
-  }
+  constructor(
+    @inject(SessionTimeRequestService) private sessionTimeRequestService: SessionTimeRequestService,
+    @inject(CourseService) private courseService: CourseService,
+    @inject(SessionService) private sessionService: SessionService,
+    @inject(HttpService) private externalService: HttpService
+  ) { }
 
   private getNextOccurrence(dayOfWeek: string, startTime: string): Date {
     const dayOfWeekMap: Record<string, number> = {

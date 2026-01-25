@@ -4,22 +4,15 @@ import { MaterialModel } from "../models/material.model";
 import { MaterialLinkModel } from "../models/material-link.model";
 import { CourseModel } from "../models/course.model";
 import { logger } from "../utils/logger";
+import { injectable, inject } from "tsyringe";
 
+@injectable()
 export class MaterialService {
-    private materialRepo: Repository<MaterialModel>;
-    private materialLinkRepo: Repository<MaterialLinkModel>;
-    private courseRepo: Repository<CourseModel>;
-
     constructor(
-        materialRepo?: Repository<MaterialModel>,
-        materialLinkRepo?: Repository<MaterialLinkModel>,
-        courseRepo?: Repository<CourseModel>
-    ) {
-        this.materialRepo = materialRepo || AppDataSource.getRepository(MaterialModel);
-        this.materialLinkRepo =
-            materialLinkRepo || AppDataSource.getRepository(MaterialLinkModel);
-        this.courseRepo = courseRepo || AppDataSource.getRepository(CourseModel);
-    }
+        @inject("MaterialRepository") private materialRepo: Repository<MaterialModel>,
+        @inject("MaterialLinkRepository") private materialLinkRepo: Repository<MaterialLinkModel>,
+        @inject("CourseRepository") private courseRepo: Repository<CourseModel>
+    ) { }
 
     async getCourseMaterials(id: string): Promise<MaterialLinkModel[]> {
         try {

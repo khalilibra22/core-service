@@ -1,13 +1,14 @@
 import { AppDataSource } from "../config/database";
+import { injectable, inject } from "tsyringe";
+import { Repository } from "typeorm";
 import { logger } from "../utils/logger";
 import { StudentRequestModel } from "../models/student-request.model";
 
+@injectable()
 export class StudentRequestService {
-  studentRequestRepo: any;
-
-  constructor() {
-    this.studentRequestRepo = AppDataSource.getRepository(StudentRequestModel);
-  }
+  constructor(
+    @inject("StudentRequestRepository") private studentRequestRepo: Repository<StudentRequestModel>
+  ) { }
 
   async createStudentRequest(
     request: StudentRequestModel

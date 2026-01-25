@@ -7,14 +7,16 @@ import { CourseModel } from "../models/course.model";
 import { EnrollmentModel } from "../models/enrollment.model";
 import { LruInMemoryCache } from "../cache/lru-in-memory.cache";
 import { logger } from "../utils/logger";
+import { injectable, inject } from "tsyringe";
 
+@injectable()
 export class EnrollmentOrchestratorService {
     constructor(
-        private enrollmentService: EnrollmentService,
-        private courseService: CourseService,
-        private sessionService: SessionService,
-        private httpService: HttpService,
-        private notificationService: NotificationService
+        @inject(EnrollmentService) private enrollmentService: EnrollmentService,
+        @inject(CourseService) private courseService: CourseService,
+        @inject(SessionService) private sessionService: SessionService,
+        @inject(HttpService) private httpService: HttpService,
+        @inject(NotificationService) private notificationService: NotificationService
     ) { }
 
     async enrollStudentInCourse(
