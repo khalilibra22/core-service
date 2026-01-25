@@ -58,7 +58,7 @@ export class SessionTimeRequestController {
     res: Response
   ): Promise<void> => {
     try {
-      const { availabilityId, reason, ownerId, userRole } = req.body;
+      const { availabilityId, availabilityException, reason, ownerId, userRole } = req.body;
       const session = await this.courseService.getSessionById(req.params.id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
@@ -79,24 +79,32 @@ export class SessionTimeRequestController {
 
       let requestedDate: Date | undefined;
 
-      // If student is requesting, they MUST provide availabilityId
+      // If student is requesting, they MUST provide either availabilityId OR availabilityException
       if (isStudent) {
-        if (!availabilityId) {
-          res.status(400).json({ error: "Availability ID is required" });
+        if ((!availabilityId && !availabilityException) || (availabilityId && availabilityException)) {
+          res.status(400).json({ error: "Provide either availabilityId or availabilityException, not both/neither" });
           return;
         }
 
-        const availabilities = await this.externalService.checkAvailabilities([availabilityId]);
-        if (!availabilities || availabilities.length === 0) {
-          res.status(404).json({ error: "Availability not found or not available" });
-          return;
-        }
+        if (availabilityId) {
+          const availabilities = await this.externalService.checkAvailabilities([availabilityId]);
+          if (!availabilities || availabilities.length === 0) {
+            res.status(404).json({ error: "Availability not found or not available" });
+            return;
+          }
 
-        const availability = availabilities[0];
-        requestedDate = this.getNextOccurrence(
-          availability.dayOfWeek,
-          availability.startTime
-        );
+          const availability = availabilities[0];
+          requestedDate = this.getNextOccurrence(
+            availability.dayOfWeek,
+            availability.startTime
+          );
+        } else {
+          requestedDate = new Date(availabilityException);
+          if (isNaN(requestedDate.getTime())) {
+            res.status(400).json({ error: "Invalid availabilityException date" });
+            return;
+          }
+        }
       }
 
       const sessionTimeRequestBody = {
@@ -104,6 +112,7 @@ export class SessionTimeRequestController {
         userId: ownerId,
         requestedTime: requestedDate,
         availabilityId: availabilityId,
+        availabilityException: availabilityException ? new Date(availabilityException) : undefined,
         reason: reason,
         status: "pending"
       };
@@ -128,7 +137,7 @@ export class SessionTimeRequestController {
     res: Response
   ): Promise<void> => {
     try {
-      const { status, ownerId, availabilityId, userRole } = req.body;
+      const { status, ownerId, userRole } = req.body;
       const sessionTimeRequest =
         await this.sessionTimeRequestService.getSessionTimeRequestById(
           req.params.id
@@ -167,41 +176,59 @@ export class SessionTimeRequestController {
       }
 
       if (status === "approved") {
-        // If teacher requested, student must provide availabilityId now
-        const effectiveAvailabilityId = sessionTimeRequest.availabilityId || availabilityId;
+        const effectiveAvailabilityId = sessionTimeRequest.availabilityId || req.body.availabilityId;
+        const effectiveException = sessionTimeRequest.availabilityException || (req.body.availabilityException ? new Date(req.body.availabilityException) : undefined);
 
-        if (!effectiveAvailabilityId) {
-          res.status(400).json({ error: "Availability ID is required to approve" });
+        if (!effectiveAvailabilityId && !effectiveException) {
+          res.status(400).json({ error: "Availability ID or Exception date is required to approve" });
           return;
         }
 
-        // Check if availability is still valid
-        const availabilities = await this.externalService.checkAvailabilities([
-          effectiveAvailabilityId,
-        ]);
-        if (!availabilities || availabilities.length === 0) {
-          res
-            .status(409)
-            .json({ error: "Availability is no longer available" });
+        if (effectiveAvailabilityId && effectiveException) {
+          res.status(400).json({ error: "Provide either availabilityId or availabilityException, not both" });
           return;
         }
 
-        const availability = availabilities[0];
-        // Recalculate the nearest future occurrence at approval time
-        const finalScheduledTime = this.getNextOccurrence(
-          availability.dayOfWeek,
-          availability.startTime
-        );
+        let finalScheduledTime: Date;
+
+        if (effectiveAvailabilityId) {
+          // Check if availability is still valid
+          const availabilities = await this.externalService.checkAvailabilities([
+            effectiveAvailabilityId,
+          ]);
+          if (!availabilities || availabilities.length === 0) {
+            res
+              .status(409)
+              .json({ error: "Availability is no longer available" });
+            return;
+          }
+
+          const availability = availabilities[0];
+          // Recalculate the nearest future occurrence at approval time
+          finalScheduledTime = this.getNextOccurrence(
+            availability.dayOfWeek,
+            availability.startTime
+          );
+
+          await this.externalService.updateAvailabilitiesToUnavailable([
+            effectiveAvailabilityId,
+          ]);
+          sessionTimeRequest.availabilityId = effectiveAvailabilityId;
+          sessionTimeRequest.availabilityException = undefined; // Clear exception if ID is used
+        } else {
+          finalScheduledTime = effectiveException!;
+          if (isNaN(finalScheduledTime.getTime())) {
+            res.status(400).json({ error: "Invalid exception date" });
+            return;
+          }
+          sessionTimeRequest.availabilityException = finalScheduledTime;
+          sessionTimeRequest.availabilityId = undefined; // Clear ID if exception is used
+        }
 
         if (sessionTimeRequest.session) {
           sessionTimeRequest.session.date = finalScheduledTime;
         }
         sessionTimeRequest.requestedTime = finalScheduledTime;
-        sessionTimeRequest.availabilityId = effectiveAvailabilityId;
-
-        await this.externalService.updateAvailabilitiesToUnavailable([
-          effectiveAvailabilityId,
-        ]);
       }
 
       sessionTimeRequest.status = status;
