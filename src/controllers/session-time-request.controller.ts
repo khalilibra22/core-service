@@ -6,15 +6,18 @@ import { SessionTimeChangeRequestDto } from "../dtos/session-time-change-request
 import { enrichDto } from "../utils";
 import { HttpService } from "../services/http.service";
 import { UserRole } from "../enums/user-roles.enum";
+import { SessionService } from "../services/session.service";
 
 export class SessionTimeRequestController {
   private sessionTimeRequestService: SessionTimeRequestService;
   private courseService: CourseService;
+  private sessionService: SessionService;
   private externalService: HttpService;
 
   constructor() {
     this.sessionTimeRequestService = new SessionTimeRequestService();
     this.courseService = new CourseService();
+    this.sessionService = new SessionService();
     this.externalService = new HttpService();
   }
 
@@ -59,7 +62,7 @@ export class SessionTimeRequestController {
   ): Promise<void> => {
     try {
       const { availabilityId, availabilityException, reason, ownerId, userRole } = req.body;
-      const session = await this.courseService.getSessionById(req.params.id);
+      const session = await this.sessionService.getSessionById(req.params.id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;

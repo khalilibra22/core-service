@@ -1,14 +1,15 @@
-import { In } from "typeorm";
+import { In, Repository } from "typeorm";
 import { AppDataSource } from "../config/database";
 import { EnrollmentModel } from "../models/enrollment.model";
 import { logger } from "../utils/logger";
 import { publish } from "../events";
+import { CACHE_KEYS, CACHE_TTL } from "../config/constants";
 
 export class EnrollmentService {
-  enrollmentRepo: any;
+  private enrollmentRepo: Repository<EnrollmentModel>;
 
-  constructor() {
-    this.enrollmentRepo = AppDataSource.getRepository(EnrollmentModel);
+  constructor(repo?: Repository<EnrollmentModel>) {
+    this.enrollmentRepo = repo || AppDataSource.getRepository(EnrollmentModel);
   }
 
   async createEnrollment(
@@ -21,10 +22,10 @@ export class EnrollmentService {
       // Publish enrollment.created event for course enrollments
       if (savedEnrollment.type === "course" && savedEnrollment.course?.id) {
         await publish("enrollment.created", {
-          courseId: savedEnrollment.course.id,
-          userId: savedEnrollment.studentId,
-          enrollmentId: savedEnrollment.id,
-          courseTitle: savedEnrollment.course.title,
+          courseId: savedEnrollment.course.id as string,
+          userId: savedEnrollment.studentId as string,
+          enrollmentId: savedEnrollment.id as string,
+          courseTitle: savedEnrollment.course.name as string,
           fcmToken,
         });
       }
@@ -42,8 +43,8 @@ export class EnrollmentService {
         where: { course: { id: courseId }, type: "course" },
         relations: ["course"],
         cache: {
-          id: `course-enrollments-${courseId}`,
-          milliseconds: 300000, // 5 minutes
+          id: CACHE_KEYS.COURSE_ENROLLMENTS(courseId),
+          milliseconds: CACHE_TTL.STATIC_CONTENT,
         },
       });
     } catch (error) {
@@ -52,7 +53,7 @@ export class EnrollmentService {
     }
   }
 
-  async getOneOnOneEnrollementByTeacherId(
+  async getOneOnOneEnrollmentByTeacherId(
     teacherId: string
   ): Promise<EnrollmentModel[]> {
     try {
@@ -63,12 +64,12 @@ export class EnrollmentService {
         },
         relations: ["sessions", "materialLinks", "materialLinks.material"],
         cache: {
-          id: `teacher-one-on-one-enrollments-${teacherId}`,
-          milliseconds: 300000, // 5 minutes
+          id: CACHE_KEYS.TEACHER_ONE_ON_ONE_ENROLLMENTS(teacherId),
+          milliseconds: CACHE_TTL.STATIC_CONTENT,
         },
       });
     } catch (error) {
-      logger.error({ err: error, teacherId }, "getOneOnOneEnrollementByTeacherId failed");
+      logger.error({ err: error, teacherId }, "getOneOnOneEnrollmentByTeacherId failed");
       throw new Error("Error fetching session enrollments");
     }
   }
@@ -93,8 +94,8 @@ export class EnrollmentService {
           id: enrollmentId,
         },
         cache: {
-          id: `enrollment-${enrollmentId}`,
-          milliseconds: 300000, // 5 minutes
+          id: CACHE_KEYS.ENROLLMENT(enrollmentId),
+          milliseconds: CACHE_TTL.STATIC_CONTENT,
         },
       });
     } catch (error) {
@@ -117,8 +118,8 @@ export class EnrollmentService {
         relations: ["course", "course.couresSettings", "course.sessions"], //group by createdAt , newest first
         order: { createdAt: "DESC" },
         cache: {
-          id: `student-course-enrollments-${studentId}`,
-          milliseconds: 300000, // 5 minutes
+          id: CACHE_KEYS.STUDENT_COURSE_ENROLLMENTS(studentId),
+          milliseconds: CACHE_TTL.STATIC_CONTENT,
         },
       });
     } catch (error) {
@@ -136,8 +137,8 @@ export class EnrollmentService {
         relations: ["sessions", "materialLinks", "materialLinks.material"],
         order: { createdAt: "DESC" },
         cache: {
-          id: `student-one-on-one-enrollments-${studentId}`,
-          milliseconds: 300000, // 5 minutes
+          id: CACHE_KEYS.STUDENT_ONE_ON_ONE_ENROLLMENTS(studentId),
+          milliseconds: CACHE_TTL.STATIC_CONTENT,
         },
       });
     } catch (error) {

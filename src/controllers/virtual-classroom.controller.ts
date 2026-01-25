@@ -1,15 +1,18 @@
 import { Request, Response } from "express";
 import { VirtualClassroomService } from "../interfaces/virtual-classroom-service.interface";
 import { CourseService } from "../services/course.service";
+import { SessionService } from "../services/session.service";
 import { publish } from "../events";
 
 export class VirtualClassroomController {
   private virtualClassroomService: VirtualClassroomService;
   private courseService: CourseService;
+  private sessionService: SessionService;
 
   constructor(virtualClassroomService: VirtualClassroomService) {
     this.virtualClassroomService = virtualClassroomService;
     this.courseService = new CourseService();
+    this.sessionService = new SessionService();
   }
 
   launchMeeting = async (req: Request, res: Response): Promise<void> => {
@@ -19,7 +22,7 @@ export class VirtualClassroomController {
         res.status(400).json({ error: "Fullname is required" });
         return;
       }
-      const session = await this.courseService.getSessionById(req.params.id);
+      const session = await this.sessionService.getSessionById(req.params.id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -41,11 +44,11 @@ export class VirtualClassroomController {
         attendeePW: "password_",
       };
       await this.virtualClassroomService.createMeeting(meetingData);
-      
+
       // Publish session.started event to notify enrolled students
       const courseId = session.course?.id || session.enrollment?.course?.id;
       const enrollmentId = session.enrollment?.id;
-      
+
       if ((courseId || enrollmentId) && session.id) {
         await publish("session.started", {
           courseId,
@@ -56,18 +59,18 @@ export class VirtualClassroomController {
         });
         req.log.info({ courseId, enrollmentId, sessionId: session.id }, "Published session.started event");
       }
-      
+
       const desktopJoinUrl = await this.virtualClassroomService.joinMeeting(
         session.id ?? "",
-        { fullName:fullname, password: "password" }
+        { fullName: fullname, password: "password" }
       );
       const mobileJoinUrl = await this.virtualClassroomService.joinMeeting(
         session.id ?? "",
-        { fullName:fullname, password: "password", mobile: true }
+        { fullName: fullname, password: "password", mobile: true }
       );
-      res.status(201).json({ 
+      res.status(201).json({
         desktopJoinUrl,
-        mobileJoinUrl 
+        mobileJoinUrl
       });
     } catch (error: any) {
       req.log.error({ err: error, sessionId: req.params.id }, "launchMeeting failed");
@@ -78,7 +81,7 @@ export class VirtualClassroomController {
   endMeeting = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const session = await this.courseService.getSessionById(id);
+      const session = await this.sessionService.getSessionById(id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;

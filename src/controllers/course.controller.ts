@@ -16,6 +16,9 @@ import { CourseProgressDto } from "../dtos/course-progress.dto";
 import { NotificationService } from "../services/notification.service";
 import { HttpService } from "../services/http.service";
 import { StudentRequestService } from "../services/student-request.service";
+import { SessionService } from "../services/session.service";
+import { MaterialService } from "../services/material.service";
+import { CertificateService } from "../services/certificate.service";
 
 export class CourseController {
   private courseService: CourseService;
@@ -23,6 +26,9 @@ export class CourseController {
   private quizService: QuizService;
   private httpService: HttpService;
   private studentRequestService: StudentRequestService;
+  private sessionService: SessionService;
+  private materialService: MaterialService;
+  private certificateService: CertificateService;
 
   constructor() {
     this.courseService = new CourseService();
@@ -30,6 +36,9 @@ export class CourseController {
     this.quizService = new QuizService();
     this.httpService = new HttpService();
     this.studentRequestService = new StudentRequestService();
+    this.sessionService = new SessionService();
+    this.materialService = new MaterialService();
+    this.certificateService = new CertificateService();
   }
 
   createDraftCourse = async (req: Request, res: Response): Promise<void> => {
@@ -182,7 +191,7 @@ export class CourseController {
         ...req.body,
         course: course,
       };
-      const session = await this.courseService.createCourseSession(sessionBody);
+      const session = await this.sessionService.createSession(sessionBody);
       const sessionDto = await getSessionDto(session, course.type ?? "session");
       res.status(201).json(sessionDto);
     } catch (error) {
@@ -205,7 +214,7 @@ export class CourseController {
         res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
-      const session = await this.courseService.getSessionById(sessionId);
+      const session = await this.sessionService.getSessionById(sessionId);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -219,7 +228,7 @@ export class CourseController {
         ...req.body,
       };
 
-      await this.courseService.updateSession(sessionBody);
+      await this.sessionService.updateSession(sessionBody);
       res.status(200).json({ message: "Session updated successfully" });
     } catch (error) {
       req.log.error({ err: error, courseId: req.params.id, sessionId: req.params.sessionId }, "updateCourseSession failed");
@@ -241,13 +250,13 @@ export class CourseController {
         res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
-      const session = await this.courseService.getSessionById(sessionId);
+      const session = await this.sessionService.getSessionById(sessionId);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
       }
 
-      await this.courseService.deleteSession(sessionId);
+      await this.sessionService.deleteSession(sessionId);
       res.status(204).json({ message: "Session deleted successfully" });
     } catch (error) {
       req.log.error({ err: error, courseId: req.params.id, sessionId: req.params.sessionId }, "deleteCourseSession failed");
@@ -272,7 +281,7 @@ export class CourseController {
         ...req.body,
         course: course,
       };
-      const certificate = await this.courseService.createCertificate(
+      const certificate = await this.certificateService.createCertificate(
         certificateBody
       );
 
@@ -292,7 +301,7 @@ export class CourseController {
         res.status(404).json({ error: "Course not found" });
         return;
       }
-      const sessions = await this.courseService.getCourseSessions(id);
+      const sessions = await this.sessionService.getCourseSessions(id);
       const sessionDtos = await getSessionDto(sessions, course.type ?? "session");
       res.status(200).json(sessionDtos);
     } catch (error) {
@@ -514,7 +523,7 @@ export class CourseController {
   createLesson = async (req: Request, res: Response): Promise<void> => {
     try {
       const sessionId = req.params.id;
-      const session = await this.courseService.getSessionById(sessionId);
+      const session = await this.sessionService.getSessionById(sessionId);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -539,7 +548,7 @@ export class CourseController {
       const lesson = await this.courseService.createLesson(lessonBody);
       // Add materials via link table
       if (ids && lesson.id) {
-        await this.courseService.addMaterialsToLesson(lesson.id, ids);
+        await this.materialService.addMaterialsToLesson(lesson.id, ids);
       }
       const lessonDto = plainToInstance(
         LessonDto,
@@ -560,7 +569,7 @@ export class CourseController {
       const sessionId = req.params.id;
       const lessonId = req.params.lessonId;
 
-      const session = await this.courseService.getSessionById(sessionId);
+      const session = await this.sessionService.getSessionById(sessionId);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -589,7 +598,7 @@ export class CourseController {
       delete lessonBody.materials;
       await this.courseService.updateLesson(lessonBody);
       if (ids && lesson.id) {
-        await this.courseService.updateLessonMaterials(lesson.id, ids);
+        await this.materialService.updateLessonMaterials(lesson.id, ids);
       }
 
       res.status(200).json({ message: "Lesson updated successfully" });
@@ -604,7 +613,7 @@ export class CourseController {
       const sessionId = req.params.id;
       const lessonId = req.params.lessonId;
 
-      const session = await this.courseService.getSessionById(sessionId);
+      const session = await this.sessionService.getSessionById(sessionId);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -636,7 +645,7 @@ export class CourseController {
   ): Promise<void> => {
     try {
       const sessionId = req.params.id;
-      const session = await this.courseService.getSessionById(sessionId);
+      const session = await this.sessionService.getSessionById(sessionId);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -667,7 +676,7 @@ export class CourseController {
     try {
       const sessionId = req.params.id;
       const sessionDetails =
-        await this.courseService.getPrerecordedSessionDetails(sessionId);
+        await this.sessionService.getPrerecordedSessionDetails(sessionId);
       if (!sessionDetails) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -750,7 +759,7 @@ export class CourseController {
         }
       }
 
-      const sections = await this.courseService.getPrerecordedCourseSections(
+      const sections = await this.sessionService.getPrerecordedCourseSections(
         courseId
       );
 
@@ -844,7 +853,7 @@ export class CourseController {
         res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
-      const sessions = await this.courseService.getTeacherOneOnOneSessions(
+      const sessions = await this.sessionService.getTeacherOneOnOneSessions(
         teacherId
       );
       const sessionDtos = plainToInstance(SessionDto, sessions, {
@@ -871,7 +880,7 @@ export class CourseController {
         return;
       }
       const ids = req.body.materials;
-      await this.courseService.addMaterialsToCourse(courseId, ids);
+      await this.materialService.addMaterialsToCourse(courseId, ids);
       res.status(200).json({ message: "Materials added successfully" });
     } catch (error) {
       req.log.error({ err: error, courseId: req.params.id }, "addCourseMaterials failed");
@@ -882,7 +891,7 @@ export class CourseController {
   getCourseMaterials = async (req: Request, res: Response): Promise<void> => {
     try {
       const courseId = req.params.id;
-      const materials = await this.courseService.getCourseMaterials(courseId);
+      const materials = await this.materialService.getCourseMaterials(courseId);
       const materialDtos = plainToInstance(MaterialDto, materials, {
         excludeExtraneousValues: true,
       });
@@ -897,7 +906,7 @@ export class CourseController {
   getLessonMaterials = async (req: Request, res: Response): Promise<void> => {
     try {
       const { lessonId } = req.params;
-      const materials = await this.courseService.getLessonMaterials(lessonId);
+      const materials = await this.materialService.getLessonMaterials(lessonId);
       const materialDtos = plainToInstance(MaterialDto, materials, {
         excludeExtraneousValues: true,
       });
@@ -913,7 +922,7 @@ export class CourseController {
   removeLessonMaterials = async (req: Request, res: Response): Promise<void> => {
     try {
       const { lessonId, id } = req.params;
-      const session = await this.courseService.getSessionById(id);
+      const session = await this.sessionService.getSessionById(id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -923,7 +932,7 @@ export class CourseController {
         return;
       }
       const { materialIds } = req.body;
-      await this.courseService.removeMaterialsFromLesson(lessonId, materialIds);
+      await this.materialService.removeMaterialsFromLesson(lessonId, materialIds);
       res.status(200).json({ message: "Materials removed successfully" });
     }
     catch (error) {
@@ -946,7 +955,7 @@ export class CourseController {
         res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
-      await this.courseService.removeMaterialsFromCourse(id, materialIds);
+      await this.materialService.removeMaterialsFromCourse(id, materialIds);
       res.status(200).json({ message: "Materials removed successfully" });
     }
     catch (error) {
@@ -970,7 +979,7 @@ export class CourseController {
       }
       const isSharableInput = req.body?.isSharable;
       const isSharable = isSharableInput === true || isSharableInput === "true" || isSharableInput === 1 || isSharableInput === "1";
-      await this.courseService.setCourseMaterialsSharable(courseId, isSharable);
+      await this.materialService.setCourseMaterialsSharable(courseId, isSharable);
       res.status(200).json({ message: `Course materials ${isSharable ? "shared" : "unshared"} successfully` });
     } catch (error) {
       req.log.error({ err: error, courseId: req.params.id, isSharable: req.body?.isSharable }, "toggleCourseMaterialsShare failed");
@@ -992,7 +1001,7 @@ export class CourseController {
         res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
-      const newValue = await this.courseService.toggleCourseMaterialSharable(courseId, materialId);
+      const newValue = await this.materialService.toggleCourseMaterialSharable(courseId, materialId);
       res.status(200).json({
         message: `Course material ${newValue ? "shared" : "unshared"} successfully`,
         isSharable: newValue
@@ -1010,9 +1019,8 @@ export class CourseController {
   // Toggle share/unshare for ALL lesson materials (under a session)
   toggleLessonMaterialsShare = async (req: Request, res: Response): Promise<void> => {
     try {
-      const sessionId = req.params.id;
-      const lessonId = req.params.lessonId;
-      const session = await this.courseService.getSessionById(sessionId);
+      const { lessonId, id } = req.params;
+      const session = await this.sessionService.getSessionById(id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -1023,10 +1031,10 @@ export class CourseController {
       }
       const isSharableInput = req.body?.isSharable;
       const isSharable = isSharableInput === true || isSharableInput === "true" || isSharableInput === 1 || isSharableInput === "1";
-      await this.courseService.setLessonMaterialsSharable(lessonId, isSharable);
+      await this.materialService.setLessonMaterialsSharable(lessonId, isSharable);
       res.status(200).json({ message: `Lesson materials ${isSharable ? "shared" : "unshared"} successfully` });
     } catch (error) {
-      req.log.error({ err: error, sessionId: req.params.id, lessonId: req.params.lessonId, isSharable: req.body?.isSharable }, "toggleLessonMaterialsShare failed");
+      req.log.error({ err: error, id: req.params.id, lessonId: req.params.lessonId, isSharable: req.body?.isSharable }, "toggleLessonMaterialsShare failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
@@ -1034,11 +1042,9 @@ export class CourseController {
   // Toggle share/unshare for ONE lesson material (auto-toggle)
   toggleLessonMaterialShare = async (req: Request, res: Response): Promise<void> => {
     try {
-      const sessionId = req.params.id;
-      const lessonId = req.params.lessonId;
-      const materialId = req.params.materialId;
+      const { lessonId, id, materialId } = req.params;
 
-      const session = await this.courseService.getSessionById(sessionId);
+      const session = await this.sessionService.getSessionById(id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -1047,20 +1053,13 @@ export class CourseController {
         res.status(403).json({ error: "You are not the owner of this course" });
         return;
       }
-      const materialLink = await this.courseService.getMaterialLinkByMaterialIdAndLessonId(materialId, lessonId);
-      if (!materialLink) {
-        res.status(404).json({ error: "Material link not found" });
-        return;
-      }
-      materialLink.isSharable = !materialLink.isSharable;
-      await this.courseService.updateMaterialLinkById(materialLink);
-      const newValue = materialLink.isSharable;
+      const newValue = await this.materialService.toggleLessonMaterialSharable(lessonId, materialId);
       res.status(200).json({
         message: `Lesson material ${newValue ? "shared" : "unshared"} successfully`,
         isSharable: newValue
       });
     } catch (error) {
-      req.log.error({ err: error, sessionId: req.params.id, lessonId: req.params.lessonId, materialId: req.params.materialId }, "toggleLessonMaterialShare failed");
+      req.log.error({ err: error, id: req.params.id, lessonId: req.params.lessonId, materialId: req.params.materialId }, "toggleLessonMaterialShare failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };

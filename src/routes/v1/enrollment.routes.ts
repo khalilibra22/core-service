@@ -20,7 +20,7 @@ router.get(
   "/teachers/:id/one-on-one-sessions",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("enrollments", "manage_enrollments"),
-  enrollmentController.getOneOnOneEnrollementByTeacherId
+  enrollmentController.getOneOnOneEnrollmentByTeacherId
 );
 
 router.patch(
@@ -37,7 +37,7 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("enrollments", "enroll_course"),
   ValidationMiddleware.validate(oneOnOneEnrollmentSchema),
-  enrollmentController.createOneOnOneErollment
+  enrollmentController.createOneOnOneEnrollment
 );
 
 router.get(

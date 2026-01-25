@@ -1,20 +1,23 @@
 import { Request, Response } from "express";
 import { CourseService } from "../services/course.service";
 import { StreamingService } from "../services/streaming.service";
+import { SessionService } from "../services/session.service";
 
 export class StreamingServiceController {
   private streamingService: StreamingService;
   private courseService: CourseService;
+  private sessionService: SessionService;
 
   constructor() {
     this.streamingService = new StreamingService();
     this.courseService = new CourseService();
+    this.sessionService = new SessionService();
   }
 
   createVideoEntry = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const session = await this.courseService.getSessionById(id);
+      const session = await this.sessionService.getSessionById(id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -39,7 +42,7 @@ export class StreamingServiceController {
   getVideoById = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id, videoId } = req.params;
-      const session = await this.courseService.getSessionById(id);
+      const session = await this.sessionService.getSessionById(id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -74,7 +77,7 @@ export class StreamingServiceController {
   deleteVideoById = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id, videoId } = req.params;
-      const session = await this.courseService.getSessionById(id);
+      const session = await this.sessionService.getSessionById(id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
