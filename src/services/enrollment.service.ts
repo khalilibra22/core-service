@@ -145,4 +145,21 @@ export class EnrollmentService {
       throw new Error("Error fetching student one-on-one enrollments");
     }
   }
+
+  async getEnrollmentWithMaterials(
+    enrollmentId: string
+  ): Promise<EnrollmentModel | null> {
+    try {
+      return await this.enrollmentRepo.findOne({
+        where: { id: enrollmentId },
+        relations: [
+          "materialLinks",
+          "materialLinks.material",
+        ],
+      });
+    } catch (error) {
+      logger.error({ err: error, enrollmentId }, "getEnrollmentWithMaterials failed");
+      throw new Error("Error fetching enrollment with materials");
+    }
+  }
 }

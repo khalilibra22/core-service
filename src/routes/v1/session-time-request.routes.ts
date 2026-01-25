@@ -16,4 +16,11 @@ router.patch(
   sessionTimeRequestController.changeSessionTimeRequestStatus
 );
 
+router.get(
+  "/",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("sessions", "view"),
+  sessionTimeRequestController.getSessionTimeRequests
+);
+
 export { router as sessionTimeRequestRouter };

@@ -19,6 +19,9 @@ export class SessionTimeChangeRequestDto {
   availabilityId?: string;
 
   @Expose()
+  availabilityException?: Date;
+
+  @Expose()
   requestedTime?: Date;
 
   @Expose()

@@ -64,6 +64,13 @@ router.post(
 );
 
 router.get(
+  "/one-on-one/:id/materials",
+  AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("enrollments", "view"),
+  enrollmentController.getEnrollmentMaterials
+);
+
+router.get(
   "/one-on-one/:id/sessions",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("enrollments", "view"),
