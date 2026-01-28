@@ -55,6 +55,7 @@ export class SessionTimeRequestService {
         where = [
           { userId: filters.userId },
           { session: { enrollment: { teacherId: filters.userId } } },
+          { session: { enrollment: { studentId: filters.userId } } },
         ];
 
         // Apply additional filters to both OR conditions
