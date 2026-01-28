@@ -1,10 +1,11 @@
 import express from "express";
 import { StudentRequestController } from "../../controllers/student-request.controller";
 import { AuthMiddleware } from "../../utils/auth.middleware";
+import { container } from "tsyringe";
 
 const router = express.Router();
 
-const studentRequestController = new StudentRequestController();
+const studentRequestController = container.resolve(StudentRequestController);
 
 // Create a student request for a specific course
 // router.post(

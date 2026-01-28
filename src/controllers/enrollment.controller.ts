@@ -12,91 +12,36 @@ import { FeedbackService } from "../services/feedback.service";
 import { LruInMemoryCache } from "../cache/lru-in-memory.cache";
 import { HttpService } from "../services/http.service";
 import { NotificationService } from "../services/notification.service";
+import { EnrollmentOrchestratorService } from "../services/enrollment-orchestrator.service";
+import { DtoAssemblerService } from "../services/dto-assembler.service";
+import { SessionService } from "../services/session.service";
+import { MaterialService } from "../services/material.service";
+import { injectable, inject } from "tsyringe";
 
+@injectable()
 export class EnrollmentController {
-  private enrollmentService: EnrollmentService;
-  private courseService: CourseService;
-  private externalService: HttpService;
-  private feedbackService: FeedbackService;
-  private notificationService: NotificationService;
-
-  constructor() {
-    this.enrollmentService = new EnrollmentService();
-    this.courseService = new CourseService();
-    this.externalService = new HttpService();
-    this.feedbackService = new FeedbackService();
-    this.notificationService = new NotificationService();
-  }
+  constructor(
+    @inject(EnrollmentService) private enrollmentService: EnrollmentService,
+    @inject(CourseService) private courseService: CourseService,
+    @inject(SessionService) private sessionService: SessionService,
+    @inject(MaterialService) private materialService: MaterialService,
+    @inject(HttpService) private externalService: HttpService,
+    @inject(FeedbackService) private feedbackService: FeedbackService,
+    @inject(NotificationService) private notificationService: NotificationService,
+    @inject(EnrollmentOrchestratorService) private enrollmentOrchestrator: EnrollmentOrchestratorService,
+    @inject(DtoAssemblerService) private dtoAssembler: DtoAssemblerService
+  ) { }
 
   createEnrollment = async (req: Request, res: Response): Promise<void> => {
     try {
-      const course = await this.courseService.getCourseByIdWithEnrollments(
-        req.params.id
-      );
-      if (!course) {
-        res.status(404).json({ error: "Course not found" });
-        return;
-      }
-      //check if course status is published
-      if (course.status !== "published") {
-        res
-          .status(409)
-          .json({ error: "Course is not published yet or canceled" });
-        return;
-      }
-      //check if the user already enrolled
-      if (
-        course.enrollments?.some(
-          (enrollment) => enrollment.studentId === req.body.ownerId
-        )
-      ) {
-        res.status(409).json({ error: "User already enrolled in this course" });
-        return;
-      }
-      if (course.couresSettings?.isCanceled) {
-        res.status(409).json({ error: "Course is canceled" });
-        return;
-      }
       const studentId = req.body.ownerId;
-      delete req.body.type, req.body.ownerId;
-
-      if (course.type === "group" || course.type === "live") {
-        if (
-          (course.enrollments?.length ?? 0) >= (course.maxParticipants ?? 0)
-        ) {
-          res.status(409).json({
-            error: `Course is full. Max students: ${course.maxParticipants}`,
-          });
-          return;
-        }
-      }
-      const enrollmentBody = {
-        ...req.body,
-        studentId: studentId,
-        course: course,
-        type: "course",
-        amount: course.price || 0,
-        currency: "DZD",
-      };
-
-      // Extract fcmToken before creating enrollment
       const fcmToken = req.body.fcmToken as string | undefined;
-      delete enrollmentBody.fcmToken; // Remove from enrollment body
 
-      const enrollment = await this.enrollmentService.createEnrollment(enrollmentBody, fcmToken);
-      if (course.groupId) {
-        const isJoined = await this.externalService.joinChatGroup(course.groupId, studentId);
-      }
-      // Auto-subscribe to course notifications if fcmToken provided
-      const topic = `course-${course.id}`;
-      if (fcmToken) {
-        try {
-          await this.notificationService.subscribeTokenToTopic(fcmToken, topic);
-          req.log.info({ topic, enrollmentId: enrollment.id }, "Auto-subscribed to course topic");
-        } catch (err) {
-          req.log.warn({ err, topic }, "Failed to auto-subscribe to course topic");
-        }
-      }
+      const { topic } = await this.enrollmentOrchestrator.enrollStudentInCourse(
+        req.params.id,
+        studentId,
+        fcmToken
+      );
 
       res.status(201).json({
         message: "Enrollment created successfully",
@@ -104,137 +49,69 @@ export class EnrollmentController {
           course: topic,
         },
       });
-      // //send email to teacher
-      // await this.notificationService.sendEmail({
-      //   to: "test@test.com",
-      //   subject: "New Enrollment",
-      //   text: `A new student enrolled in ${course.name}.`,
-      //   from: "noreply@example.com",
-      // });
     } catch (error: any) {
-      req.log.error({ err: error, courseId: req.params.id }, "createEnrollment failed");
-      res.status(500).json({ error: "Internal Server Error" });
+      req.log.error(
+        { err: error, courseId: req.params.id },
+        "createEnrollment failed"
+      );
+      if (
+        error.message.includes("not found") ||
+        error.message.includes("Course is canceled")
+      ) {
+        res.status(404).json({ error: error.message });
+      } else if (
+        error.message.includes("already enrolled") ||
+        error.message.includes("Course is full")
+      ) {
+        res.status(409).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: "Internal Server Error" });
+      }
     }
   };
 
-  createOneOnOneErollment = async (
+  createOneOnOneEnrollment = async (
     req: Request,
     res: Response
   ): Promise<void> => {
     try {
-      const { teacherId, ownerId, topicId, sessionsNumber, isPaid } = req.body;
+      const { teacherId, ownerId, topicId, sessionsNumber, isPaid, availabilityIds, fcmToken } =
+        req.body;
+
+      // Basic validation
       if (!isPaid) {
-        //TODO: add logic to
-        //ckeck if possible to have free one-on-one session
-        // for example, check if the teacher has a free session available in their plan
-        // if not possible, return 400 error
-        // Example:
-        //res.status(400).json({ error: "One-on-one sessions must be paid" });
-        //return;
+        // checks...
       }
 
-      const availabilityIdsArray = req.body.availabilityIds as string[];
-      if (!availabilityIdsArray || availabilityIdsArray.length === 0) {
-        res.status(400).json({ error: "No sessions provided" });
-        return;
-      }
-      const availabilities =
-        await this.externalService.checkAvailabilities(
-          availabilityIdsArray
-        );
-      const sessions = generateSessionsFromAvailabilities(
-        availabilities,
-        topicId,
-        sessionsNumber
-      );
-
-      // Create chat group for one-on-one enrollment before creating enrollment
-      let groupId: string | null = null;
-      try {
-        const student = await LruInMemoryCache.getUserDetails(ownerId);
-        const teacher = await LruInMemoryCache.getUserDetails(teacherId);
-        const studentName = student?.fullname || ownerId;
-        const teacherName = teacher?.fullname || teacherId;
-
-        groupId = await this.externalService.createChatGroup({
-          name: `1 on 1 with ${teacherName} & ${studentName}`,
-          type: "one-on-one",
-          ownerId: ownerId,
-          members: [ownerId, teacherId], // Add both student and teacher as members
-        });
-
-        if (groupId) {
-          req.log.info({ groupId, studentId: ownerId, teacherId }, "Chat group created for one-on-one enrollment");
-        } else {
-          req.log.warn({ studentId: ownerId, teacherId }, "Failed to create chat group for one-on-one enrollment");
-        }
-      } catch (err) {
-        req.log.warn({ err, studentId: ownerId, teacherId }, "Error creating chat group for one-on-one enrollment");
-        // Don't fail enrollment creation if chat group creation fails
-      }
-
-      const userTopic = await LruInMemoryCache.getUserTopic(topicId);
-      const amount = (userTopic?.price || 0) * sessionsNumber;
-
-      const enrollmentBody = {
+      const { topic } = await this.enrollmentOrchestrator.enrollStudentOneOnOne({
+        teacherId,
         studentId: ownerId,
-        teacherId: teacherId,
-        sessions: sessions,
-        type: "one-on-one",
-        groupId: groupId, // Include groupId in enrollment body
-        amount: amount,
-        currency: "DZD",
-      } as any;
-      const enrollment = await this.enrollmentService.createEnrollment(enrollmentBody);
+        topicId,
+        sessionsNumber,
+        availabilityIds,
+        isPaid,
+        fcmToken,
+      });
 
-      // Topic for this one-on-one enrollment
-      const topic = `oneonone-${enrollment.id}`;
-
-      // Optional auto-subscribe if fcmToken provided
-      const stuedentFcmToken = req.body.fcmToken as string | undefined;
-      if (stuedentFcmToken) {
-        try {
-          await this.notificationService.subscribeTokenToTopic(stuedentFcmToken, topic);
-          req.log.info({ topic, enrollmentId: enrollment.id }, "Auto-subscribed to 1:1 topic");
-        } catch (err) {
-          req.log.warn({ err, topic }, "Failed to auto-subscribe to 1:1 topic");
-        }
-      }
-      const teacher = await LruInMemoryCache.getUserDetails(teacherId);
-      if (teacher?.fcmToken) {
-        try {
-          const teacherTopic = `teacher-${teacherId}`;
-          await this.notificationService.subscribeTokenToTopic(teacher.fcmToken, teacherTopic);
-          //send notification to teacher and student (filter out undefined/empty tokens)
-          const tokens = [teacher.fcmToken, stuedentFcmToken].filter((token): token is string => !!token && token.length >= 10);
-          if (tokens.length > 0) {
-            await this.notificationService.sendToTokens({
-              tokens,
-              title: "One-on-one Scheduled",
-              body: "Your one-on-one sessions have been scheduled.",
-              data: { enrollmentId: String(enrollment.id), type: "oneonone_created" },
-            });
-          }
-          req.log.info({ teacherTopic, enrollmentId: enrollment.id }, "Notification sent to teacher");
-        } catch (err) {
-          req.log.warn({ err, teacherFcmToken: teacher.fcmToken }, "Failed to send notification to teacher");
-        }
-      }
-      await this.externalService.updateAvailabilitiesToUnavailable(
-        availabilityIdsArray
-      );
       res.status(201).json({
         message: "Enrollment created successfully",
         notificationTopics: { oneOnOne: topic },
       });
     } catch (error: any) {
-      req.log.error({ err: error, teacherId: req.body?.teacherId, ownerId: req.body?.ownerId, topicId: req.body?.topicId, sessionsNumber: req.body?.sessionsNumber }, "createOneOnOneErollment failed");
-      if (error.message.includes("400")) {
+      req.log.error(
+        { err: error },
+        "createOneOnOneEnrollment failed"
+      );
+      if (error.message.includes("No sessions provided")) {
+        res.status(400).json({ error: error.message });
+      } else if (
+        error.message.includes("Some time slotes aleardy scheduled") || // keeping typo for compatibility
+        error.message.includes("400") // Assuming 400 from checkAvailabilities means bad request
+      ) {
         res.status(409).json({ error: "Some time slotes aleardy scheduled" });
-        return;
+      } else {
+        res.status(500).json({ error: "Internal Server Error" });
       }
-
-      res.status(500).json({ error: "Internal Server Error" });
     }
   };
 
@@ -251,27 +128,12 @@ export class EnrollmentController {
         return;
       }
       const enrollments = await this.enrollmentService.getCourseEnrollments(id);
-      const enrollmentDtos = await Promise.all(
-        enrollments.map(async (enrollment) => {
-          const teacher = await LruInMemoryCache.getUserDetails(
-            enrollment.teacherId ?? enrollment.course?.ownerId ?? "keynotfound"
-          );
-          const student = await LruInMemoryCache.getUserDetails(
-            enrollment.studentId ?? "keynotfound"
-          );
-          const enrollmentDto = {
-            ...enrollment,
-            teacherFullname: teacher?.fullname ?? "keynotfound",
-            studentFullname: student?.fullname ?? "keynotfound",
-            studentEmail: student?.email ?? "keynotfound",
-            studentPhone: student?.phoneNumber ?? "keynotfound",
-            address: teacher?.address ?? "keynotfound",
-          };
-          return plainToInstance(EnrollmentDto, enrollmentDto, {
-            excludeExtraneousValues: true,
-          });
-        })
+
+      const enrollmentDtos: EnrollmentDto[] = await this.dtoAssembler.enrichDto(
+        EnrollmentDto,
+        enrollments
       );
+
       res.status(200).json(enrollmentDtos);
     } catch (error: any) {
       if (error.message === "Error fetching user") {
@@ -285,7 +147,7 @@ export class EnrollmentController {
     }
   };
 
-  getOneOnOneEnrollementByTeacherId = async (
+  getOneOnOneEnrollmentByTeacherId = async (
     req: Request,
     res: Response
   ): Promise<void> => {
@@ -298,33 +160,15 @@ export class EnrollmentController {
         return;
       }
       const enrollments =
-        await this.enrollmentService.getOneOnOneEnrollementByTeacherId(
+        await this.enrollmentService.getOneOnOneEnrollmentByTeacherId(
           teacherId
         );
-      const enrollmentDtos = await Promise.all(
-        enrollments.map(async (enrollment) => {
-          const student = await LruInMemoryCache.getUserDetails(
-            enrollment.studentId ?? "keynotfound"
-          );
-          const teacher = await LruInMemoryCache.getUserDetails(
-            enrollment.teacherId ?? "keynotfound"
-          );
-          const topic = await LruInMemoryCache.getUserTopic(
-            enrollment?.sessions?.[0]?.topicId ?? 0
-          );
-          req.log.info({ topic }, "Fetched topic for enrollment");
-          const enrollmentDto = {
-            ...enrollment,
-            studentFullname: student?.fullname ?? "keynotfound",
-            teacherFullname: teacher?.fullname ?? "keynotfound",
-            address: teacher?.address ?? "keynotfound",
-            topicName: topic?.topic.name ?? "keynotfound",
-          };
-          return plainToInstance(OneOnOneEnollmentDto, enrollmentDto, {
-            excludeExtraneousValues: true,
-          });
-        })
+
+      const enrollmentDtos: OneOnOneEnollmentDto[] = await this.dtoAssembler.enrichDto(
+        OneOnOneEnollmentDto,
+        enrollments
       );
+
       res.status(200).json(enrollmentDtos);
     } catch (error) {
       req.log.error({ err: error, teacherId: req.params.id }, "getOneOnOneEnrollementByTeacherId failed");
@@ -528,12 +372,10 @@ export class EnrollmentController {
         return;
       }
       const sessions =
-        await this.courseService.getOneOnOneSessionsByEnrollmentId(
+        await this.sessionService.getOneOnOneSessionsByEnrollmentId(
           enrollmentId
         );
-      const sessionDtos = await Promise.all(sessions.map(async (session) => {
-        return await enrichDto<SessionDto>(SessionDto, session);
-      }));
+      const sessionDtos = await this.dtoAssembler.enrichDto<SessionDto[]>(SessionDto, sessions);
       res.status(200).json(sessionDtos);
     } catch (error) {
       req.log.error({ err: error, enrollmentId: req.params.id }, "getOneOnOneEnrollmentSessions failed");
@@ -554,7 +396,7 @@ export class EnrollmentController {
         res.status(403).json({ error: "Only the teacher can add materials" });
         return;
       }
-      await this.courseService.addMaterialsToEnrollment(enrollmentId, materialIds);
+      await this.materialService.addMaterialsToEnrollment(enrollmentId, materialIds);
       res.status(200).json({ message: "Materials added to enrollment successfully" });
     } catch (error: any) {
       req.log.error({ err: error, enrollmentId: req.params.id }, "addMaterialsToOneOnOneEnrollment failed");
@@ -575,7 +417,7 @@ export class EnrollmentController {
         res.status(403).json({ error: "Only the teacher can update materials" });
         return;
       }
-      await this.courseService.updateEnrollmentMaterials(enrollmentId, materialIds);
+      await this.materialService.updateEnrollmentMaterials(enrollmentId, materialIds);
       res.status(200).json({ message: "Enrollment materials updated successfully" });
     } catch (error: any) {
       req.log.error({ err: error, enrollmentId: req.params.id }, "updateEnrollmentMaterials failed");
@@ -587,7 +429,7 @@ export class EnrollmentController {
     try {
       const sessionId = req.params.sessionId;
       const { materialIds } = req.body;
-      const session = await this.courseService.getSessionById(sessionId);
+      const session = await this.sessionService.getSessionById(sessionId);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -596,7 +438,7 @@ export class EnrollmentController {
         res.status(403).json({ error: "Only the teacher can add materials" });
         return;
       }
-      await this.courseService.addMaterialsToSession(sessionId, materialIds);
+      await this.materialService.addMaterialsToSession(sessionId, materialIds);
       res.status(200).json({ message: "Materials added to session successfully" });
     } catch (error: any) {
       req.log.error({ err: error, sessionId: req.params.sessionId }, "addMaterialsToSession failed");
@@ -608,7 +450,7 @@ export class EnrollmentController {
     try {
       const sessionId = req.params.sessionId;
       const { materialIds } = req.body;
-      const session = await this.courseService.getSessionById(sessionId);
+      const session = await this.sessionService.getSessionById(sessionId);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -617,7 +459,7 @@ export class EnrollmentController {
         res.status(403).json({ error: "Only the teacher can update materials" });
         return;
       }
-      await this.courseService.updateSessionMaterials(sessionId, materialIds);
+      await this.materialService.updateSessionMaterials(sessionId, materialIds);
       res.status(200).json({ message: "Session materials updated successfully" });
     } catch (error: any) {
       req.log.error({ err: error, sessionId: req.params.sessionId }, "updateSessionMaterials failed");

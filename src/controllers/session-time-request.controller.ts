@@ -1,22 +1,22 @@
 import { Request, Response } from "express";
+import { injectable, inject } from "tsyringe";
 import { SessionTimeRequestService } from "../services/session-time-request.service";
 import { CourseService } from "../services/course.service";
+import { SessionService } from "../services/session.service";
+import { HttpService } from "../services/http.service";
 import { plainToInstance } from "class-transformer";
 import { SessionTimeChangeRequestDto } from "../dtos/session-time-change-request.dto";
 import { enrichDto } from "../utils";
-import { HttpService } from "../services/http.service";
 import { UserRole } from "../enums/user-roles.enum";
 
+@injectable()
 export class SessionTimeRequestController {
-  private sessionTimeRequestService: SessionTimeRequestService;
-  private courseService: CourseService;
-  private externalService: HttpService;
-
-  constructor() {
-    this.sessionTimeRequestService = new SessionTimeRequestService();
-    this.courseService = new CourseService();
-    this.externalService = new HttpService();
-  }
+  constructor(
+    @inject(SessionTimeRequestService) private sessionTimeRequestService: SessionTimeRequestService,
+    @inject(CourseService) private courseService: CourseService,
+    @inject(SessionService) private sessionService: SessionService,
+    @inject(HttpService) private externalService: HttpService
+  ) { }
 
   private getNextOccurrence(dayOfWeek: string, startTime: string): Date {
     const dayOfWeekMap: Record<string, number> = {
@@ -59,7 +59,7 @@ export class SessionTimeRequestController {
   ): Promise<void> => {
     try {
       const { availabilityId, availabilityException, reason, ownerId, userRole } = req.body;
-      const session = await this.courseService.getSessionById(req.params.id);
+      const session = await this.sessionService.getSessionById(req.params.id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -107,6 +107,9 @@ export class SessionTimeRequestController {
         }
       }
 
+      const expirationDate = new Date();
+      expirationDate.setHours(expirationDate.getHours() + 72);
+
       const sessionTimeRequestBody = {
         session: session,
         userId: ownerId,
@@ -114,7 +117,8 @@ export class SessionTimeRequestController {
         availabilityId: availabilityId,
         availabilityException: availabilityException ? new Date(availabilityException) : undefined,
         reason: reason,
-        status: "pending"
+        status: "pending",
+        expirationDate: expirationDate
       };
 
       const sessionTimeRequest =
@@ -123,7 +127,8 @@ export class SessionTimeRequestController {
         );
       const sessionTimeRequestDto = await enrichDto<SessionTimeChangeRequestDto>(
         SessionTimeChangeRequestDto,
-        sessionTimeRequest
+        sessionTimeRequest,
+        { topicIdFields: ["session.topicId"] }
       );
       res.status(201).json(sessionTimeRequestDto);
     } catch (error) {
@@ -263,7 +268,8 @@ export class SessionTimeRequestController {
         requests.map(async (request) => {
           return await enrichDto<SessionTimeChangeRequestDto>(
             SessionTimeChangeRequestDto,
-            request
+            request,
+            { topicIdFields: ["session.topicId"] }
           );
         })
       );

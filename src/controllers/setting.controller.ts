@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
 import { SettingService } from "../services/setting.service";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class SettingController {
-  private settingService: SettingService;
-  constructor() {
-    this.settingService = new SettingService();
-  }
+  constructor(
+    @inject(SettingService) private settingService: SettingService
+  ) { }
   createOrUpdateSettings = async (
     req: Request,
     res: Response

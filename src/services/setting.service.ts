@@ -1,12 +1,14 @@
 import { AppDataSource } from "../config/database";
 import { logger } from "../utils/logger";
 import { SettingsModel } from "../models/settings.model";
+import { inject, injectable } from "tsyringe";
+import { Repository } from "typeorm";
 
+@injectable()
 export class SettingService {
-  settingRepo: any;
 
-  constructor() {
-    this.settingRepo = AppDataSource.getRepository(SettingsModel);
+  constructor(@inject("SettingRepository") private settingRepo: Repository<SettingsModel>,
+  ) {
   }
 
   async createOrUpdateSettings(

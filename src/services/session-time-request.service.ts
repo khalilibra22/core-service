@@ -1,15 +1,14 @@
 import { AppDataSource } from "../config/database";
+import { injectable, inject } from "tsyringe";
+import { Repository } from "typeorm";
 import { logger } from "../utils/logger";
 import { SessionTimeChangeRequestModel } from "../models/session-time-change-request.model";
 
+@injectable()
 export class SessionTimeRequestService {
-  sessionTimeRequestRepo: any;
-
-  constructor() {
-    this.sessionTimeRequestRepo = AppDataSource.getRepository(
-      SessionTimeChangeRequestModel
-    );
-  }
+  constructor(
+    @inject("SessionTimeRequestRepository") private sessionTimeRequestRepo: Repository<SessionTimeChangeRequestModel>
+  ) { }
 
   // Create a new session time change request
   async createSessionTimeRequest(
@@ -56,6 +55,7 @@ export class SessionTimeRequestService {
         where = [
           { userId: filters.userId },
           { session: { enrollment: { teacherId: filters.userId } } },
+          { session: { enrollment: { studentId: filters.userId } } },
         ];
 
         // Apply additional filters to both OR conditions

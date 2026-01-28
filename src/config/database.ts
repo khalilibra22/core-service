@@ -21,12 +21,11 @@ import { CourseProgressModel } from "../models/course-progress.model";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
-  host:
-    process.env.DB_HOST || "pg-2a2ac9b9-ibrakhalilo22-4c7b.f.aivencloud.com",
-  port: Number(process.env.DB_PORT) || 12183,
-  username: process.env.DB_USERNAME || "avnadmin",
-  password: process.env.DB_PASSWORD || "AVNS_0vhpVNq82FydIBgv2ow",
-  database: process.env.DB_NAME || "course-service-db",
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT),
+  username: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
   ssl: { rejectUnauthorized: false },
   entities: [
     CourseModel,

@@ -3,10 +3,10 @@ import { StorageController } from "../../controllers/storage.controller";
 import { upload } from "../../config/multer";
 import { AuthMiddleware } from "../../utils/auth.middleware";
 import { handleMulterError } from "../../utils";
+import { container } from "tsyringe";
 
 const router = Router();
-const storageController = new StorageController();
-
+const storageController = container.resolve(StorageController);
 
 // Upload file
 router.post(

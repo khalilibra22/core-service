@@ -1,22 +1,23 @@
 import { Request, Response } from "express";
+import { injectable, inject } from "tsyringe";
 import { CourseService } from "../services/course.service";
 import { QuizService } from "../services/quiz.service";
+import { SessionService } from "../services/session.service";
 import { plainToInstance } from "class-transformer";
 import { QuizDto } from "../dtos/quiz.dto";
 import { QuestionDto } from "../dtos/question.dto";
 import { QuizAttemptDto } from "../dtos/quiz-attempt.dto";
 
+@injectable()
 export class QuizController {
-  private quizService: QuizService;
-  private courseService: CourseService;
-  constructor() {
-    this.quizService = new QuizService();
-    this.courseService = new CourseService();
-  }
+  constructor(
+    @inject(QuizService) private quizService: QuizService,
+    @inject(SessionService) private sessionService: SessionService
+  ) { }
 
   createQuiz = async (req: Request, res: Response): Promise<void> => {
     try {
-      const session = await this.courseService.getSessionById(req.params.id);
+      const session = await this.sessionService.getSessionById(req.params.id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -49,7 +50,7 @@ export class QuizController {
     try {
       const { id, quizId } = req.params;
       const updates = req.body;
-      const session = await this.courseService.getSessionById(id);
+      const session = await this.sessionService.getSessionById(id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -79,7 +80,7 @@ export class QuizController {
   deleteQuiz = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id, quizId } = req.params;
-      const session = await this.courseService.getSessionById(id);
+      const session = await this.sessionService.getSessionById(id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -193,7 +194,7 @@ export class QuizController {
     try {
       const id = req.params.id;
       const userRole = req.body.userRole;
-      const session = await this.courseService.getSessionById(id);
+      const session = await this.sessionService.getSessionById(id);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -219,15 +220,15 @@ export class QuizController {
         res.status(404).json({ error: "Quiz not found" });
         return;
       }
-      
+
       // Determine transformation groups based on user role
       const groups = userRole === 2 ? [] : ["instructor", "admin"];
-      
+
       const quizDto = plainToInstance(QuizDto, quiz, {
         excludeExtraneousValues: true,
         groups: groups,
       });
-      
+
       res.status(200).json(quizDto);
     } catch (error) {
       req.log.error({ err: error, quizId: req.params.id }, "getQuizDetails failed");

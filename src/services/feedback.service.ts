@@ -1,16 +1,17 @@
+import { Repository } from "typeorm";
 import { AppDataSource } from "../config/database";
 import { logger } from "../utils/logger";
+import { injectable, inject } from "tsyringe";
 import { ComplaintModel } from "../models/complaint.model";
 import { ReviewModel } from "../models/review.model";
 import { PaginatedResult } from "../utils";
 
+@injectable()
 export class FeedbackService {
-  reviewRepo: any;
-  complaintRepo: any;
-  constructor() {
-    this.reviewRepo = AppDataSource.getRepository(ReviewModel);
-    this.complaintRepo = AppDataSource.getRepository(ComplaintModel);
-  }
+  constructor(
+    @inject("ReviewRepository") private reviewRepo: Repository<ReviewModel>,
+    @inject("ComplaintRepository") private complaintRepo: Repository<ComplaintModel>
+  ) { }
 
   async createReview(review: ReviewModel): Promise<ReviewModel> {
     try {
@@ -256,7 +257,7 @@ export class FeedbackService {
     try {
       return await this.complaintRepo.find({
         where: {
-          status: status,
+          status: status as any,
         },
         cache: {
           id: `complaints-status-${status}`,

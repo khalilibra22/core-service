@@ -4,8 +4,8 @@ export class SessionTimeChangeRequestDto {
   @Expose()
   id?: string;
 
-  // @Expose()
-  // userId?: string;
+  @Expose()
+  userId?: string;
 
   @Expose()
   @Transform(({ obj, options }) => options?.context?.userById?.[obj?.userId]?.fullname)
@@ -33,4 +33,16 @@ export class SessionTimeChangeRequestDto {
 
   @Expose()
   reason?: string;
+
+  // requested date
+  @Expose()
+  @Transform(({ obj }) => obj.createdAt)
+  requestedDate?: Date;
+
+  @Expose()
+  expirationDate?: Date;
+
+  @Expose()
+  @Transform(({ obj, options }) => options?.context?.topicById?.[obj?.session?.topicId]?.name)
+  topic?: string;
 }

@@ -1,21 +1,22 @@
 import { Request, Response } from "express";
+import { injectable, inject } from "tsyringe";
 import { CourseService } from "../services/course.service";
 import { FeedbackService } from "../services/feedback.service";
 import { EnrollmentService } from "../services/enrollment.service";
+import { SessionService } from "../services/session.service";
 import { ReviewDto } from "../dtos/review.dto";
 import { ComplaintDto } from "../dtos/complaint.dto";
 import { ComplaintListDto } from "../dtos/complaint-list.dto";
 import { enrichDto, setPaginationHeaders } from "../utils";
 
+@injectable()
 export class FeedbackController {
-  private feedbackService: FeedbackService;
-  private courseService: CourseService;
-  private enrollmentService: EnrollmentService;
-  constructor() {
-    this.feedbackService = new FeedbackService();
-    this.courseService = new CourseService();
-    this.enrollmentService = new EnrollmentService();
-  }
+  constructor(
+    @inject(FeedbackService) private feedbackService: FeedbackService,
+    @inject(CourseService) private courseService: CourseService,
+    @inject(EnrollmentService) private enrollmentService: EnrollmentService,
+    @inject(SessionService) private sessionService: SessionService
+  ) { }
 
   createCourseReview = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -154,7 +155,7 @@ export class FeedbackController {
           res.status(400).json({ error: "Other complaint types must be linked to a Session" });
           return;
         }
-        const session = await this.courseService.getSessionById(finalSessionId);
+        const session = await this.sessionService.getSessionById(finalSessionId);
         if (!session) {
           res.status(404).json({ error: "Session not found" });
           return;

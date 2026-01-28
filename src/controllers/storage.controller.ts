@@ -4,12 +4,13 @@ import { plainToInstance } from "class-transformer";
 import { MinimalMaterialDto } from "../dtos/minimal-material.dto";
 import { v4 as uuidv4 } from "uuid";
 import { setPaginationHeaders } from "../utils";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class StorageController {
-  private storageService: StorageService;
 
-  constructor() {
-    this.storageService = new StorageService();
+  constructor(@inject(StorageService) private storageService: StorageService
+  ) {
   }
 
   uploadFile = async (req: Request, res: Response): Promise<void> => {
@@ -195,7 +196,7 @@ export class StorageController {
       const key = `${uuidv4()}-${title
         .toLowerCase()
         .replace(/\s+/g, "-")}`;
-      const url = await this.storageService.generatePresignedUploadUrl(key,req.body.type);
+      const url = await this.storageService.generatePresignedUploadUrl(key, req.body.type);
       // store metadata in database
       const material = {
         ...req.body,
