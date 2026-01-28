@@ -31,6 +31,9 @@ export class SessionTimeChangeRequestModel {
   @Column({ type: "timestamp", nullable: true })
   availabilityException?: Date;
 
+  @Column({ type: "timestamp", nullable: true })
+  expirationDate?: Date;
+
   @Column({ default: "pending" })
   status?: string; // Status of the request (e.g., pending, approved, rejected)
 

@@ -107,6 +107,9 @@ export class SessionTimeRequestController {
         }
       }
 
+      const expirationDate = new Date();
+      expirationDate.setHours(expirationDate.getHours() + 72);
+
       const sessionTimeRequestBody = {
         session: session,
         userId: ownerId,
@@ -114,7 +117,8 @@ export class SessionTimeRequestController {
         availabilityId: availabilityId,
         availabilityException: availabilityException ? new Date(availabilityException) : undefined,
         reason: reason,
-        status: "pending"
+        status: "pending",
+        expirationDate: expirationDate
       };
 
       const sessionTimeRequest =
@@ -123,7 +127,8 @@ export class SessionTimeRequestController {
         );
       const sessionTimeRequestDto = await enrichDto<SessionTimeChangeRequestDto>(
         SessionTimeChangeRequestDto,
-        sessionTimeRequest
+        sessionTimeRequest,
+        { topicIdFields: ["session.topicId"] }
       );
       res.status(201).json(sessionTimeRequestDto);
     } catch (error) {
@@ -263,7 +268,8 @@ export class SessionTimeRequestController {
         requests.map(async (request) => {
           return await enrichDto<SessionTimeChangeRequestDto>(
             SessionTimeChangeRequestDto,
-            request
+            request,
+            { topicIdFields: ["session.topicId"] }
           );
         })
       );

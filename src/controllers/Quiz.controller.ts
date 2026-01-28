@@ -12,7 +12,6 @@ import { QuizAttemptDto } from "../dtos/quiz-attempt.dto";
 export class QuizController {
   constructor(
     @inject(QuizService) private quizService: QuizService,
-    @inject(CourseService) private courseService: CourseService,
     @inject(SessionService) private sessionService: SessionService
   ) { }
 
