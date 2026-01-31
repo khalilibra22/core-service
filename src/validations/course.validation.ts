@@ -137,7 +137,7 @@ export const timeChangeRequestValidationSchema = Joi.object({
   availabilityException: Joi.date().greater("now").optional(),
   reason: Joi.string().required(),
   ownerId: Joi.string().uuid().optional(),
-}).xor("availabilityId", "availabilityException");
+}).oxor("availabilityId", "availabilityException");
 
 export const courseCancellationValidationSchema = Joi.object({
   reasonOfCancellation: Joi.string().required(),
