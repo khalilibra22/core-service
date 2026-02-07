@@ -1,21 +1,26 @@
 import { Repository } from "typeorm";
-import { AppDataSource } from "../config/database";
 import { logger } from "../utils/logger";
 import { injectable, inject } from "tsyringe";
 import { ComplaintModel } from "../models/complaint.model";
 import { ReviewModel } from "../models/review.model";
+import { CourseModel } from "../models/course.model";
 import { PaginatedResult } from "../utils";
 
 @injectable()
 export class FeedbackService {
   constructor(
     @inject("ReviewRepository") private reviewRepo: Repository<ReviewModel>,
-    @inject("ComplaintRepository") private complaintRepo: Repository<ComplaintModel>
+    @inject("ComplaintRepository") private complaintRepo: Repository<ComplaintModel>,
+    @inject("CourseRepository") private courseRepo: Repository<CourseModel>
   ) { }
 
   async createReview(review: ReviewModel): Promise<ReviewModel> {
     try {
-      return await this.reviewRepo.save(review);
+      const savedReview = await this.reviewRepo.save(review);
+      if (review.course?.id) {
+        await this.syncCourseRating(review.course.id);
+      }
+      return savedReview;
     } catch (error) {
       logger.error({ err: error }, "createReview failed");
       throw new Error("Error creating review");
@@ -24,7 +29,11 @@ export class FeedbackService {
 
   async updateReview(review: ReviewModel): Promise<ReviewModel> {
     try {
-      return await this.reviewRepo.save(review);
+      const savedReview = await this.reviewRepo.save(review);
+      if (review.course?.id) {
+        await this.syncCourseRating(review.course.id);
+      }
+      return savedReview;
     } catch (error) {
       logger.error({ err: error }, "updateReview failed");
       throw new Error("Error updating review");
@@ -33,7 +42,11 @@ export class FeedbackService {
 
   async softDeleteReview(id: string): Promise<void> {
     try {
+      const review = await this.getReviewById(id);
       await this.reviewRepo.softDelete(id);
+      if (review?.course?.id) {
+        await this.syncCourseRating(review.course.id);
+      }
     } catch (error) {
       logger.error({ err: error, id }, "softDeleteReview failed");
       throw new Error("Error deleting review");
@@ -531,6 +544,47 @@ export class FeedbackService {
     } catch (error) {
       logger.error({ err: error, filters }, "getAdminDisputes failed");
       throw new Error("Error fetching admin disputes");
+    }
+  }
+
+  async calculateCourseAverageRating(courseId: string): Promise<number> {
+    try {
+      const result = await this.reviewRepo
+        .createQueryBuilder("review")
+        .select("AVG(review.rating)", "average")
+        .where("review.courseId = :courseId", { courseId })
+        .getRawOne();
+
+      return result?.average ? parseFloat(parseFloat(result.average).toFixed(1)) : 0;
+    } catch (error) {
+      logger.error({ err: error, courseId }, "calculateCourseAverageRating failed");
+      return 0;
+    }
+  }
+
+  async calculateTeacherAverageRating(teacherId: string): Promise<number> {
+    try {
+      const result = await this.reviewRepo
+        .createQueryBuilder("review")
+        .select("AVG(review.rating)", "average")
+        .leftJoin("review.course", "course")
+        .where("(course.ownerId = :teacherId OR review.teacherId = :teacherId)", { teacherId })
+        .getRawOne();
+
+      return result?.average ? parseFloat(parseFloat(result.average).toFixed(1)) : 0;
+    } catch (error) {
+      logger.error({ err: error, teacherId }, "calculateTeacherAverageRating failed");
+      return 0;
+    }
+  }
+
+  async syncCourseRating(courseId: string): Promise<void> {
+    try {
+      const averageRating = await this.calculateCourseAverageRating(courseId);
+      await this.courseRepo.update(courseId, { rating: averageRating });
+      logger.info({ courseId, averageRating }, "Course rating synchronized");
+    } catch (error) {
+      logger.error({ err: error, courseId }, "syncCourseRating failed");
     }
   }
 }

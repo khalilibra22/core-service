@@ -11,6 +11,8 @@ import { Availability } from "../types/availability.types";
 import multer from "multer";
 import { Request, Response, NextFunction } from "express";
 import { LruInMemoryCache } from "../cache/lru-in-memory.cache";
+import { AppDataSource } from "../config/database";
+import { ReviewModel } from "../models/review.model";
 
 import { MinimalUser, Subject, Topic } from "../types/user.types";
 
@@ -74,9 +76,35 @@ export const getCourseDto = async (
       subjectById[subjectIds[i]] = s;
     });
 
+    // Batch fetch average ratings and reviews count for owners
+    const ownerRatingById: Record<string, number> = {};
+    const ownerReviewsCountById: Record<string, number> = {};
+    if (userIds.length > 0) {
+      const reviewRepo = AppDataSource.getRepository(ReviewModel);
+
+      for (const userId of userIds) {
+        const [result, count] = await Promise.all([
+          reviewRepo
+            .createQueryBuilder("review")
+            .select("AVG(review.rating)", "average")
+            .leftJoin("review.course", "course")
+            .where("(course.ownerId = :userId OR review.teacherId = :userId)", { userId })
+            .getRawOne(),
+          reviewRepo
+            .createQueryBuilder("review")
+            .leftJoin("review.course", "course")
+            .where("(course.ownerId = :userId OR review.teacherId = :userId)", { userId })
+            .getCount()
+        ]);
+
+        ownerRatingById[userId] = result?.average ? parseFloat(parseFloat(result.average).toFixed(1)) : 0;
+        ownerReviewsCountById[userId] = count;
+      }
+    }
+
     const options = {
       excludeExtraneousValues: true,
-      context: { userById, topicById, subjectById }
+      context: { userById, topicById, subjectById, ownerRatingById, ownerReviewsCountById }
     };
 
     switch (type) {
