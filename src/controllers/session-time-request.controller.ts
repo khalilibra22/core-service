@@ -6,7 +6,7 @@ import { SessionService } from "../services/session.service";
 import { HttpService } from "../services/http.service";
 import { plainToInstance } from "class-transformer";
 import { SessionTimeChangeRequestDto } from "../dtos/session-time-change-request.dto";
-import { enrichDto } from "../utils";
+import { DtoService } from "../services/dto.service";
 import { UserRole } from "../enums/user-roles.enum";
 
 @injectable()
@@ -15,7 +15,8 @@ export class SessionTimeRequestController {
     @inject(SessionTimeRequestService) private sessionTimeRequestService: SessionTimeRequestService,
     @inject(CourseService) private courseService: CourseService,
     @inject(SessionService) private sessionService: SessionService,
-    @inject(HttpService) private externalService: HttpService
+    @inject(HttpService) private externalService: HttpService,
+    @inject(DtoService) private dtoService: DtoService
   ) { }
 
   private getNextOccurrence(dayOfWeek: string, startTime: string): Date {
@@ -125,7 +126,7 @@ export class SessionTimeRequestController {
         await this.sessionTimeRequestService.createSessionTimeRequest(
           sessionTimeRequestBody as any
         );
-      const sessionTimeRequestDto = await enrichDto<SessionTimeChangeRequestDto>(
+      const sessionTimeRequestDto = await this.dtoService.enrichDto<SessionTimeChangeRequestDto>(
         SessionTimeChangeRequestDto,
         sessionTimeRequest,
         { topicIdFields: ["session.topicId"] }
@@ -266,7 +267,7 @@ export class SessionTimeRequestController {
 
       const requestDtos = await Promise.all(
         requests.map(async (request) => {
-          return await enrichDto<SessionTimeChangeRequestDto>(
+          return await this.dtoService.enrichDto<SessionTimeChangeRequestDto>(
             SessionTimeChangeRequestDto,
             request,
             { topicIdFields: ["session.topicId"] }

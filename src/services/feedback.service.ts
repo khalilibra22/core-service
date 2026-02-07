@@ -578,6 +578,21 @@ export class FeedbackService {
     }
   }
 
+  async getTeacherReviewsCount(teacherId: string): Promise<number> {
+    try {
+      const count = await this.reviewRepo
+        .createQueryBuilder("review")
+        .leftJoin("review.course", "course")
+        .where("(course.ownerId = :teacherId OR review.teacherId = :teacherId)", { teacherId })
+        .getCount();
+
+      return count;
+    } catch (error) {
+      logger.error({ err: error, teacherId }, "getTeacherReviewsCount failed");
+      return 0;
+    }
+  }
+
   async syncCourseRating(courseId: string): Promise<void> {
     try {
       const averageRating = await this.calculateCourseAverageRating(courseId);

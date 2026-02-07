@@ -4,7 +4,7 @@ import { EnrollmentService } from "../services/enrollment.service";
 import { EnrollmentDto } from "../dtos/enrollment.dto";
 import { plainToInstance } from "class-transformer";
 import { OneOnOneEnollmentDto } from "../dtos/one-on-one-enrollment.dto";
-import { enrichDto, generateSessionsFromAvailabilities, getCourseDto, setPaginationHeaders } from "../utils";
+import { setPaginationHeaders } from "../utils";
 import { SessionDto } from "../dtos/session.dto";
 import { RefundDto } from "../dtos/refund.dto";
 import { MaterialDto } from "../dtos/material.dto";
@@ -13,7 +13,7 @@ import { LruInMemoryCache } from "../cache/lru-in-memory.cache";
 import { HttpService } from "../services/http.service";
 import { NotificationService } from "../services/notification.service";
 import { EnrollmentOrchestratorService } from "../services/enrollment-orchestrator.service";
-import { DtoAssemblerService } from "../services/dto-assembler.service";
+import { DtoService } from "../services/dto.service";
 import { SessionService } from "../services/session.service";
 import { MaterialService } from "../services/material.service";
 import { injectable, inject } from "tsyringe";
@@ -29,7 +29,7 @@ export class EnrollmentController {
     @inject(FeedbackService) private feedbackService: FeedbackService,
     @inject(NotificationService) private notificationService: NotificationService,
     @inject(EnrollmentOrchestratorService) private enrollmentOrchestrator: EnrollmentOrchestratorService,
-    @inject(DtoAssemblerService) private dtoAssembler: DtoAssemblerService
+    @inject(DtoService) private dtoService: DtoService
   ) { }
 
   createEnrollment = async (req: Request, res: Response): Promise<void> => {
@@ -129,7 +129,7 @@ export class EnrollmentController {
       }
       const enrollments = await this.enrollmentService.getCourseEnrollments(id);
 
-      const enrollmentDtos: EnrollmentDto[] = await this.dtoAssembler.enrichDto(
+      const enrollmentDtos: EnrollmentDto[] = await this.dtoService.enrichDto(
         EnrollmentDto,
         enrollments
       );
@@ -164,7 +164,7 @@ export class EnrollmentController {
           teacherId
         );
 
-      const enrollmentDtos: OneOnOneEnollmentDto[] = await this.dtoAssembler.enrichDto(
+      const enrollmentDtos: OneOnOneEnollmentDto[] = await this.dtoService.enrichDto(
         OneOnOneEnollmentDto,
         enrollments
       );
@@ -375,7 +375,7 @@ export class EnrollmentController {
         await this.sessionService.getOneOnOneSessionsByEnrollmentId(
           enrollmentId
         );
-      const sessionDtos = await this.dtoAssembler.enrichDto<SessionDto[]>(SessionDto, sessions);
+      const sessionDtos = await this.dtoService.enrichDto<SessionDto[]>(SessionDto, sessions);
       res.status(200).json(sessionDtos);
     } catch (error) {
       req.log.error({ err: error, enrollmentId: req.params.id }, "getOneOnOneEnrollmentSessions failed");
@@ -651,7 +651,7 @@ export class EnrollmentController {
         limit,
         courseType
       );
-      const courseDtos = await getCourseDto(courses, courseType);
+      const courseDtos = await this.dtoService.getCourseDto(courses, courseType);
       setPaginationHeaders(res, total, page, limit);
       res.status(200).json(courseDtos);
     } catch (error) {
