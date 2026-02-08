@@ -57,6 +57,23 @@ export class EnrollmentOrchestratorService {
 
         // Auto-subscribe to course notifications
         const topic = `course-${course.id}`;
+
+        // Handle Payment
+        if (course.price && course.price > 0) {
+            const paymentResponse = await this.httpService.initiatePayment({
+                userId: studentId,
+                amount: course.price,
+                currency: "DZD",
+                method: "satim", // Default or passed in args?
+                referenceType: "COURSE_ENROLLMENT",
+                referenceId: enrollment.id,
+                returnUrl: `http://localhost:3000/enrollment/${enrollment.id}/success`, // TODO: Config
+                failUrl: `http://localhost:3000/enrollment/${enrollment.id}/fail`,
+            });
+
+            // We can return the payment URL in the response
+            return { enrollment, topic, paymentUrl: paymentResponse.paymentUrl, transactionId: paymentResponse.transactionId } as any;
+        }
         if (fcmToken) {
             try {
                 await this.notificationService.subscribeTokenToTopic(fcmToken, topic);

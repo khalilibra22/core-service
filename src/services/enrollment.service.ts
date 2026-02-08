@@ -163,4 +163,29 @@ export class EnrollmentService {
       throw new Error("Error fetching enrollment with materials");
     }
   }
+
+  async updateEnrollmentPaymentStatus(
+    enrollmentId: string,
+    status: string,
+    paymentId?: string,
+    paymentProvider?: string
+  ): Promise<EnrollmentModel> {
+    try {
+      const enrollment = await this.enrollmentRepo.findOne({ where: { id: enrollmentId } });
+      if (!enrollment) throw new Error("Enrollment not found");
+
+      enrollment.paymentStatus = status;
+      if (paymentId) enrollment.paymentId = paymentId;
+      if (paymentProvider) enrollment.paymentProvider = paymentProvider;
+
+      if (status === "paid") {
+        enrollment.status = "approved"; // Auto-approve if paid?
+      }
+
+      return await this.enrollmentRepo.save(enrollment);
+    } catch (error) {
+      logger.error({ err: error, enrollmentId }, "updateEnrollmentPaymentStatus failed");
+      throw new Error("Error updating enrollment payment status");
+    }
+  }
 }

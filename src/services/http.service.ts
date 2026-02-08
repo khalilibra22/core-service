@@ -121,6 +121,16 @@ export class HttpService implements ExternalService {
         }
     }
 
+    async initiatePayment(payload: any): Promise<{ transactionId: string; paymentUrl?: string; message?: string }> {
+        try {
+            const response = await this.httpClient.post(`/payments/initiate`, payload);
+            return response.data as { transactionId: string; paymentUrl?: string; message?: string };
+        } catch (error) {
+            logger.error({ err: error }, "Failed to initiate payment via user-service");
+            throw error;
+        }
+    }
+
     async checkAvailabilities(availabilityIds: string[]): Promise<any> {
         try {
             const response = await this.httpClient.post(`${this.baseURL}/availabilities/check`, { availabilityIds: availabilityIds });
