@@ -217,7 +217,7 @@ export class SessionTimeRequestController {
           );
 
           await this.externalService.updateAvailabilitiesToUnavailable([
-            effectiveAvailabilityId,
+            { availabilityId: effectiveAvailabilityId },
           ]);
           sessionTimeRequest.availabilityId = effectiveAvailabilityId;
           sessionTimeRequest.availabilityException = undefined; // Clear exception if ID is used

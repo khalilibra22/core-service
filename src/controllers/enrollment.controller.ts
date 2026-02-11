@@ -75,7 +75,7 @@ export class EnrollmentController {
     res: Response
   ): Promise<void> => {
     try {
-      const { teacherId, ownerId, topicId, sessionsNumber, isPaid, availabilityIds, fcmToken } =
+      const { teacherId, ownerId, topicId, sessionsNumber, isPaid, availabilityIds, fcmToken, allowUnavailable } =
         req.body;
 
       // Basic validation
@@ -91,6 +91,7 @@ export class EnrollmentController {
         availabilityIds,
         isPaid,
         fcmToken,
+        allowUnavailable,
       });
 
       res.status(201).json({
@@ -104,9 +105,11 @@ export class EnrollmentController {
       );
       if (error.message.includes("No sessions provided")) {
         res.status(400).json({ error: error.message });
+      } else if (error?.response?.data?.message) {
+        res.status(error.response.status).json({ error: error.response.data.message });
       } else if (
-        error.message.includes("Some time slotes aleardy scheduled") || // keeping typo for compatibility
-        error.message.includes("400") // Assuming 400 from checkAvailabilities means bad request
+        error.message.includes("Some time slotes aleardy scheduled") ||
+        error.message.includes("400")
       ) {
         res.status(409).json({ error: "Some time slotes aleardy scheduled" });
       } else {

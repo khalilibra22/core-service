@@ -54,6 +54,9 @@ export class SessionModel {
   @Column({ name: "is_paid", default: true })
   isPaid?: boolean;
 
+  @Column({ name: "availability_id", nullable: true })
+  availabilityId?: string;
+
   @Column({ name: "is_reserved", default: false })
   isReserved?: boolean;
 

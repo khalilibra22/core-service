@@ -67,6 +67,7 @@ export function generateSessionsFromAvailabilities(
                     isPaid: !availability.isFree,
                     status: "scheduled",
                     topicId: topic_id,
+                    availabilityId: availability.id,
                 });
             }
 
