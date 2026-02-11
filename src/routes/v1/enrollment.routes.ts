@@ -21,7 +21,7 @@ router.get(
   "/teachers/:id/one-on-one-sessions",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("enrollments", "manage_enrollments"),
-  (req, res) => enrollmentController.getOneOnOneEnrollmentByTeacherId(req, res)
+  enrollmentController.getOneOnOneEnrollmentByTeacherId
 );
 
 router.patch(
@@ -29,7 +29,7 @@ router.patch(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("enrollments", "manage_enrollments"),
   ValidationMiddleware.validate(enrollmentStatusSchema),
-  (req, res) => enrollmentController.updateCourseEnrollmentStatus(req, res)
+  enrollmentController.updateCourseEnrollmentStatus
 );
 
 //create one on one enrollment
@@ -38,21 +38,21 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("enrollments", "enroll_course"),
   ValidationMiddleware.validate(oneOnOneEnrollmentSchema),
-  (req, res) => enrollmentController.createOneOnOneEnrollment(req, res)
+  enrollmentController.createOneOnOneEnrollment
 );
 
 router.get(
   "/student",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("enrollments", "view"),
-  (req, res) => enrollmentController.getStudentEnrollments(req, res)
+  enrollmentController.getStudentEnrollments
 );
 
 router.get(
   "/student/courses",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("enrollments", "view"),
-  (req, res) => enrollmentController.getStudentEnrolledCourses(req, res)
+  enrollmentController.getStudentEnrolledCourses
 );
 
 //cancel one on one enrollment
@@ -61,49 +61,49 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("enrollments", "cancel_enrollment"),
   ValidationMiddleware.validate(cancelEnrollmentShcema),
-  (req, res) => enrollmentController.cancelOneOnOneEnrollment(req, res)
+  enrollmentController.cancelOneOnOneEnrollment
 );
 
 router.get(
   "/one-on-one/:id/materials",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("enrollments", "view"),
-  (req, res) => enrollmentController.getEnrollmentMaterials(req, res)
+  enrollmentController.getEnrollmentMaterials
 );
 
 router.get(
   "/one-on-one/:id/sessions",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("enrollments", "view"),
-  (req, res) => enrollmentController.getOneOnOneEnrollmentSessions(req, res)
+  enrollmentController.getOneOnOneEnrollmentSessions
 );
 
 router.post(
   "/one-on-one/:id/materials",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("enrollments", "manage_enrollments"),
-  (req, res) => enrollmentController.addMaterialsToOneOnOneEnrollment(req, res)
+  enrollmentController.addMaterialsToOneOnOneEnrollment
 );
 
 router.put(
   "/one-on-one/:id/materials",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("enrollments", "manage_enrollments"),
-  (req, res) => enrollmentController.updateEnrollmentMaterials(req, res)
+  enrollmentController.updateEnrollmentMaterials
 );
 
 router.post(
   "/one-on-one/:id/sessions/:sessionId/materials",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("enrollments", "manage_enrollments"),
-  (req, res) => enrollmentController.addMaterialsToSession(req, res)
+  enrollmentController.addMaterialsToSession
 );
 
 router.put(
   "/one-on-one/:id/sessions/:sessionId/materials",
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("enrollments", "manage_enrollments"),
-  (req, res) => enrollmentController.updateSessionMaterials(req, res)
+  enrollmentController.updateSessionMaterials
 );
 
 router.post(
@@ -111,7 +111,7 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("complaints", "complain"),
   ValidationMiddleware.validate(refundValdationSchema),
-  (req, res) => enrollmentController.createRefundRequest(req, res)
+  enrollmentController.createRefundRequest
 );
 
 router.post(
@@ -119,7 +119,7 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("complaints", "respond_complaints"),
   ValidationMiddleware.validate(refundInitialResponseSchema),
-  (req, res) => enrollmentController.addRefundInitialResponse(req, res)
+  enrollmentController.addRefundInitialResponse
 );
 
 router.post(
@@ -127,7 +127,7 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("complaints", "complain"),
   ValidationMiddleware.validate(refundStudentDecisionSchema),
-  (req, res) => enrollmentController.refundStudentDecision(req, res)
+  enrollmentController.refundStudentDecision
 );
 
 router.post(
@@ -135,7 +135,7 @@ router.post(
   AuthMiddleware.verifyToken,
   AuthMiddleware.authorize("complaints", "manage_all_complaints"),
   ValidationMiddleware.validate(resolveRefundSchema),
-  (req, res) => enrollmentController.refundAdminResolve(req, res)
+  enrollmentController.refundAdminResolve
 );
 
 export { router as enrollmentRouter };

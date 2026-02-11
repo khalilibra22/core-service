@@ -169,7 +169,10 @@ export class EnrollmentController {
 
       const enrollmentDtos: OneOnOneEnollmentDto[] = await this.dtoService.enrichDto(
         OneOnOneEnollmentDto,
-        enrollments
+        enrollments,
+        {
+          topicIdFields: ["sessions.0.topicId"],
+        }
       );
 
       res.status(200).json(enrollmentDtos);
@@ -222,71 +225,28 @@ export class EnrollmentController {
 
       const coursesEnrollments =
         await this.enrollmentService.getStudentCoursesEnrollments(studentId);
-      // get courses enrollments with teacher details / student details
-      const coursesEnrollmentsWithDetails = await Promise.all(
-        coursesEnrollments.map(async (enrollment) => {
-          const teacher = await LruInMemoryCache.getUserDetails(
-            enrollment.teacherId ?? "keynotfound"
-          );
-          const student = await LruInMemoryCache.getUserDetails(
-            enrollment.studentId ?? "keynotfound"
-          );
-          return {
-            ...enrollment,
-            teacherFullname: teacher?.fullname ?? "keynotfound",
-            studentFullname: student?.fullname ?? "keynotfound",
-            address: teacher?.address ?? "keynotfound",
-          };
-        })
-      );
-      const oneOnOneEnrollments =
+      const ones =
         await this.enrollmentService.getStudentOneOnOneEnrollments(studentId);
-      const liveEnrollments = coursesEnrollmentsWithDetails.filter(
-        (enrollment) => enrollment.course?.type === "live"
-      );
-      // get one on one enrollments with student details / teacher details
-      const oneOnOneEnrollmentsWithDetails = await Promise.all(
-        oneOnOneEnrollments.map(async (enrollment) => {
-          if (!enrollment.studentId || !enrollment.teacherId) {
-            return null;
-          }
-          const student = await LruInMemoryCache.getUserDetails(
-            enrollment.studentId
-          );
-          const teacher = await LruInMemoryCache.getUserDetails(
-            enrollment.teacherId
-          );
-          return {
-            ...enrollment,
-            studentFullname: student?.fullname ?? "keynotfound",
-            teacherFullname: teacher?.fullname ?? "keynotfound",
-            address: teacher?.address ?? "keynotfound",
-          };
-        })
-      );
-      const groupEnrollments = coursesEnrollmentsWithDetails.filter(
-        (enrollment) => enrollment.course?.type === "group"
-      );
-      const prerecordedEnrollments = coursesEnrollmentsWithDetails.filter(
-        (enrollment) => enrollment.course?.type === "prerecorded"
-      );
       const allEnrollmentDtos = {
-        "one-on-one": plainToInstance(
+        "one-on-one": await this.dtoService.enrichDto<OneOnOneEnollmentDto[]>(
           OneOnOneEnollmentDto,
-          oneOnOneEnrollmentsWithDetails,
+          ones,
           {
-            excludeExtraneousValues: true,
+            topicIdFields: ["sessions.0.topicId"],
           }
         ),
-        live: plainToInstance(EnrollmentDto, liveEnrollments, {
-          excludeExtraneousValues: true,
-        }),
-        group: plainToInstance(EnrollmentDto, groupEnrollments, {
-          excludeExtraneousValues: true,
-        }),
-        prerecorded: plainToInstance(EnrollmentDto, prerecordedEnrollments, {
-          excludeExtraneousValues: true,
-        }),
+        live: await this.dtoService.enrichDto<EnrollmentDto[]>(
+          EnrollmentDto,
+          coursesEnrollments.filter((e) => e.course?.type === "live")
+        ),
+        group: await this.dtoService.enrichDto<EnrollmentDto[]>(
+          EnrollmentDto,
+          coursesEnrollments.filter((e) => e.course?.type === "group")
+        ),
+        prerecorded: await this.dtoService.enrichDto<EnrollmentDto[]>(
+          EnrollmentDto,
+          coursesEnrollments.filter((e) => e.course?.type === "prerecorded")
+        ),
       };
 
       // If type filter is specified, return only that type
