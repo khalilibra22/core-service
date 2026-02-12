@@ -15,6 +15,7 @@ export interface MinimalUser {
 export interface Topic {
   id: number;
   name: string;
+  price?: number;
 }
 
 export interface Subject {

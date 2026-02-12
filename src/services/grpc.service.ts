@@ -43,20 +43,20 @@ export class GrpcExternalService implements ExternalService {
 
     this.deadline = deadline;
     this.apiKey = apiKey || ''; // Allow empty initially, validate when methods are called
-    
+
     // Initialize client lazily
     this.initializeClient(serverAddress, useSecureCredentials);
   }
 
   private async initializeClient(serverAddress: string, useSecureCredentials: boolean): Promise<void> {
     if (this.isInitialized) return;
-    
+
     try {
       const proto = await LoadProto();
-      const credentials = useSecureCredentials 
+      const credentials = useSecureCredentials
         ? grpc.credentials.createSsl()
         : grpc.credentials.createInsecure();
-        
+
       this.client = new proto.UserService(serverAddress, credentials);
       this.isInitialized = true;
     } catch (error) {
@@ -83,7 +83,7 @@ export class GrpcExternalService implements ExternalService {
     if (value === undefined || value === null) {
       throw new ValidationError(`${fieldName} is required`, fieldName);
     }
-    
+
     switch (type) {
       case 'string':
         if (typeof value !== 'string' || value.trim() === '') {
@@ -108,12 +108,12 @@ export class GrpcExternalService implements ExternalService {
     if (!this.apiKey) {
       throw new ValidationError('API key is required for gRPC calls', 'apiKey');
     }
-    
+
     await this.initializeClient(process.env.USER_SERVICE_URL || 'localhost:50051', process.env.NODE_ENV === 'production');
-    
+
     return new Promise((resolve, reject) => {
       const metadata = this.createMetadata();
-      
+
       this.client[method](
         request,
         metadata,
@@ -156,7 +156,7 @@ export class GrpcExternalService implements ExternalService {
   // Get single user by ID
   async getUser(userId: string): Promise<MinimalUser> {
     this.validateInput(userId, 'userId', 'string');
-    
+
     try {
       const request: GetUserRequest = { user_id: userId };
       const response = await this.promisifyCall<MinimalUser>('GetUser', request);
@@ -176,13 +176,13 @@ export class GrpcExternalService implements ExternalService {
   // Get user by email
   async getUserByEmail(email: string): Promise<MinimalUser> {
     this.validateInput(email, 'email', 'string');
-    
+
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       throw new ValidationError('Invalid email format', 'email');
     }
-    
+
     try {
       const request: GetUserByEmailRequest = { email };
       const response = await this.promisifyCall<MinimalUser>('GetUserByEmail', request);
@@ -202,7 +202,7 @@ export class GrpcExternalService implements ExternalService {
   // Get user topic by ID
   async getUserTopic(userTopicId: number): Promise<UserTopic> {
     this.validateInput(userTopicId, 'userTopicId', 'number');
-    
+
     try {
       const request: GetUserTopicsRequest = { user_topic_id: userTopicId };
       const response = await this.promisifyCall<UserTopic>('GetUserTopic', request);
@@ -222,7 +222,7 @@ export class GrpcExternalService implements ExternalService {
   // Check availabilities by IDs
   async checkAvailabilities(availabilityIds: string[]): Promise<CheckAvailabilitiesResponse> {
     this.validateInput(availabilityIds, 'availabilityIds', 'array');
-    
+
     try {
       const request: CheckAvailabilitiesRequest = { availabilityIds };
       const response = await this.promisifyCall<CheckAvailabilitiesResponse>('CheckAvailabilities', request);
@@ -240,10 +240,11 @@ export class GrpcExternalService implements ExternalService {
   }
 
   // Update availabilities to unavailable
-  async updateAvailabilitiesToUnavailable(availabilityIds: string[]): Promise<UpdateAvailabilitiesToUnavailableResponse> {
-    this.validateInput(availabilityIds, 'availabilityIds', 'array');
-    
+  async updateAvailabilitiesToUnavailable(availabilities: { availabilityId: string, reservedUntil?: string }[]): Promise<UpdateAvailabilitiesToUnavailableResponse> {
+    this.validateInput(availabilities, 'availabilities', 'array');
+
     try {
+      const availabilityIds = availabilities.map(a => a.availabilityId);
       const request: UpdateAvailabilitiesToUnavailableRequest = { availabilityIds };
       const response = await this.promisifyCall<UpdateAvailabilitiesToUnavailableResponse>('UpdateAvailabilitiesToUnavailable', request);
       return response;
