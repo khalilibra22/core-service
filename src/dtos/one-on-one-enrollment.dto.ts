@@ -6,49 +6,51 @@ export class OneOnOneEnollmentDto {
   id?: string;
 
   @Expose()
+  @Transform(({ obj, options }) => options?.context?.userById?.[obj.studentId]?.fullname)
   studentFullname?: string;
 
   @Expose()
+  @Transform(({ obj, options }) => options?.context?.userById?.[obj.teacherId]?.fullname)
   teacherFullname?: string;
 
   @Expose()
   address?: string;
 
   @Expose()
+  @Transform(({ obj }) => obj.sessions?.[0]?.topicId)
   topicId?: number;
 
   @Expose()
+  @Transform(({ obj, options }) => {
+    const topicId = obj.sessions?.[0]?.topicId;
+    return options?.context?.topicById?.[topicId]?.name;
+  })
   topicName?: string;
 
   @Expose()
-  @Transform(() =>
-    //random price
-    // to be fixed form payment service
-    Math.floor(Math.random() * 1000 + 1000)
-  )
+  @Transform(({ obj, options }) => {
+    const topicId = obj.sessions?.[0]?.topicId;
+    return options?.context?.topicById?.[topicId]?.price;
+  })
   price?: number;
 
   @Expose()
-  @Transform(({ obj }) => obj.session?.date)
+  @Transform(({ obj }) => obj.session?.date || obj.sessions?.[0]?.date)
   date?: Date;
 
   @Expose()
-  @Transform(({ obj }) => obj.session?.isPaid)
+  @Transform(({ obj }) => obj.session?.isPaid || obj.sessions?.[0]?.isPaid)
   isPaid?: boolean;
 
   @Expose()
   status?: string;
 
   @Expose()
-  @Transform(() =>
-    //random duration
-    // to be fixed
-    Math.floor(Math.random() * 100 + 100)
-  )
+  @Transform(({ obj }) => obj.sessions?.[0]?.duration)
   duration?: number;
 
   @Expose()
-  @Transform(() => "minutes")
+  @Transform(({ obj }) => obj.sessions?.[0]?.durationUnit || "minutes")
   durationUnit?: string;
 
   @Expose()

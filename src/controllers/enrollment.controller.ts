@@ -4,7 +4,7 @@ import { EnrollmentService } from "../services/enrollment.service";
 import { EnrollmentDto } from "../dtos/enrollment.dto";
 import { plainToInstance } from "class-transformer";
 import { OneOnOneEnollmentDto } from "../dtos/one-on-one-enrollment.dto";
-import { enrichDto, generateSessionsFromAvailabilities, getCourseDto, setPaginationHeaders } from "../utils";
+import { setPaginationHeaders } from "../utils";
 import { SessionDto } from "../dtos/session.dto";
 import { RefundDto } from "../dtos/refund.dto";
 import { MaterialDto } from "../dtos/material.dto";
@@ -13,7 +13,7 @@ import { LruInMemoryCache } from "../cache/lru-in-memory.cache";
 import { HttpService } from "../services/http.service";
 import { NotificationService } from "../services/notification.service";
 import { EnrollmentOrchestratorService } from "../services/enrollment-orchestrator.service";
-import { DtoAssemblerService } from "../services/dto-assembler.service";
+import { DtoService } from "../services/dto.service";
 import { SessionService } from "../services/session.service";
 import { MaterialService } from "../services/material.service";
 import { injectable, inject } from "tsyringe";
@@ -29,7 +29,7 @@ export class EnrollmentController {
     @inject(FeedbackService) private feedbackService: FeedbackService,
     @inject(NotificationService) private notificationService: NotificationService,
     @inject(EnrollmentOrchestratorService) private enrollmentOrchestrator: EnrollmentOrchestratorService,
-    @inject(DtoAssemblerService) private dtoAssembler: DtoAssemblerService
+    @inject(DtoService) private dtoService: DtoService
   ) { }
 
   createEnrollment = async (req: Request, res: Response): Promise<void> => {
@@ -75,7 +75,7 @@ export class EnrollmentController {
     res: Response
   ): Promise<void> => {
     try {
-      const { teacherId, ownerId, topicId, sessionsNumber, isPaid, availabilityIds, fcmToken } =
+      const { teacherId, ownerId, topicId, sessionsNumber, isPaid, availabilityIds, fcmToken, allowUnavailable } =
         req.body;
 
       // Basic validation
@@ -91,6 +91,7 @@ export class EnrollmentController {
         availabilityIds,
         isPaid,
         fcmToken,
+        allowUnavailable,
       });
 
       res.status(201).json({
@@ -104,9 +105,11 @@ export class EnrollmentController {
       );
       if (error.message.includes("No sessions provided")) {
         res.status(400).json({ error: error.message });
+      } else if (error?.response?.data?.message) {
+        res.status(error.response.status).json({ error: error.response.data.message });
       } else if (
-        error.message.includes("Some time slotes aleardy scheduled") || // keeping typo for compatibility
-        error.message.includes("400") // Assuming 400 from checkAvailabilities means bad request
+        error.message.includes("Some time slotes aleardy scheduled") ||
+        error.message.includes("400")
       ) {
         res.status(409).json({ error: "Some time slotes aleardy scheduled" });
       } else {
@@ -129,7 +132,7 @@ export class EnrollmentController {
       }
       const enrollments = await this.enrollmentService.getCourseEnrollments(id);
 
-      const enrollmentDtos: EnrollmentDto[] = await this.dtoAssembler.enrichDto(
+      const enrollmentDtos: EnrollmentDto[] = await this.dtoService.enrichDto(
         EnrollmentDto,
         enrollments
       );
@@ -164,9 +167,12 @@ export class EnrollmentController {
           teacherId
         );
 
-      const enrollmentDtos: OneOnOneEnollmentDto[] = await this.dtoAssembler.enrichDto(
+      const enrollmentDtos: OneOnOneEnollmentDto[] = await this.dtoService.enrichDto(
         OneOnOneEnollmentDto,
-        enrollments
+        enrollments,
+        {
+          topicIdFields: ["sessions.0.topicId"],
+        }
       );
 
       res.status(200).json(enrollmentDtos);
@@ -219,71 +225,28 @@ export class EnrollmentController {
 
       const coursesEnrollments =
         await this.enrollmentService.getStudentCoursesEnrollments(studentId);
-      // get courses enrollments with teacher details / student details
-      const coursesEnrollmentsWithDetails = await Promise.all(
-        coursesEnrollments.map(async (enrollment) => {
-          const teacher = await LruInMemoryCache.getUserDetails(
-            enrollment.teacherId ?? "keynotfound"
-          );
-          const student = await LruInMemoryCache.getUserDetails(
-            enrollment.studentId ?? "keynotfound"
-          );
-          return {
-            ...enrollment,
-            teacherFullname: teacher?.fullname ?? "keynotfound",
-            studentFullname: student?.fullname ?? "keynotfound",
-            address: teacher?.address ?? "keynotfound",
-          };
-        })
-      );
-      const oneOnOneEnrollments =
+      const ones =
         await this.enrollmentService.getStudentOneOnOneEnrollments(studentId);
-      const liveEnrollments = coursesEnrollmentsWithDetails.filter(
-        (enrollment) => enrollment.course?.type === "live"
-      );
-      // get one on one enrollments with student details / teacher details
-      const oneOnOneEnrollmentsWithDetails = await Promise.all(
-        oneOnOneEnrollments.map(async (enrollment) => {
-          if (!enrollment.studentId || !enrollment.teacherId) {
-            return null;
-          }
-          const student = await LruInMemoryCache.getUserDetails(
-            enrollment.studentId
-          );
-          const teacher = await LruInMemoryCache.getUserDetails(
-            enrollment.teacherId
-          );
-          return {
-            ...enrollment,
-            studentFullname: student?.fullname ?? "keynotfound",
-            teacherFullname: teacher?.fullname ?? "keynotfound",
-            address: teacher?.address ?? "keynotfound",
-          };
-        })
-      );
-      const groupEnrollments = coursesEnrollmentsWithDetails.filter(
-        (enrollment) => enrollment.course?.type === "group"
-      );
-      const prerecordedEnrollments = coursesEnrollmentsWithDetails.filter(
-        (enrollment) => enrollment.course?.type === "prerecorded"
-      );
       const allEnrollmentDtos = {
-        "one-on-one": plainToInstance(
+        "one-on-one": await this.dtoService.enrichDto<OneOnOneEnollmentDto[]>(
           OneOnOneEnollmentDto,
-          oneOnOneEnrollmentsWithDetails,
+          ones,
           {
-            excludeExtraneousValues: true,
+            topicIdFields: ["sessions.0.topicId"],
           }
         ),
-        live: plainToInstance(EnrollmentDto, liveEnrollments, {
-          excludeExtraneousValues: true,
-        }),
-        group: plainToInstance(EnrollmentDto, groupEnrollments, {
-          excludeExtraneousValues: true,
-        }),
-        prerecorded: plainToInstance(EnrollmentDto, prerecordedEnrollments, {
-          excludeExtraneousValues: true,
-        }),
+        live: await this.dtoService.enrichDto<EnrollmentDto[]>(
+          EnrollmentDto,
+          coursesEnrollments.filter((e) => e.course?.type === "live")
+        ),
+        group: await this.dtoService.enrichDto<EnrollmentDto[]>(
+          EnrollmentDto,
+          coursesEnrollments.filter((e) => e.course?.type === "group")
+        ),
+        prerecorded: await this.dtoService.enrichDto<EnrollmentDto[]>(
+          EnrollmentDto,
+          coursesEnrollments.filter((e) => e.course?.type === "prerecorded")
+        ),
       };
 
       // If type filter is specified, return only that type
@@ -375,7 +338,7 @@ export class EnrollmentController {
         await this.sessionService.getOneOnOneSessionsByEnrollmentId(
           enrollmentId
         );
-      const sessionDtos = await this.dtoAssembler.enrichDto<SessionDto[]>(SessionDto, sessions);
+      const sessionDtos = await this.dtoService.enrichDto<SessionDto[]>(SessionDto, sessions);
       res.status(200).json(sessionDtos);
     } catch (error) {
       req.log.error({ err: error, enrollmentId: req.params.id }, "getOneOnOneEnrollmentSessions failed");
@@ -651,7 +614,7 @@ export class EnrollmentController {
         limit,
         courseType
       );
-      const courseDtos = await getCourseDto(courses, courseType);
+      const courseDtos = await this.dtoService.getCourseDto(courses, courseType);
       setPaginationHeaders(res, total, page, limit);
       res.status(200).json(courseDtos);
     } catch (error) {

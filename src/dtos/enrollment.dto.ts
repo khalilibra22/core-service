@@ -22,12 +22,21 @@ export class EnrollmentDto {
   courseId?: string;
 
   @Expose()
+  @Transform(({ obj, options }) => options?.context?.userById?.[obj.studentId]?.fullname)
   studentFullname?: string;
 
   @Expose()
+  @Transform(({ obj, options }) => {
+    const teacherId = obj.teacherId || obj.course?.ownerId;
+    return options?.context?.userById?.[teacherId]?.fullname;
+  })
   teacherFullname?: string;
 
   @Expose()
+  @Transform(({ obj, options }) => {
+    const teacherId = obj.teacherId || obj.course?.ownerId;
+    return options?.context?.userById?.[teacherId]?.address;
+  })
   address?: string;
 
   @Expose()
@@ -35,14 +44,14 @@ export class EnrollmentDto {
   name?: string;
 
   @Expose()
-  @Transform(() =>
-    //random duration
-    Math.floor(Math.random() * 100 + 100)
-  )
+  @Transform(({ obj }) => {
+    // If sessions exist, sum their duration or just pick the first one
+    return obj.course?.sessions?.[0]?.duration;
+  })
   duration?: number;
 
   @Expose()
-  @Transform(() => "minutes")
+  @Transform(({ obj }) => obj.course?.sessions?.[0]?.durationUnit || "minutes")
   durationUnit?: string;
 
   @Expose()

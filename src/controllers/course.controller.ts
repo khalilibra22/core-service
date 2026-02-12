@@ -9,7 +9,8 @@ import { plainToInstance } from "class-transformer";
 import { CourseSettingsModel } from "../models/course-settings.model";
 import { CourseModel } from "../models/course.model";
 import { MinimalCourseDto } from "../dtos/minimal-course.dto";
-import { getCourseDto, getSessionDto, enrichDto, setPaginationHeaders } from "../utils";
+import { setPaginationHeaders } from "../utils";
+import { DtoService } from "../services/dto.service";
 import { StudentRequestDto } from "../dtos/student-request.dto";
 import { CourseProgressDto } from "../dtos/course-progress.dto";
 
@@ -20,7 +21,8 @@ export class CourseController {
     @inject(NotificationService) private notificationService: NotificationService,
     @inject(QuizService) private quizService: QuizService,
     @inject(HttpService) private httpService: HttpService,
-    @inject(StudentRequestService) private studentRequestService: StudentRequestService
+    @inject(StudentRequestService) private studentRequestService: StudentRequestService,
+    @inject(DtoService) private dtoService: DtoService
   ) { }
 
   createDraftCourse = async (req: Request, res: Response): Promise<void> => {
@@ -208,7 +210,7 @@ export class CourseController {
         }
       }
 
-      const courseDto = await getCourseDto(course, course.type ?? "minimal");
+      const courseDto = await this.dtoService.getCourseDto(course, course.type ?? "minimal");
       res.status(200).json(courseDto);
     } catch (error) {
       req.log.error({ err: error, courseId: req.params.id }, "getCourseById failed");
@@ -284,7 +286,7 @@ export class CourseController {
         );
       }
 
-      const courseDtos = await getCourseDto(allCourses, courseType);
+      const courseDtos = await this.dtoService.getCourseDto(allCourses, courseType);
       setPaginationHeaders(res, total, page, limit);
       res.status(200).json(courseDtos);
     } catch (error) {
@@ -299,7 +301,7 @@ export class CourseController {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
       const { data: courses, total } = await this.courseService.getAllLiveCourses(page, limit);
-      const courseDtos = await getCourseDto(courses, "live");
+      const courseDtos = await this.dtoService.getCourseDto(courses, "live");
       setPaginationHeaders(res, total, page, limit);
       res.status(200).json(courseDtos);
     } catch (error) {
@@ -313,7 +315,7 @@ export class CourseController {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
       const { data: courses, total } = await this.courseService.getAllGroupCourses(page, limit);
-      const courseDtos = await getCourseDto(courses, "group");
+      const courseDtos = await this.dtoService.getCourseDto(courses, "group");
       setPaginationHeaders(res, total, page, limit);
       res.status(200).json(courseDtos);
     } catch (error) {
@@ -334,7 +336,7 @@ export class CourseController {
         page,
         limit
       );
-      const courseDtos = await getCourseDto(courses, "prerecorded");
+      const courseDtos = await this.dtoService.getCourseDto(courses, "prerecorded");
       setPaginationHeaders(res, total, page, limit);
       res.status(200).json(courseDtos);
     } catch (error) {
@@ -414,7 +416,7 @@ export class CourseController {
           startDate
         }
       );
-      const courseDtos = await getCourseDto(courses, courseType);
+      const courseDtos = await this.dtoService.getCourseDto(courses, courseType);
       setPaginationHeaders(res, total, page, limit);
       res.status(200).json(courseDtos);
 
@@ -492,7 +494,7 @@ export class CourseController {
             message,
             enhancedPayload
           );
-          const requestDto = await enrichDto<StudentRequestDto>(StudentRequestDto, request);
+          const requestDto = await this.dtoService.enrichDto<StudentRequestDto>(StudentRequestDto, request);
           res.status(201).json(requestDto);
           return;
         } catch (quizError) {
@@ -508,7 +510,7 @@ export class CourseController {
         message,
         payload
       );
-      const requestDto = await enrichDto<StudentRequestDto>(StudentRequestDto, request);
+      const requestDto = await this.dtoService.enrichDto<StudentRequestDto>(StudentRequestDto, request);
       res.status(201).json(requestDto);
     } catch (error) {
       req.log.error({ err: error, courseId: req.params.id }, "createStudentRequest failed");
@@ -647,7 +649,7 @@ export class CourseController {
         return;
       }
 
-      const requestDto = await enrichDto<StudentRequestDto>(StudentRequestDto, certificateRequest);
+      const requestDto = await this.dtoService.enrichDto<StudentRequestDto>(StudentRequestDto, certificateRequest);
       res.status(200).json(requestDto);
     } catch (error) {
       req.log.error({ err: error, courseId: req.params.id }, "getStudentCourseCertificateRequest failed");

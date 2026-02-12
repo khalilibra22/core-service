@@ -41,7 +41,24 @@ export class SessionService {
                     if (sessions.length >= numberOfSessions) break;
 
                     const dayIndex = dayOfWeekMap[availability.dayOfWeek!.toLowerCase()];
-                    const tempDate = new Date(currentDate);
+
+                    // Determine the effective start date for this availability
+                    let effectiveStartDate = new Date(startDate);
+                    if (availability.reservedUntil) {
+                        const reservedUntilDate = new Date(availability.reservedUntil);
+                        if (reservedUntilDate > effectiveStartDate) {
+                            effectiveStartDate = reservedUntilDate;
+                        }
+                    }
+
+                    // If currentDate is before effectiveStartDate, use effectiveStartDate
+                    // But we need to be careful not to regress if we've already advanced past it in the loop
+                    let targetDate = new Date(currentDate);
+                    if (targetDate < effectiveStartDate) {
+                        targetDate = new Date(effectiveStartDate);
+                    }
+
+                    const tempDate = new Date(targetDate);
 
                     // Adjust date to the next correct weekday
                     const daysToAdd = (7 + dayIndex - tempDate.getDay()) % 7;
@@ -58,8 +75,19 @@ export class SessionService {
                     const start = new Date(tempDate);
                     start.setHours(startHour, startMinute, 0, 0);
 
-                    const end = new Date(tempDate);
+                    // Ensure we are truly after reservedUntil (considering time)
+                    if (availability.reservedUntil) {
+                        const reservedUntilDate = new Date(availability.reservedUntil);
+                        if (start <= reservedUntilDate) {
+                            // Move to next week
+                            tempDate.setDate(tempDate.getDate() + 7);
+                            start.setDate(start.getDate() + 7);
+                        }
+                    }
+
+                    const end = new Date(start);
                     end.setHours(endHour, endMinute, 0, 0);
+
 
                     const durationMs = end.getTime() - start.getTime();
                     if (durationMs <= 0) continue;
@@ -73,6 +101,7 @@ export class SessionService {
                         isPaid: !availability.isFree,
                         status: "scheduled",
                         topicId: topic_id,
+                        availabilityId: availability.id,
                     });
                 }
 

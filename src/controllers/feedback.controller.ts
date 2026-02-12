@@ -7,7 +7,8 @@ import { SessionService } from "../services/session.service";
 import { ReviewDto } from "../dtos/review.dto";
 import { ComplaintDto } from "../dtos/complaint.dto";
 import { ComplaintListDto } from "../dtos/complaint-list.dto";
-import { enrichDto, setPaginationHeaders } from "../utils";
+import { setPaginationHeaders } from "../utils";
+import { DtoService } from "../services/dto.service";
 
 @injectable()
 export class FeedbackController {
@@ -15,7 +16,8 @@ export class FeedbackController {
     @inject(FeedbackService) private feedbackService: FeedbackService,
     @inject(CourseService) private courseService: CourseService,
     @inject(EnrollmentService) private enrollmentService: EnrollmentService,
-    @inject(SessionService) private sessionService: SessionService
+    @inject(SessionService) private sessionService: SessionService,
+    @inject(DtoService) private dtoService: DtoService
   ) { }
 
   createCourseReview = async (req: Request, res: Response): Promise<void> => {
@@ -42,7 +44,7 @@ export class FeedbackController {
         course: course,
       };
       const review = await this.feedbackService.createReview(reviewBody);
-      const reviewDto = await enrichDto<ReviewDto>(ReviewDto, review);
+      const reviewDto = await this.dtoService.enrichDto<ReviewDto>(ReviewDto, review);
       res.status(201).json(reviewDto);
     } catch (error) {
       req.log.error({ err: error, courseId: req.params.id }, "createCourseReview failed");
@@ -79,7 +81,7 @@ export class FeedbackController {
       review.comment = req.body.comment;
 
       const updatedReview = await this.feedbackService.updateReview(review);
-      const reviewDto = await enrichDto<ReviewDto>(ReviewDto, updatedReview);
+      const reviewDto = await this.dtoService.enrichDto<ReviewDto>(ReviewDto, updatedReview);
       res.status(200).json(reviewDto);
     } catch (error) {
       req.log.error({ err: error, courseId: req.params.id, reviewId: req.params.reviewId }, "updateCourseReview failed");
@@ -211,7 +213,7 @@ export class FeedbackController {
         'enrollment.course.ownerId',
         'course.ownerId'
       ];
-      const complaintDto = await enrichDto<ComplaintDto>(ComplaintDto, updatedComplaint, { userIdFields });
+      const complaintDto = await this.dtoService.enrichDto<ComplaintDto>(ComplaintDto, updatedComplaint, { userIdFields });
       res.status(200).json(complaintDto);
     } catch (error) {
       req.log.error({ err: error, complaintId: req.params.id }, "addComplaintInitialResponse failed");
@@ -256,7 +258,7 @@ export class FeedbackController {
         'enrollment.course.ownerId',
         'course.ownerId'
       ];
-      const complaintDto = await enrichDto<ComplaintDto>(ComplaintDto, updatedComplaint, { userIdFields });
+      const complaintDto = await this.dtoService.enrichDto<ComplaintDto>(ComplaintDto, updatedComplaint, { userIdFields });
       res.status(200).json(complaintDto);
     } catch (error) {
       req.log.error({ err: error, complaintId: req.params.id }, "complaintAdminResolve failed");
@@ -355,7 +357,7 @@ export class FeedbackController {
         'course.ownerId'
       ];
 
-      const complaintDtos = await enrichDto<ComplaintListDto[]>(ComplaintListDto, complaints, { userIdFields });
+      const complaintDtos = await this.dtoService.enrichDto<ComplaintListDto[]>(ComplaintListDto, complaints, { userIdFields });
       setPaginationHeaders(res, total, filters.page, filters.limit);
 
       res.status(200).json(complaintDtos);
@@ -387,7 +389,7 @@ export class FeedbackController {
         'enrollment.course.ownerId',
         'course.ownerId'
       ];
-      const complaintDto = await enrichDto<ComplaintDto>(ComplaintDto, complaint, { userIdFields });
+      const complaintDto = await this.dtoService.enrichDto<ComplaintDto>(ComplaintDto, complaint, { userIdFields });
       res.status(200).json(complaintDto);
     } catch (error) {
       req.log.error({ err: error, id: req.params.id }, "getComplaintDetail failed");
@@ -508,7 +510,7 @@ export class FeedbackController {
   getAllReviews = async (req: Request, res: Response): Promise<void> => {
     try {
       const reviews = await this.feedbackService.getAllReviews();
-      const reviewDtos = await enrichDto<ReviewDto[]>(ReviewDto, reviews);
+      const reviewDtos = await this.dtoService.enrichDto<ReviewDto[]>(ReviewDto, reviews);
       res.status(200).json(reviewDtos);
     } catch (error) {
       req.log.error({ err: error }, "getAllReviews failed");
@@ -519,7 +521,7 @@ export class FeedbackController {
   getAllComplaints = async (req: Request, res: Response): Promise<void> => {
     try {
       const complaints = await this.feedbackService.getAllComplaints();
-      const complaintDtos = await enrichDto<ComplaintDto[]>(ComplaintDto, complaints);
+      const complaintDtos = await this.dtoService.enrichDto<ComplaintDto[]>(ComplaintDto, complaints);
       res.status(200).json(complaintDtos);
     } catch (error) {
       req.log.error({ err: error }, "getAllComplaints failed");
@@ -536,7 +538,7 @@ export class FeedbackController {
       const complaints = await this.feedbackService.getComplaintsByStudentId(
         studentId
       );
-      const complaintDtos = await enrichDto<ComplaintDto[]>(ComplaintDto, complaints);
+      const complaintDtos = await this.dtoService.enrichDto<ComplaintDto[]>(ComplaintDto, complaints);
       res.status(200).json(complaintDtos);
     } catch (error) {
       req.log.error({ err: error, studentId: req.params.id }, "getAllComplaintsByStudentId failed");
@@ -568,7 +570,7 @@ export class FeedbackController {
         page,
         limit
       );
-      const reviewDtos = await enrichDto<ReviewDto[]>(ReviewDto, reviews);
+      const reviewDtos = await this.dtoService.enrichDto<ReviewDto[]>(ReviewDto, reviews);
       setPaginationHeaders(res, total, page, limit);
       res.status(200).json(reviewDtos);
     } catch (error) {
@@ -586,7 +588,7 @@ export class FeedbackController {
         return;
       }
       const reviews = await this.feedbackService.getReviewsByCourseId(courseId);
-      const reviewDtos = await enrichDto<ReviewDto[]>(ReviewDto, reviews);
+      const reviewDtos = await this.dtoService.enrichDto<ReviewDto[]>(ReviewDto, reviews);
       res.status(200).json(reviewDtos);
     } catch (error) {
       req.log.error({ err: error, courseId: req.params.id }, "getReviewsByCourseId failed");
@@ -608,7 +610,7 @@ export class FeedbackController {
       const reviews = await this.feedbackService.getReviewsByTeacherId(
         teacherId
       );
-      const reviewDtos = await enrichDto<ReviewDto[]>(ReviewDto, reviews);
+      const reviewDtos = await this.dtoService.enrichDto<ReviewDto[]>(ReviewDto, reviews);
       res.status(200).json(reviewDtos);
     } catch (error) {
       req.log.error({ err: error, teacherId: req.params.teacherId }, "getReviewsByTeacherId failed");
@@ -629,7 +631,7 @@ export class FeedbackController {
         studentId: ownerId,
       };
       const review = await this.feedbackService.createReview(reviewBody);
-      const reviewDto = await enrichDto<ReviewDto>(ReviewDto, review);
+      const reviewDto = await this.dtoService.enrichDto<ReviewDto>(ReviewDto, review);
       res.status(201).json(reviewDto);
     } catch (error) {
       req.log.error({ err: error, teacherId: req.body.teacherId }, "createOneOnOneReview failed");
@@ -647,7 +649,7 @@ export class FeedbackController {
       const reviews = await this.feedbackService.getReviewsByOneOnOneTeacherId(
         teacherId
       );
-      const reviewDtos = await enrichDto<ReviewDto[]>(ReviewDto, reviews);
+      const reviewDtos = await this.dtoService.enrichDto<ReviewDto[]>(ReviewDto, reviews);
       res.status(200).json(reviewDtos);
     } catch (error) {
       req.log.error({ err: error, teacherId: req.params.teacherId }, "getReviewsByOneOnOneTeacherId failed");
@@ -665,7 +667,7 @@ export class FeedbackController {
       const reviews = await this.feedbackService.getAllReviewsByTeacherId(
         teacherId
       );
-      const reviewDtos = await enrichDto<ReviewDto[]>(ReviewDto, reviews);
+      const reviewDtos = await this.dtoService.enrichDto<ReviewDto[]>(ReviewDto, reviews);
       res.status(200).json(reviewDtos);
     } catch (error) {
       req.log.error({ err: error, teacherId: req.params.teacherId }, "getAllReviewsByTeacherId failed");
@@ -682,7 +684,7 @@ export class FeedbackController {
       const complaints = await this.feedbackService.getComplaintsByTeacherId(
         teacherId
       );
-      const complaintDtos = await enrichDto<ComplaintDto[]>(ComplaintDto, complaints);
+      const complaintDtos = await this.dtoService.enrichDto<ComplaintDto[]>(ComplaintDto, complaints);
       res.status(200).json(complaintDtos);
     } catch (error) {
       req.log.error({ err: error, teacherId: req.params.teacherId }, "getAllComplaintsByTeacherId failed");

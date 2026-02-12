@@ -121,12 +121,15 @@ export class HttpService implements ExternalService {
         }
     }
 
-    async checkAvailabilities(availabilityIds: string[]): Promise<any> {
+    async checkAvailabilities(availabilityIds: string[], allowUnavailable?: boolean): Promise<any> {
         try {
-            const response = await this.httpClient.post(`${this.baseURL}/availabilities/check`, { availabilityIds: availabilityIds });
+            const response = await this.httpClient.post(`${this.baseURL}/availabilities/check`, {
+                availabilityIds: availabilityIds,
+                allowUnavailable: allowUnavailable
+            });
             return response.data;
         } catch (error: any) {
-            logger.error({ err: error }, 'Failed to check availabilities');
+            logger.error({ err: error, responseData: error?.response?.data }, 'Failed to check availabilities');
             if (error?.response?.status >= 500) {
                 throw new Error(`User service is currently unavailable`);
             }
@@ -134,16 +137,16 @@ export class HttpService implements ExternalService {
         }
     }
 
-    async updateAvailabilitiesToUnavailable(availabilityIds: string[]): Promise<any> {
+    async updateAvailabilitiesToUnavailable(availabilities: { availabilityId: string, reservedUntil?: string }[]): Promise<any> {
         try {
-            if (!Array.isArray(availabilityIds) || availabilityIds.length === 0) {
-                throw new Error('Invalid availabilityIds provided - must be a non-empty array');
+            if (!Array.isArray(availabilities) || availabilities.length === 0) {
+                throw new Error('Invalid availabilities provided - must be a non-empty array');
             }
-            const invalidIds = availabilityIds.filter(id => !id || typeof id !== 'string');
-            if (invalidIds.length > 0) {
-                throw new Error('Invalid availability IDs found in array');
-            }
-            return await this.httpClient.put(`${this.baseURL}/availabilities/update-to-unavailable`, { availabilityIds: availabilityIds.map(id => id.trim()) });
+            const payload = availabilities.map(a => ({
+                id: a.availabilityId.trim(),
+                reservedUntil: a.reservedUntil
+            }));
+            return await this.httpClient.put(`${this.baseURL}/availabilities/update-to-unavailable`, { availabilityIds: payload });
         } catch (error: any) {
             logger.error({ err: error }, 'Failed to update availabilities to unavailable');
             if (error?.response?.status >= 500) {

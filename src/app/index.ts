@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import { appV1 } from "../app/app-v1";
@@ -23,6 +24,8 @@ app.use(
     customSuccessMessage: function (req, res) {
       return `${req.method} ${req.url} ${res.statusCode}`;
     },
+    // Set the level for the logger in the middleware
+    useLevel: process.env.NODE_ENV === "production" ? "warn" : "info",
   })
 );
 

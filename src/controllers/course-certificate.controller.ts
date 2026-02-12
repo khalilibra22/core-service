@@ -4,13 +4,14 @@ import { CourseService } from "../services/course.service";
 import { CertificateService } from "../services/certificate.service";
 import { plainToInstance } from "class-transformer";
 import { CertificateDto } from "../dtos/certificate.dto";
-import { enrichDto } from "../utils";
+import { DtoService } from "../services/dto.service";
 
 @injectable()
 export class CourseCertificateController {
     constructor(
         @inject(CourseService) private courseService: CourseService,
-        @inject(CertificateService) private certificateService: CertificateService
+        @inject(CertificateService) private certificateService: CertificateService,
+        @inject(DtoService) private dtoService: DtoService
     ) { }
 
     createCertificate = async (req: Request, res: Response): Promise<void> => {
@@ -33,7 +34,7 @@ export class CourseCertificateController {
                 certificateBody
             );
 
-            const certificateDto = await enrichDto<CertificateDto>(CertificateDto, certificate);
+            const certificateDto = await this.dtoService.enrichDto<CertificateDto>(CertificateDto, certificate);
             res.status(201).json(certificateDto);
         } catch (error) {
             req.log.error({ err: error, courseId: req.params.id }, "createCertificate failed");

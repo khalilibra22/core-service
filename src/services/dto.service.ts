@@ -1,17 +1,26 @@
+import { injectable, inject } from "tsyringe";
 import { plainToInstance } from "class-transformer";
 import { CourseModel } from "../models/course.model";
+import { SessionModel } from "../models/session.model";
 import { GroupClassDto } from "../dtos/group-class.dto";
 import { LiveCourseDto } from "../dtos/live-course.dto";
-import { MinimalCourseDto } from "../dtos/minimal-course.dto";
 import { PrerecordedCourseDto } from "../dtos/prerecorded-course.dto";
-import { SessionModel } from "../models/session.model";
+import { MinimalCourseDto } from "../dtos/minimal-course.dto";
 import { SessionDto } from "../dtos/session.dto";
-import { RecordedSessionDto } from "../dtos/recorded-session.dto";
 import { LruInMemoryCache } from "../cache/lru-in-memory.cache";
-import { MinimalUser, Subject, Topic } from "../types/user.types";
+import { FeedbackService } from "./feedback.service";
 import { logger } from "../utils/logger";
+import { MinimalUser, Subject, Topic } from "../types/user.types";
 
-export class DtoAssemblerService {
+@injectable()
+export class DtoService {
+    constructor(
+        @inject(FeedbackService) private feedbackService: FeedbackService
+    ) { }
+
+    /**
+     * Enrich and transform CourseModel(s) to DTOs
+     */
     async getCourseDto(
         courses: CourseModel | CourseModel[],
         type: string
@@ -19,40 +28,37 @@ export class DtoAssemblerService {
         try {
             const list = Array.isArray(courses) ? courses : [courses];
 
-            // Collect unique user IDs (ownerId, instructorId)
+            // Collect unique IDs for batch fetching
             const userIds = Array.from(
                 new Set(
-                    list
-                        .flatMap((c) => [c.ownerId, c.instructorId].filter(Boolean) as string[])
+                    list.flatMap((c) =>
+                        [c.ownerId, c.instructorId].filter(Boolean) as string[]
+                    )
                 )
             );
 
-            // Collect unique topic IDs from course settings and sessions
             const topicIds = Array.from(
                 new Set(
-                    list
-                        .flatMap((c) =>
-                            [
-                                c?.couresSettings?.topicId,
-                                ...(c?.sessions ?? []).map((s) => s?.topicId),
-                            ].filter(Boolean) as number[]
-                        )
+                    list.flatMap((c) =>
+                        [
+                            c?.couresSettings?.topicId,
+                            ...(c?.sessions ?? []).map((s) => s?.topicId),
+                        ].filter(Boolean) as number[]
+                    )
                 )
             );
 
-            // Collect unique subject IDs
             const subjectIds = Array.from(
                 new Set(list.map((c) => c.subjectId).filter(Boolean) as number[])
             );
 
-            // Batch fetch users and topics from cache
+            // Batch fetch from cache and service
             const [usersArr, topicsArr, subjectsArr] = await Promise.all([
                 Promise.all(userIds.map((id) => LruInMemoryCache.getUserDetails(id))),
                 Promise.all(topicIds.map((id) => LruInMemoryCache.getTopic(id))),
                 Promise.all(subjectIds.map((id) => LruInMemoryCache.getSubject(id))),
             ]);
 
-            // Build lookup maps as plain objects (not Maps) for class-transformer compatibility
             const userById: Record<string, MinimalUser | null> = {};
             usersArr.forEach((u, i) => {
                 userById[userIds[i]] = u;
@@ -68,112 +74,91 @@ export class DtoAssemblerService {
                 subjectById[subjectIds[i]] = s;
             });
 
+            // Fetch owner ratings and review counts via FeedbackService
+            const ownerRatingById: Record<string, number> = {};
+            const ownerReviewsCountById: Record<string, number> = {};
+
+            if (userIds.length > 0) {
+                await Promise.all(
+                    userIds.map(async (userId) => {
+                        const [rating, count] = await Promise.all([
+                            this.feedbackService.calculateTeacherAverageRating(userId),
+                            this.feedbackService.getTeacherReviewsCount(userId),
+                        ]);
+                        ownerRatingById[userId] = rating;
+                        ownerReviewsCountById[userId] = count;
+                    })
+                );
+            }
+
             const options = {
                 excludeExtraneousValues: true,
-                context: { userById, topicById, subjectById },
+                context: {
+                    userById,
+                    topicById,
+                    subjectById,
+                    ownerRatingById,
+                    ownerReviewsCountById,
+                },
             };
 
+            let result: any;
             switch (type) {
                 case "group":
-                    return plainToInstance(GroupClassDto, courses, options);
+                    result = plainToInstance(GroupClassDto, courses, options);
+                    break;
                 case "live":
-                    return plainToInstance(LiveCourseDto, courses, options);
+                    result = plainToInstance(LiveCourseDto, courses, options);
+                    break;
                 case "prerecorded":
-                    return plainToInstance(PrerecordedCourseDto, courses, options);
+                    result = plainToInstance(PrerecordedCourseDto, courses, options);
+                    break;
                 default:
-                    return plainToInstance(MinimalCourseDto, courses, options);
+                    result = plainToInstance(MinimalCourseDto, courses, options);
+                    break;
             }
+            return result;
         } catch (error) {
-            logger.error({ err: error }, "Error enriching course DTO from cache");
+            logger.error({ err: error }, "Error enriching course DTO");
             // Fallback: return DTO without enrichment
-            return plainToInstance(
+            const fallbackClass =
                 type === "group"
                     ? GroupClassDto
                     : type === "live"
                         ? LiveCourseDto
                         : type === "prerecorded"
                             ? PrerecordedCourseDto
-                            : MinimalCourseDto,
-                courses,
-                { excludeExtraneousValues: true }
-            );
-        }
-    }
-
-    async getSessionDto(
-        sessions: SessionModel | SessionModel[],
-        type: string
-    ): Promise<any> {
-        try {
-            const list = Array.isArray(sessions) ? sessions : [sessions];
-
-            // Collect unique topic IDs from sessions
-            const topicIds = Array.from(
-                new Set(list.map((s) => s?.topicId).filter(Boolean) as number[])
-            );
-
-            // Batch fetch topics from cache
-            const topicsArr = await Promise.all(
-                topicIds.map((id) => LruInMemoryCache.getTopic(id))
-            );
-
-            // Build lookup as plain object
-            const topicById: Record<number, Topic | null> = {};
-            topicsArr.forEach((t, i) => {
-                topicById[topicIds[i]] = t;
-            });
-
-            const options = {
+                            : MinimalCourseDto;
+            return plainToInstance(fallbackClass, courses, {
                 excludeExtraneousValues: true,
-                context: { topicById },
-            };
-
-            switch (type) {
-                case "session":
-                    return plainToInstance(SessionDto, sessions, options);
-                case "prerecorded":
-                    return plainToInstance(RecordedSessionDto, sessions, options);
-                default:
-                    return plainToInstance(SessionDto, sessions, options);
-            }
-        } catch (error) {
-            logger.error({ err: error }, "Error enriching session DTO from cache");
-            // Fallback: return DTO without enrichment
-            return plainToInstance(
-                type === "prerecorded" ? RecordedSessionDto : SessionDto,
-                sessions,
-                { excludeExtraneousValues: true }
-            );
+            });
         }
     }
 
-    // Generic enrichment helper
+    /**
+     * Generic enrichment for DTOs
+     */
     async enrichDto<T>(
         DtoClass: any,
         data: any | any[],
-        options?: {
+        options: {
             userIdFields?: string[];
             topicIdFields?: string[];
             subjectIdFields?: string[];
-        }
+        } = {}
     ): Promise<T> {
         try {
             const list = Array.isArray(data) ? data : [data];
-            const userIdFields = options?.userIdFields ?? [
-                "studentId",
-                "teacherId",
-                "userId",
-                "ownerId",
-            ];
-            const topicIdFields = options?.topicIdFields ?? ["topicId"];
-            const subjectIdFields = options?.subjectIdFields ?? ["subjectId"];
+            const userIdFields = options.userIdFields ?? ["userId", "studentId", "teacherId", "ownerId"];
+            const topicIdFields = options.topicIdFields ?? ["topicId"];
+            const subjectIdFields = options.subjectIdFields ?? ["subjectId"];
 
-            // Helper to get value from nested path
+            // Helper for nested path extraction
             const getNestedValue = (obj: any, path: string) => {
                 return path.split(".").reduce((acc, part) => acc && acc[part], obj);
             };
 
-            // Collect unique user IDs
+            // Extract unique IDs
             const userIds = Array.from(
                 new Set(
                     list.flatMap((item) =>
@@ -184,7 +169,6 @@ export class DtoAssemblerService {
                 )
             );
 
-            // Collect unique topic IDs
             const topicIds = Array.from(
                 new Set(
                     list.flatMap((item) =>
@@ -195,7 +179,6 @@ export class DtoAssemblerService {
                 )
             );
 
-            // Collect unique subject IDs
             const subjectIds = Array.from(
                 new Set(
                     list.flatMap((item) =>
@@ -206,20 +189,13 @@ export class DtoAssemblerService {
                 )
             );
 
-            // Batch fetch users and topics from cache
+            // Fetch from cache
             const [usersArr, topicsArr, subjectsArr] = await Promise.all([
-                userIds.length > 0
-                    ? Promise.all(userIds.map((id) => LruInMemoryCache.getUserDetails(id)))
-                    : [],
-                topicIds.length > 0
-                    ? Promise.all(topicIds.map((id) => LruInMemoryCache.getTopic(id)))
-                    : [],
-                subjectIds.length > 0
-                    ? Promise.all(subjectIds.map((id) => LruInMemoryCache.getSubject(id)))
-                    : [],
+                Promise.all(userIds.map((id) => LruInMemoryCache.getUserDetails(id))),
+                Promise.all(topicIds.map((id) => LruInMemoryCache.getTopic(id))),
+                Promise.all(subjectIds.map((id) => LruInMemoryCache.getSubject(id))),
             ]);
 
-            // Build lookup as plain objects
             const userById: Record<string, MinimalUser | null> = {};
             usersArr.forEach((u, i) => {
                 userById[userIds[i]] = u;
@@ -235,16 +211,53 @@ export class DtoAssemblerService {
                 subjectById[subjectIds[i]] = s;
             });
 
-            return plainToInstance(DtoClass, data, {
+            const transformOptions = {
                 excludeExtraneousValues: true,
                 context: { userById, topicById, subjectById },
-            }) as T;
+            };
+
+            return plainToInstance(DtoClass, data, transformOptions) as T;
         } catch (error) {
-            logger.error({ err: error }, "Error enriching DTO from cache");
-            // Fallback: return DTO without enrichment
+            logger.error({ err: error }, "Error enriching generic DTO");
             return plainToInstance(DtoClass, data, {
                 excludeExtraneousValues: true,
             }) as T;
+        }
+    }
+
+    /**
+     * Enrich and transform SessionModel(s) to DTOs
+     */
+    async getSessionDto(
+        sessions: SessionModel | SessionModel[],
+        type: string = "minimal"
+    ): Promise<any> {
+        try {
+            const list = Array.isArray(sessions) ? sessions : [sessions];
+            const topicIds = Array.from(
+                new Set(list.map((s) => s.topicId).filter(Boolean) as number[])
+            );
+
+            const topicsArr = await Promise.all(
+                topicIds.map((id) => LruInMemoryCache.getTopic(id))
+            );
+
+            const topicById: Record<number, Topic | null> = {};
+            topicsArr.forEach((t, i) => {
+                topicById[topicIds[i]] = t;
+            });
+
+            const options = {
+                excludeExtraneousValues: true,
+                context: { topicById },
+            };
+
+            return plainToInstance(SessionDto, sessions, options);
+        } catch (error) {
+            logger.error({ err: error }, "Error enriching session DTO");
+            return plainToInstance(SessionDto, sessions, {
+                excludeExtraneousValues: true,
+            });
         }
     }
 }

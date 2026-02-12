@@ -7,14 +7,15 @@ import { plainToInstance } from "class-transformer";
 import { LessonDto } from "../dtos/lesson.dto";
 import { RecordedSessionDto } from "../dtos/recorded-session.dto";
 import { SessionDto } from "../dtos/session.dto";
-import { getCourseDto, getSessionDto } from "../utils";
+import { DtoService } from "../services/dto.service";
 
 @injectable()
 export class CourseSessionController {
     constructor(
         @inject(CourseService) private courseService: CourseService,
         @inject(SessionService) private sessionService: SessionService,
-        @inject(MaterialService) private materialService: MaterialService
+        @inject(MaterialService) private materialService: MaterialService,
+        @inject(DtoService) private dtoService: DtoService
     ) { }
 
     createCourseSession = async (req: Request, res: Response): Promise<void> => {
@@ -39,7 +40,7 @@ export class CourseSessionController {
                 course: course,
             };
             const session = await this.sessionService.createSession(sessionBody);
-            const sessionDto = await getSessionDto(session, course.type ?? "session");
+            const sessionDto = await this.dtoService.getSessionDto(session, course.type ?? "session");
             res.status(201).json(sessionDto);
         } catch (error) {
             req.log.error({ err: error, courseId: req.params.id }, "createCourseSession failed");
@@ -121,7 +122,7 @@ export class CourseSessionController {
                 return;
             }
             const sessions = await this.sessionService.getCourseSessions(id);
-            const sessionDtos = await getSessionDto(sessions, course.type ?? "session");
+            const sessionDtos = await this.dtoService.getSessionDto(sessions, course.type ?? "session");
             res.status(200).json(sessionDtos);
         } catch (error) {
             req.log.error({ err: error, courseId: req.params.id }, "getCourseSessions failed");

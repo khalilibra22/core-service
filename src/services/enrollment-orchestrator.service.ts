@@ -77,6 +77,7 @@ export class EnrollmentOrchestratorService {
         availabilityIds: string[];
         isPaid: boolean;
         fcmToken?: string;
+        allowUnavailable?: boolean;
     }): Promise<{ enrollment: EnrollmentModel; topic: string }> {
         const {
             teacherId,
@@ -85,6 +86,7 @@ export class EnrollmentOrchestratorService {
             sessionsNumber,
             availabilityIds,
             fcmToken,
+            allowUnavailable,
         } = payload;
 
         // TODO: Validate payment/free session logic if needed
@@ -94,7 +96,8 @@ export class EnrollmentOrchestratorService {
         }
 
         const availabilities = await this.httpService.checkAvailabilities(
-            availabilityIds
+            availabilityIds,
+            true
         );
         const sessions = this.sessionService.generateSessionsFromAvailabilities(
             availabilities,
@@ -150,7 +153,25 @@ export class EnrollmentOrchestratorService {
         );
 
         // Update Availabilities
-        await this.httpService.updateAvailabilitiesToUnavailable(availabilityIds);
+        const availabilityUpdates = availabilityIds.map(id => {
+            const sessionsForThisAvailability = sessions.filter(s => s.availabilityId === id);
+            if (sessionsForThisAvailability.length === 0) return { availabilityId: id };
+
+            // Get the last session for this availability
+            const lastSession = sessionsForThisAvailability.reduce((prev, current) =>
+                (prev.date!.getTime() > current.date!.getTime()) ? prev : current
+            );
+
+            const reservedUntilDate = new Date(lastSession.date!);
+            reservedUntilDate.setMinutes(reservedUntilDate.getMinutes() + (lastSession.duration || 0));
+
+            return {
+                availabilityId: id,
+                reservedUntil: reservedUntilDate.toISOString()
+            };
+        });
+
+        await this.httpService.updateAvailabilitiesToUnavailable(availabilityUpdates);
 
         return { enrollment, topic };
     }

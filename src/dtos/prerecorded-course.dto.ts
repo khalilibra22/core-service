@@ -64,19 +64,11 @@ export class PrerecordedCourseDto {
   sectionsCount?: number;
 
   @Expose()
-  @Transform(
-    () =>
-      //random number between 1 and 5
-      Math.floor(Math.random() * 5) + 1
-  )
+  @Transform(({ obj, options }) => options?.context?.ownerRatingById?.[obj.ownerId] ?? 0)
   ownerRating?: number;
 
   @Expose()
-  @Transform(
-    () =>
-      //random number between 1 and 5
-      Math.floor(Math.random() * 5) + 1
-  )
+  @Transform(({ obj }) => obj.rating ?? 0)
   courseRating?: number;
 
   @Expose()
