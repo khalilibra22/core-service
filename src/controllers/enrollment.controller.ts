@@ -75,7 +75,7 @@ export class EnrollmentController {
     res: Response
   ): Promise<void> => {
     try {
-      const { teacherId, ownerId, topicId, sessionsNumber, isPaid, availabilityIds, fcmToken, allowUnavailable } =
+      const { teacherId, ownerId, topicId, sessionsNumber, isPaid, availabilityIds, sessions, fcmToken, allowUnavailable } =
         req.body;
 
       // Basic validation
@@ -89,6 +89,7 @@ export class EnrollmentController {
         topicId,
         sessionsNumber,
         availabilityIds,
+        sessions,
         isPaid,
         fcmToken,
         allowUnavailable,

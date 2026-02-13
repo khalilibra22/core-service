@@ -116,6 +116,59 @@ export class SessionService {
         }
     }
 
+    mapSelectedDatesToSessions(
+        selectedSessions: { availabilityId: string; date: Date | string }[],
+        availabilities: Availability[],
+        topicId: number
+    ): SessionModel[] {
+        try {
+            return selectedSessions.map(({ availabilityId, date }) => {
+                const availability = availabilities.find((a) => a.id === availabilityId);
+                if (!availability) {
+                    throw new Error(`Availability not found: ${availabilityId}`);
+                }
+
+                const sessionDate = new Date(date);
+
+                // Integrity Check: Ensure the selected date matches the availability's day of week
+                const dayName = sessionDate.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
+                if (dayName !== availability.dayOfWeek?.toLowerCase()) {
+                    throw new Error(`Date ${sessionDate.toISOString().split('T')[0]} is a ${dayName}, but the availability is for ${availability.dayOfWeek}`);
+                }
+
+                // Parse start time and end time to calculate duration
+                if (!availability.startTime || !availability.endTime) {
+                    throw new Error(`Availability ${availabilityId} is missing start or end time`);
+                }
+
+                const [startHour, startMinute] = availability.startTime.split(":").map(Number);
+                const [endHour, endMinute] = availability.endTime.split(":").map(Number);
+
+                const start = new Date(sessionDate);
+                start.setHours(startHour, startMinute, 0, 0);
+
+                const end = new Date(sessionDate);
+                end.setHours(endHour, endMinute, 0, 0);
+
+                const durationMs = end.getTime() - start.getTime();
+                const durationMinutes = Math.floor(durationMs / (1000 * 60));
+
+                return {
+                    date: start,
+                    duration: durationMinutes,
+                    durationUnit: "minutes",
+                    isPaid: !availability.isFree,
+                    status: "scheduled",
+                    topicId: topicId,
+                    availabilityId: availability.id,
+                } as SessionModel;
+            });
+        } catch (error: any) {
+            logger.error({ err: error }, "Error mapping selected dates to sessions");
+            throw new Error(`Failed to map selected dates: ${error.message}`);
+        }
+    }
+
     async createSession(session: SessionModel): Promise<SessionModel> {
         try {
             return await this.sessionRepo.save(session);
