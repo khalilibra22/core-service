@@ -122,6 +122,16 @@ export class SessionService {
         topicId: number
     ): SessionModel[] {
         try {
+            // Check for duplicates within the request
+            const seen = new Set<string>();
+            for (const s of selectedSessions) {
+                const key = `${s.availabilityId}-${new Date(s.date).toISOString().split('T')[0]}`;
+                if (seen.has(key)) {
+                    throw new Error(`Duplicate session requested for availability ${s.availabilityId} on date ${s.date}`);
+                }
+                seen.add(key);
+            }
+
             return selectedSessions.map(({ availabilityId, date }) => {
                 const availability = availabilities.find((a) => a.id === availabilityId);
                 if (!availability) {
@@ -175,7 +185,7 @@ export class SessionService {
                     topicId: topicId,
                     availabilityId: availability.id,
                 } as SessionModel;
-            });
+            }).sort((a, b) => a.date!.getTime() - b.date!.getTime());
         } catch (error: any) {
             logger.error({ err: error }, "Error mapping selected dates to sessions");
             throw new Error(`Failed to map selected dates: ${error.message}`);
@@ -260,7 +270,7 @@ export class SessionService {
         try {
             return await this.sessionRepo.find({
                 where: { enrollment: { id: enrollmentId } },
-                relations: ["materialLinks", "materialLinks.material"],
+                relations: ["materialLinks", "materialLinks.material", "enrollment"],
                 cache: {
                     id: CACHE_KEYS.ENROLLMENT_SESSIONS(enrollmentId),
                     milliseconds: CACHE_TTL.STATIC_CONTENT,

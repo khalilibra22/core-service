@@ -347,7 +347,9 @@ export class EnrollmentController {
         await this.sessionService.getOneOnOneSessionsByEnrollmentId(
           enrollmentId
         );
-      const sessionDtos = await this.dtoService.enrichDto<SessionDto[]>(SessionDto, sessions);
+      const sessionDtos = await this.dtoService.enrichDto<SessionDto[]>(SessionDto, sessions, {
+        userIdFields: ["enrollment.studentId", "enrollment.teacherId"]
+      });
       res.status(200).json(sessionDtos);
     } catch (error) {
       req.log.error({ err: error, enrollmentId: req.params.id }, "getOneOnOneEnrollmentSessions failed");
