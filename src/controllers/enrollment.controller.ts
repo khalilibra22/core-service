@@ -75,7 +75,7 @@ export class EnrollmentController {
     res: Response
   ): Promise<void> => {
     try {
-      const { teacherId, ownerId, topicId, sessionsNumber, isPaid, availabilityIds, fcmToken, allowUnavailable } =
+      const { teacherId, ownerId, topicId, sessionsNumber, isPaid, availabilityIds, sessions, fcmToken, allowUnavailable } =
         req.body;
 
       // Basic validation
@@ -89,6 +89,7 @@ export class EnrollmentController {
         topicId,
         sessionsNumber,
         availabilityIds,
+        sessions,
         isPaid,
         fcmToken,
         allowUnavailable,
@@ -105,6 +106,14 @@ export class EnrollmentController {
       );
       if (error.message.includes("No sessions provided")) {
         res.status(400).json({ error: error.message });
+      } else if (
+        error.message.includes("is in the past") ||
+        error.message.includes("is a") && error.message.includes("but the availability is for") ||
+        error.message.includes("is missing start or end time")
+      ) {
+        res.status(400).json({ error: error.message });
+      } else if (error.message.includes("is already reserved until")) {
+        res.status(409).json({ error: error.message });
       } else if (error?.response?.data?.message) {
         res.status(error.response.status).json({ error: error.response.data.message });
       } else if (
@@ -338,7 +347,9 @@ export class EnrollmentController {
         await this.sessionService.getOneOnOneSessionsByEnrollmentId(
           enrollmentId
         );
-      const sessionDtos = await this.dtoService.enrichDto<SessionDto[]>(SessionDto, sessions);
+      const sessionDtos = await this.dtoService.enrichDto<SessionDto[]>(SessionDto, sessions, {
+        userIdFields: ["enrollment.studentId", "enrollment.teacherId"]
+      });
       res.status(200).json(sessionDtos);
     } catch (error) {
       req.log.error({ err: error, enrollmentId: req.params.id }, "getOneOnOneEnrollmentSessions failed");

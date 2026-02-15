@@ -75,6 +75,7 @@ export class EnrollmentOrchestratorService {
         topicId: number;
         sessionsNumber: number;
         availabilityIds: string[];
+        sessions?: { availabilityId: string; date: Date | string }[];
         isPaid: boolean;
         fcmToken?: string;
         allowUnavailable?: boolean;
@@ -85,25 +86,35 @@ export class EnrollmentOrchestratorService {
             topicId,
             sessionsNumber,
             availabilityIds,
+            sessions: manualSessions,
             fcmToken,
             allowUnavailable,
         } = payload;
 
         // TODO: Validate payment/free session logic if needed
 
-        if (!availabilityIds || availabilityIds.length === 0) {
+        const effectiveAvailabilityIds = manualSessions
+            ? Array.from(new Set(manualSessions.map(s => s.availabilityId)))
+            : availabilityIds;
+
+        if (!effectiveAvailabilityIds || effectiveAvailabilityIds.length === 0) {
             throw new Error("No sessions provided");
         }
 
         const availabilities = await this.httpService.checkAvailabilities(
-            availabilityIds,
+            effectiveAvailabilityIds,
             true
         );
-        const sessions = this.sessionService.generateSessionsFromAvailabilities(
-            availabilities,
-            topicId,
-            sessionsNumber
-        );
+
+        const sessions = manualSessions
+            ? this.sessionService.mapSelectedDatesToSessions(manualSessions, availabilities, topicId)
+            : this.sessionService.generateSessionsFromAvailabilities(
+                availabilities,
+                topicId,
+                sessionsNumber
+            );
+
+        const effectiveSessionsNumber = manualSessions ? manualSessions.length : sessionsNumber;
 
         // Create chat group
         let groupId: string | null = null;
@@ -127,7 +138,7 @@ export class EnrollmentOrchestratorService {
         }
 
         const userTopic = await LruInMemoryCache.getUserTopic(topicId);
-        const amount = (userTopic?.price || 0) * sessionsNumber;
+        const amount = (userTopic?.price || 0) * effectiveSessionsNumber;
 
         const enrollmentBody = {
             studentId,
@@ -153,7 +164,7 @@ export class EnrollmentOrchestratorService {
         );
 
         // Update Availabilities
-        const availabilityUpdates = availabilityIds.map(id => {
+        const availabilityUpdates = effectiveAvailabilityIds.map(id => {
             const sessionsForThisAvailability = sessions.filter(s => s.availabilityId === id);
             if (sessionsForThisAvailability.length === 0) return { availabilityId: id };
 

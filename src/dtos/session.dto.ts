@@ -44,4 +44,18 @@ export class SessionDto {
   @Type(() => MaterialDto)
   @Transform(({ obj }) => obj.materialLinks)
   materials?: MaterialDto[];
+
+  @Expose()
+  @Transform(({ obj, options }) => {
+    const studentId = obj.enrollment?.studentId || obj.studentId;
+    return options?.context?.userById?.[studentId]?.fullname;
+  })
+  studentName?: string;
+
+  @Expose()
+  @Transform(({ obj, options }) => {
+    const teacherId = obj.enrollment?.teacherId || obj.teacherId;
+    return options?.context?.userById?.[teacherId]?.fullname;
+  })
+  teacherName?: string;
 }
