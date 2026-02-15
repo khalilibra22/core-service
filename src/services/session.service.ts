@@ -130,7 +130,12 @@ export class SessionService {
 
                 const sessionDate = new Date(date);
 
-                // Integrity Check: Ensure the selected date matches the availability's day of week
+                // Integrity Check 1: Ensure date is in the future
+                if (sessionDate < new Date()) {
+                    throw new Error(`Date ${sessionDate.toISOString().split('T')[0]} is in the past`);
+                }
+
+                // Integrity Check 2: Ensure the selected date matches the availability's day of week
                 const dayName = sessionDate.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
                 if (dayName !== availability.dayOfWeek?.toLowerCase()) {
                     throw new Error(`Date ${sessionDate.toISOString().split('T')[0]} is a ${dayName}, but the availability is for ${availability.dayOfWeek}`);
@@ -146,6 +151,14 @@ export class SessionService {
 
                 const start = new Date(sessionDate);
                 start.setHours(startHour, startMinute, 0, 0);
+
+                // Integrity Check 3: Check if it matches reservedUntil of the availability
+                if (availability.reservedUntil) {
+                    const reservedUntilDate = new Date(availability.reservedUntil);
+                    if (start <= reservedUntilDate) {
+                        throw new Error(`Time slot for ${sessionDate.toISOString().split('T')[0]} is already reserved until ${reservedUntilDate.toISOString()}`);
+                    }
+                }
 
                 const end = new Date(sessionDate);
                 end.setHours(endHour, endMinute, 0, 0);

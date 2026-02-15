@@ -106,6 +106,14 @@ export class EnrollmentController {
       );
       if (error.message.includes("No sessions provided")) {
         res.status(400).json({ error: error.message });
+      } else if (
+        error.message.includes("is in the past") ||
+        error.message.includes("is a") && error.message.includes("but the availability is for") ||
+        error.message.includes("is missing start or end time")
+      ) {
+        res.status(400).json({ error: error.message });
+      } else if (error.message.includes("is already reserved until")) {
+        res.status(409).json({ error: error.message });
       } else if (error?.response?.data?.message) {
         res.status(error.response.status).json({ error: error.response.data.message });
       } else if (
