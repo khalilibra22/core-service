@@ -1,4 +1,4 @@
-import { Repository } from "typeorm";
+import { Repository, MoreThanOrEqual, Not } from "typeorm";
 import { AppDataSource } from "../config/database";
 import { SessionModel } from "../models/session.model";
 import { logger } from "../utils/logger";
@@ -116,11 +116,11 @@ export class SessionService {
         }
     }
 
-    mapSelectedDatesToSessions(
+    async mapSelectedDatesToSessions(
         selectedSessions: { availabilityId: string; date: Date | string }[],
         availabilities: Availability[],
         topicId: number
-    ): SessionModel[] {
+    ): Promise<SessionModel[]> {
         try {
             // Check for duplicates within the request
             const seen = new Set<string>();
@@ -132,7 +132,7 @@ export class SessionService {
                 seen.add(key);
             }
 
-            return selectedSessions.map(({ availabilityId, date }) => {
+            const sessions = await Promise.all(selectedSessions.map(async ({ availabilityId, date }) => {
                 const availability = availabilities.find((a) => a.id === availabilityId);
                 if (!availability) {
                     throw new Error(`Availability not found: ${availabilityId}`);
@@ -162,16 +162,20 @@ export class SessionService {
                 const start = new Date(sessionDate);
                 start.setHours(startHour, startMinute, 0, 0);
 
-                // Integrity Check 3: Check if it matches reservedUntil of the availability
-                if (availability.reservedUntil) {
-                    const reservedUntilDate = new Date(availability.reservedUntil);
-                    if (start <= reservedUntilDate) {
-                        throw new Error(`Time slot for ${sessionDate.toISOString().split('T')[0]} is already reserved until ${reservedUntilDate.toISOString()}`);
-                    }
-                }
-
                 const end = new Date(sessionDate);
                 end.setHours(endHour, endMinute, 0, 0);
+
+                // Integrity Check 3: Collision check in database for this specific date
+                const existingSession = await this.sessionRepo.findOne({
+                    where: {
+                        availabilityId: availabilityId,
+                        date: start
+                    }
+                });
+
+                if (existingSession) {
+                    throw new Error(`This time slot (${sessionDate.toISOString().split('T')[0]}) is already booked`);
+                }
 
                 const durationMs = end.getTime() - start.getTime();
                 const durationMinutes = Math.floor(durationMs / (1000 * 60));
@@ -185,7 +189,9 @@ export class SessionService {
                     topicId: topicId,
                     availabilityId: availability.id,
                 } as SessionModel;
-            }).sort((a, b) => a.date!.getTime() - b.date!.getTime());
+            }));
+
+            return sessions.sort((a, b) => a.date!.getTime() - b.date!.getTime());
         } catch (error: any) {
             logger.error({ err: error }, "Error mapping selected dates to sessions");
             throw new Error(`Failed to map selected dates: ${error.message}`);
@@ -311,6 +317,23 @@ export class SessionService {
         } catch (error: any) {
             logger.error({ err: error, courseId }, "getPrerecordedCourseSections failed");
             throw new Error("Error fetching prerecorded course sections: " + error.message);
+        }
+    }
+
+    async getBookedDatesByAvailability(availabilityId: string): Promise<string[]> {
+        try {
+            const sessions = await this.sessionRepo.find({
+                where: {
+                    availabilityId,
+                    date: MoreThanOrEqual(new Date()),
+                    status: Not("canceled")
+                },
+                select: ["date"],
+            });
+            return sessions.map((s) => s.date!.toISOString());
+        } catch (error: any) {
+            logger.error({ err: error, availabilityId }, "getBookedDatesByAvailability failed");
+            throw new Error("Error fetching booked dates: " + error.message);
         }
     }
 }

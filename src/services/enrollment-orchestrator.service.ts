@@ -107,7 +107,7 @@ export class EnrollmentOrchestratorService {
         );
 
         const sessions = manualSessions
-            ? this.sessionService.mapSelectedDatesToSessions(manualSessions, availabilities, topicId)
+            ? await this.sessionService.mapSelectedDatesToSessions(manualSessions, availabilities, topicId)
             : this.sessionService.generateSessionsFromAvailabilities(
                 availabilities,
                 topicId,

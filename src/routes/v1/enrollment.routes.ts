@@ -138,4 +138,10 @@ router.post(
   enrollmentController.refundAdminResolve
 );
 
+router.get(
+  "/availabilities/:id/booked-dates",
+  AuthMiddleware.verifyToken,
+  enrollmentController.getAvailabilityBookedDates
+);
+
 export { router as enrollmentRouter };
