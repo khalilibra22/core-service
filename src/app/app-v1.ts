@@ -9,6 +9,7 @@ import { settingRouter } from "../routes/v1/setting.routes";
 import { storageRouter } from "../routes/v1/storage.routes";
 import { notificationRouter } from "../routes/v1/notification.routes";
 import { studentRequestRouter } from "../routes/v1/student-request.routes";
+import { paymentRouter } from "../routes/v1/payment.routes";
 
 const app = express.Router();
 
@@ -22,5 +23,6 @@ app.use("/sessions", sessionRouter);
 app.use("/uploads", storageRouter);
 app.use("/notifications", notificationRouter);
 app.use("/student-requests", studentRequestRouter);
+app.use("/payments", paymentRouter);
 
 export { app as appV1 };
