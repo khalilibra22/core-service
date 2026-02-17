@@ -108,12 +108,16 @@ export class EnrollmentController {
         res.status(400).json({ error: error.message });
       } else if (
         error.message.includes("is in the past") ||
-        error.message.includes("is a") && error.message.includes("but the availability is for") ||
+        (error.message.includes("is a") && error.message.includes("but the availability is for")) ||
         error.message.includes("is missing start or end time")
       ) {
         res.status(400).json({ error: error.message });
-      } else if (error.message.includes("is already reserved until")) {
-        res.status(409).json({ error: error.message });
+      } else if (
+        error.message.includes("is already reserved until") ||
+        error.message.includes("is already booked") ||
+        error.message.includes("Duplicate session requested")
+      ) {
+        res.status(409).json({ error: error.message.replace("Failed to map selected dates: ", "") });
       } else if (error?.response?.data?.message) {
         res.status(error.response.status).json({ error: error.response.data.message });
       } else if (
@@ -121,6 +125,8 @@ export class EnrollmentController {
         error.message.includes("400")
       ) {
         res.status(409).json({ error: "Some time slotes aleardy scheduled" });
+      } else if (error.message.includes("Failed to map selected dates")) {
+        res.status(400).json({ error: error.message.replace("Failed to map selected dates: ", "") });
       } else {
         res.status(500).json({ error: "Internal Server Error" });
       }
@@ -665,6 +671,17 @@ export class EnrollmentController {
       res.status(200).json(materialDtos);
     } catch (error: any) {
       req.log.error({ err: error, enrollmentId: req.params.id }, "getEnrollmentMaterials failed");
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+
+  getAvailabilityBookedDates = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const availabilityId = req.params.id;
+      const bookedDates = await this.sessionService.getBookedDatesByAvailability(availabilityId);
+      res.status(200).json({ bookedDates });
+    } catch (error: any) {
+      req.log.error({ err: error, availabilityId: req.params.id }, "getAvailabilityBookedDates failed");
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
