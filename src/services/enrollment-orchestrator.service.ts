@@ -9,6 +9,13 @@ import { LruInMemoryCache } from "../cache/lru-in-memory.cache";
 import { logger } from "../utils/logger";
 import { injectable, inject } from "tsyringe";
 
+interface EnrollmentResult {
+    enrollment: EnrollmentModel;
+    topic: string;
+    paymentUrl?: string;
+    transactionId?: string;
+}
+
 @injectable()
 export class EnrollmentOrchestratorService {
     constructor(
@@ -23,7 +30,7 @@ export class EnrollmentOrchestratorService {
         courseId: string,
         studentId: string,
         fcmToken?: string
-    ): Promise<{ enrollment: EnrollmentModel; topic: string }> {
+    ): Promise<EnrollmentResult> {
         const course = await this.courseService.getCourseByIdWithEnrollments(courseId);
         if (!course) {
             throw new Error(`Course not found: ${courseId}`);
@@ -58,21 +65,20 @@ export class EnrollmentOrchestratorService {
         // Auto-subscribe to course notifications
         const topic = `course-${course.id}`;
 
-        // Handle Payment
-        if (course.price && course.price > 0) {
-            const paymentResponse = await this.httpService.initiatePayment({
-                userId: studentId,
-                amount: course.price,
-                currency: "DZD",
-                method: "satim", // Default or passed in args?
-                referenceType: "COURSE_ENROLLMENT",
-                referenceId: enrollment.id,
-                returnUrl: `http://localhost:3000/enrollment/${enrollment.id}/success`, // TODO: Config
-                failUrl: `http://localhost:3000/enrollment/${enrollment.id}/fail`,
-            });
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
 
-            // We can return the payment URL in the response
-            return { enrollment, topic, paymentUrl: paymentResponse.paymentUrl, transactionId: paymentResponse.transactionId } as any;
+        // Handle Payment
+        const paymentResult = await this.initiatePaymentFlow(
+            studentId,
+            course.price || 0,
+            "COURSE_ENROLLMENT",
+            enrollment.id!,
+            `${frontendUrl}/enrollment/${enrollment.id}/success`, // TODO: Config
+            `${frontendUrl}/enrollment/${enrollment.id}/fail`
+        );
+
+        if (paymentResult) {
+            return { enrollment, topic, ...paymentResult };
         }
         if (fcmToken) {
             try {
@@ -96,7 +102,7 @@ export class EnrollmentOrchestratorService {
         isPaid: boolean;
         fcmToken?: string;
         allowUnavailable?: boolean;
-    }): Promise<{ enrollment: EnrollmentModel; topic: string }> {
+    }): Promise<EnrollmentResult> {
         const {
             teacherId,
             studentId,
@@ -201,7 +207,52 @@ export class EnrollmentOrchestratorService {
 
         await this.httpService.updateAvailabilitiesToUnavailable(availabilityUpdates);
 
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+
+        // Handle Payment
+        const paymentResult = await this.initiatePaymentFlow(
+            studentId,
+            amount,
+            "ONE_ON_ONE_ENROLLMENT", // Assuming this is the correct reference type for 1-on-1
+            enrollment.id!,
+            `${frontendUrl}/enrollment/${enrollment.id}/success`, // TODO: Config
+            `${frontendUrl}/enrollment/${enrollment.id}/fail`
+        );
+
+        if (paymentResult) {
+            return { enrollment, topic, ...paymentResult };
+        }
+
         return { enrollment, topic };
+    }
+
+    private async initiatePaymentFlow(
+        userId: string,
+        amount: number,
+        referenceType: string,
+        referenceId: string,
+        returnUrl: string,
+        failUrl: string
+    ): Promise<{ paymentUrl?: string; transactionId: string } | null> {
+        if (!amount || amount <= 0) {
+            return null;
+        }
+
+        const paymentResponse = await this.httpService.initiatePayment({
+            userId,
+            amount,
+            currency: "DZD",
+            method: "satim", // Default or passed in args?
+            referenceType,
+            referenceId,
+            returnUrl,
+            failUrl,
+        });
+
+        return {
+            paymentUrl: paymentResponse.paymentUrl,
+            transactionId: paymentResponse.transactionId,
+        };
     }
 
     private validateCourseEnrollment(course: CourseModel, studentId: string) {
