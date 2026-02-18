@@ -34,8 +34,8 @@ export class EnrollmentModel {
   @Column({ default: "course" })
   type?: "course" | "one-on-one";
 
-  @Column({ default: "pending" })
-  status?: string; // "pending" | "approved" | "rejected"
+  @Column({ default: "pending_payment" })
+  status?: string; // "pending_payment" | "approved" | "rejected" | "expired"
 
   @Column({ name: "cancellation_reason", nullable: true })
   cancellationReason?: string;

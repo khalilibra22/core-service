@@ -42,6 +42,7 @@ export class EnrollmentOrchestratorService {
             studentId,
             course,
             type: "course",
+            status: "pending_payment",
             amount: course.price || 0,
             currency: "DZD",
         } as any;
@@ -112,10 +113,7 @@ export class EnrollmentOrchestratorService {
             availabilityIds,
             sessions: manualSessions,
             fcmToken,
-            allowUnavailable,
         } = payload;
-
-        // TODO: Validate payment/free session logic if needed
 
         const effectiveAvailabilityIds = manualSessions
             ? Array.from(new Set(manualSessions.map(s => s.availabilityId)))
@@ -170,6 +168,7 @@ export class EnrollmentOrchestratorService {
             sessions,
             type: "one-on-one",
             groupId,
+            status: "pending_payment",
             amount,
             currency: "DZD",
         } as any;
@@ -192,7 +191,6 @@ export class EnrollmentOrchestratorService {
             const sessionsForThisAvailability = sessions.filter(s => s.availabilityId === id);
             if (sessionsForThisAvailability.length === 0) return { availabilityId: id };
 
-            // Get the last session for this availability
             const lastSession = sessionsForThisAvailability.reduce((prev, current) =>
                 (prev.date!.getTime() > current.date!.getTime()) ? prev : current
             );
@@ -214,10 +212,10 @@ export class EnrollmentOrchestratorService {
         const paymentResult = await this.initiatePaymentFlow(
             studentId,
             amount,
-            "ONE_ON_ONE_ENROLLMENT", // Assuming this is the correct reference type for 1-on-1
+            "ONE_ON_ONE_ENROLLMENT",
             enrollment.id!,
             `1-on-1 sessions for topic '${userTopic?.topic?.name || topicId}'`,
-            `${frontendUrl}/enrollment/${enrollment.id}/success`, // TODO: Config
+            `${frontendUrl}/enrollment/${enrollment.id}/success`,
             `${frontendUrl}/enrollment/${enrollment.id}/fail`
         );
 
@@ -245,7 +243,7 @@ export class EnrollmentOrchestratorService {
             userId,
             amount,
             currency: "DZD",
-            method: "satim", // Default or passed in args?
+            method: "satim",
             referenceType,
             referenceId,
             description,
@@ -272,7 +270,11 @@ export class EnrollmentOrchestratorService {
             throw new Error("User already enrolled in this course");
         }
         if (course.type === "group" || course.type === "live") {
-            if ((course.enrollments?.length ?? 0) >= (course.maxParticipants ?? 0)) {
+            const activeEnrollmentsCount = course.enrollments?.filter(
+                e => e.status === "approved" || e.status === "pending_payment"
+            ).length ?? 0;
+
+            if (activeEnrollmentsCount >= (course.maxParticipants ?? 0)) {
                 throw new Error(
                     `Course is full. Max students: ${course.maxParticipants}`
                 );
@@ -286,7 +288,6 @@ export class EnrollmentOrchestratorService {
         teacherId: string,
         studentFcmToken?: string
     ) {
-        // Subscribe student
         if (studentFcmToken) {
             try {
                 await this.notificationService.subscribeTokenToTopic(
@@ -298,7 +299,6 @@ export class EnrollmentOrchestratorService {
             }
         }
 
-        // Notify Teacher
         try {
             const teacher = await LruInMemoryCache.getUserDetails(teacherId);
             if (teacher?.fcmToken) {
@@ -330,5 +330,59 @@ export class EnrollmentOrchestratorService {
                 "Failed to handle teacher notifications for 1:1"
             );
         }
+    }
+
+    async handlePaymentWebhook(payload: {
+        transactionId: string;
+        referenceId: string;
+        referenceType: string;
+        status: "success" | "failed";
+    }): Promise<void> {
+        const { referenceId, status, transactionId } = payload;
+
+        logger.info({ referenceId, status, transactionId }, "Handling payment webhook");
+
+        const enrollment = await this.enrollmentService.getEnrollmentById(referenceId);
+        if (!enrollment) {
+            logger.error({ referenceId }, "Enrollment not found for webhook");
+            throw new Error(`Enrollment not found: ${referenceId}`);
+        }
+
+        if (status === "success") {
+            enrollment.status = "approved";
+            enrollment.paymentStatus = "paid";
+            enrollment.paymentId = transactionId;
+        } else {
+            enrollment.status = "rejected";
+            enrollment.paymentStatus = "failed";
+            await this.releaseEnrollmentResources(enrollment);
+        }
+
+        await this.enrollmentService.updateEnrollment(enrollment);
+        logger.info({ enrollmentId: enrollment.id, status: enrollment.status }, "Enrollment status updated via webhook");
+    }
+
+    private async releaseEnrollmentResources(enrollment: EnrollmentModel): Promise<void> {
+        logger.info({ enrollmentId: enrollment.id, type: enrollment.type }, "Releasing enrollment resources");
+
+        if (enrollment.type === "one-on-one") {
+            try {
+                // Get availability IDs from sessions before deleting them
+                const sessions = await this.sessionService.getOneOnOneSessionsByEnrollmentId(enrollment.id!);
+                const availabilityIds = Array.from(new Set(sessions.map(s => s.availabilityId).filter((id): id is string => !!id)));
+
+                // Delete sessions
+                await this.sessionService.deleteSessionsByEnrollmentId(enrollment.id!);
+
+                // Release availabilities in user-service
+                if (availabilityIds.length > 0) {
+                    await this.httpService.releaseAvailabilities(availabilityIds);
+                }
+            } catch (error) {
+                logger.error({ err: error, enrollmentId: enrollment.id }, "Failed to release resources for one-on-one enrollment");
+            }
+        }
+
+        // For 'course' type, capacity is dynamically calculated by filtering active enrollments in validateCourseEnrollment.
     }
 }

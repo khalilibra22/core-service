@@ -336,4 +336,14 @@ export class SessionService {
             throw new Error("Error fetching booked dates: " + error.message);
         }
     }
+
+    async deleteSessionsByEnrollmentId(enrollmentId: string): Promise<void> {
+        try {
+            await this.sessionRepo.delete({ enrollment: { id: enrollmentId } });
+            logger.info({ enrollmentId }, "Deleted sessions associated with enrollment");
+        } catch (error) {
+            logger.error({ err: error, enrollmentId }, "deleteSessionsByEnrollmentId failed");
+            throw new Error("Error deleting sessions by enrollment ID");
+        }
+    }
 }

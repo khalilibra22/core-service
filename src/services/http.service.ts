@@ -131,6 +131,17 @@ export class HttpService implements ExternalService {
         }
     }
 
+    async getTransactionStatus(type: string, id: string): Promise<any> {
+        try {
+            const response = await this.httpClient.get(`/payments/reference/${type}/${id}`);
+            return response.data;
+        } catch (error: any) {
+            if (error?.response?.status === 404) return null;
+            logger.error({ err: error, type, id }, "Failed to get transaction status");
+            return null;
+        }
+    }
+
     async checkAvailabilities(availabilityIds: string[], allowUnavailable?: boolean): Promise<any> {
         try {
             const response = await this.httpClient.post(`${this.baseURL}/availabilities/check`, {
@@ -163,6 +174,18 @@ export class HttpService implements ExternalService {
                 throw new Error(`User service is currently unavailable`);
             }
             throw new Error(`Failed to update availabilities: ${error?.message || error}`);
+        }
+    }
+
+    async releaseAvailabilities(availabilityIds: string[]): Promise<any> {
+        try {
+            if (!Array.isArray(availabilityIds) || availabilityIds.length === 0) {
+                return;
+            }
+            return await this.httpClient.put(`${this.baseURL}/availabilities/release`, { availabilityIds });
+        } catch (error: any) {
+            logger.error({ err: error }, 'Failed to release availabilities');
+            return null;
         }
     }
 

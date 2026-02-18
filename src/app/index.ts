@@ -8,6 +8,7 @@ import { logger } from "../utils/logger";
 // Initialize event system
 import "../events";
 import { startEscalationCron } from "../background/escalation.cron";
+import { startPaymentCleanupCron } from "../background/payment-cleanup.cron";
 
 const app = express();
 const port = process.env.PORT || 5001;
@@ -55,6 +56,7 @@ process.on("uncaughtException", (error) => {
 app.listen(port, () => {
   logger.info({ port }, `Server running on http://localhost:${port}`);
   startEscalationCron();
+  startPaymentCleanupCron();
 });
 
 export default app;
