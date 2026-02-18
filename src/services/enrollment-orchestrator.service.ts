@@ -73,6 +73,7 @@ export class EnrollmentOrchestratorService {
             course.price || 0,
             "COURSE_ENROLLMENT",
             enrollment.id!,
+            `Enrollment in course '${course.name}'`,
             `${frontendUrl}/enrollment/${enrollment.id}/success`, // TODO: Config
             `${frontendUrl}/enrollment/${enrollment.id}/fail`
         );
@@ -215,6 +216,7 @@ export class EnrollmentOrchestratorService {
             amount,
             "ONE_ON_ONE_ENROLLMENT", // Assuming this is the correct reference type for 1-on-1
             enrollment.id!,
+            `1-on-1 sessions for topic '${userTopic?.topic?.name || topicId}'`,
             `${frontendUrl}/enrollment/${enrollment.id}/success`, // TODO: Config
             `${frontendUrl}/enrollment/${enrollment.id}/fail`
         );
@@ -231,6 +233,7 @@ export class EnrollmentOrchestratorService {
         amount: number,
         referenceType: string,
         referenceId: string,
+        description: string,
         returnUrl: string,
         failUrl: string
     ): Promise<{ paymentUrl?: string; transactionId: string } | null> {
@@ -245,6 +248,7 @@ export class EnrollmentOrchestratorService {
             method: "satim", // Default or passed in args?
             referenceType,
             referenceId,
+            description,
             returnUrl,
             failUrl,
         });
