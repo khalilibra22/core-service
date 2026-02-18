@@ -78,7 +78,8 @@ export class EnrollmentOrchestratorService {
             `Enrollment in course '${course.name}'`,
             `${frontendUrl}/enrollment/${enrollment.id}/success`, // TODO: Config
             `${frontendUrl}/enrollment/${enrollment.id}/fail`,
-            method
+            method,
+            { teacherId: course.ownerId, courseType: course.type }
         );
 
         if (paymentResult) {
@@ -220,7 +221,8 @@ export class EnrollmentOrchestratorService {
             `1-on-1 sessions for topic '${userTopic?.topic?.name || topicId}'`,
             `${frontendUrl}/enrollment/${enrollment.id}/success`,
             `${frontendUrl}/enrollment/${enrollment.id}/fail`,
-            method
+            method,
+            { teacherId, courseType: "one_on_one" }
         );
 
         if (paymentResult) {
@@ -238,7 +240,8 @@ export class EnrollmentOrchestratorService {
         description: string,
         returnUrl: string,
         failUrl: string,
-        method: string = "satim"
+        method: string = "satim",
+        metadata?: any
     ): Promise<{ paymentUrl?: string; transactionId: string } | null> {
         if (!amount || amount <= 0) {
             return null;
@@ -254,6 +257,7 @@ export class EnrollmentOrchestratorService {
             description,
             returnUrl,
             failUrl,
+            metadata
         });
 
         return {
@@ -365,6 +369,42 @@ export class EnrollmentOrchestratorService {
 
         await this.enrollmentService.updateEnrollment(enrollment);
         logger.info({ enrollmentId: enrollment.id, status: enrollment.status }, "Enrollment status updated via webhook");
+    }
+
+    async cancelAndRefund(enrollmentId: string, canceledBy: string, reason: string): Promise<void> {
+        logger.info({ enrollmentId, canceledBy, reason }, "Canceling and refunding enrollment");
+
+        const enrollment = await this.enrollmentService.getEnrollmentById(enrollmentId);
+        if (!enrollment) throw new Error("Enrollment not found");
+
+        if (enrollment.status === "canceled" || enrollment.status === "refunded") {
+            throw new Error("Enrollment is already canceled or refunded");
+        }
+
+        // 1. Update Enrollment Status
+        enrollment.status = "canceled";
+        enrollment.canceledBy = canceledBy;
+        enrollment.cancellationReason = reason;
+        await this.enrollmentService.updateEnrollment(enrollment);
+
+        // 2. Process Virtual Refund to Student Wallet
+        // Only if it was paid
+        if (enrollment.paymentStatus === "paid" && enrollment.amount && enrollment.amount > 0) {
+            await this.httpService.refundToWallet({
+                userId: enrollment.studentId as string,
+                amount: enrollment.amount as number,
+                referenceType: enrollment.type === "one-on-one" ? "ONE_ON_ONE_ENROLLMENT" : "COURSE_ENROLLMENT",
+                referenceId: enrollment.id!
+            });
+            enrollment.status = "refunded";
+            await this.enrollmentService.updateEnrollment(enrollment);
+            logger.info({ enrollmentId, studentId: enrollment.studentId }, "Refund issued to student wallet");
+        }
+
+        // 3. Release resources
+        await this.releaseEnrollmentResources(enrollment);
+
+        // 4. Notify participants? (TODO)
     }
 
     private async releaseEnrollmentResources(enrollment: EnrollmentModel): Promise<void> {

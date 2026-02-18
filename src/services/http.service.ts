@@ -10,7 +10,7 @@ export class HttpService implements ExternalService {
 
     constructor() {
         try {
-            this.baseURL = (process.env.USER_SERVICE_URL || 'http://localhost:5000/v1') + '/inbounds';
+            this.baseURL = process.env.USER_SERVICE_URL || 'http://localhost:5000/v1';
             this.httpClient = new RestApiSetup(`${this.baseURL}`);
             this.chatBaseURL = process.env.CHAT_SERVICE_URL || 'http://localhost:5002/v1';
             this.chatHttpClient = new RestApiSetup(this.chatBaseURL);
@@ -26,7 +26,7 @@ export class HttpService implements ExternalService {
             if (!userId || typeof userId !== 'string') {
                 throw new Error('Invalid userId provided');
             }
-            const response = await this.httpClient.get(`${this.baseURL}/users/${userId}/minimal`);
+            const response = await this.httpClient.get(`/inbounds/users/${userId}/minimal`);
             return response.data;
         } catch (error: any) {
             logger.error({ err: error, userId }, 'Failed to get user');
@@ -49,7 +49,7 @@ export class HttpService implements ExternalService {
             if (!emailRegex.test(email)) {
                 throw new Error('Invalid email format');
             }
-            return await this.httpClient.get(`${this.baseURL}/users/email/${email.trim()}`);
+            return await this.httpClient.get(`/inbounds/users/email/${email.trim()}`);
         } catch (error: any) {
             logger.error({ err: error, email }, 'Failed to get user by email');
             if (error?.response?.status === 404) {
@@ -67,7 +67,7 @@ export class HttpService implements ExternalService {
             if (!userTopicId || typeof userTopicId !== 'number' || userTopicId <= 0) {
                 throw new Error('Invalid userTopicId provided');
             }
-            const response = await this.httpClient.get(`${this.baseURL}/users/topics/${userTopicId}`);
+            const response = await this.httpClient.get(`/inbounds/users/topics/${userTopicId}`);
             return response.data;
         } catch (error: any) {
             logger.error({ err: error, userTopicId }, 'Failed to get user topic');
@@ -87,7 +87,7 @@ export class HttpService implements ExternalService {
                 throw new Error('Invalid topicId provided');
             }
             // inbounds/topics/id
-            const response = await this.httpClient.get(`${this.baseURL}/topics/${topicId}`);
+            const response = await this.httpClient.get(`/inbounds/topics/${topicId}`);
             return response.data;
         } catch (error: any) {
             logger.error({ err: error, topicId }, 'Failed to get topic');
@@ -107,7 +107,7 @@ export class HttpService implements ExternalService {
                 throw new Error('Invalid subjectId provided');
             }
             // inbounds/subjects/id
-            const response = await this.httpClient.get(`${this.baseURL}/subjects/${subjectId}`);
+            const response = await this.httpClient.get(`/inbounds/subjects/${subjectId}`);
             return response.data;
         } catch (error: any) {
             logger.error({ err: error, subjectId }, 'Failed to get subject');
@@ -131,6 +131,15 @@ export class HttpService implements ExternalService {
         }
     }
 
+    async refundToWallet(payload: { userId: string, amount: number, referenceType: string, referenceId: string }): Promise<void> {
+        try {
+            await this.httpClient.post(`/payments/refund/wallet`, payload);
+        } catch (error) {
+            logger.error({ err: error }, "Failed to process refund to wallet via user-service");
+            throw error;
+        }
+    }
+
     async getTransactionStatus(type: string, id: string): Promise<any> {
         try {
             const response = await this.httpClient.get(`/payments/reference/${type}/${id}`);
@@ -144,7 +153,7 @@ export class HttpService implements ExternalService {
 
     async checkAvailabilities(availabilityIds: string[], allowUnavailable?: boolean): Promise<any> {
         try {
-            const response = await this.httpClient.post(`${this.baseURL}/availabilities/check`, {
+            const response = await this.httpClient.post(`/inbounds/availabilities/check`, {
                 availabilityIds: availabilityIds,
                 allowUnavailable: allowUnavailable
             });
@@ -167,7 +176,7 @@ export class HttpService implements ExternalService {
                 id: a.availabilityId.trim(),
                 reservedUntil: a.reservedUntil
             }));
-            return await this.httpClient.put(`${this.baseURL}/availabilities/update-to-unavailable`, { availabilityIds: payload });
+            return await this.httpClient.put(`/inbounds/availabilities/update-to-unavailable`, { availabilityIds: payload });
         } catch (error: any) {
             logger.error({ err: error }, 'Failed to update availabilities to unavailable');
             if (error?.response?.status >= 500) {
@@ -182,7 +191,7 @@ export class HttpService implements ExternalService {
             if (!Array.isArray(availabilityIds) || availabilityIds.length === 0) {
                 return;
             }
-            return await this.httpClient.put(`${this.baseURL}/availabilities/release`, { availabilityIds });
+            return await this.httpClient.put(`/inbounds/availabilities/release`, { availabilityIds });
         } catch (error: any) {
             logger.error({ err: error }, 'Failed to release availabilities');
             return null;
