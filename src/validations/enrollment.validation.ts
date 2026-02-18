@@ -3,6 +3,7 @@ import Joi from "joi";
 export const enrollmentValidationsSchema = Joi.object({
   ownerId: Joi.string().uuid().optional(),
   fcmToken: Joi.string().min(10).optional(),
+  method: Joi.string().valid("satim", "baridimob", "ccp_transfer").default("satim"),
 });
 
 export const enrollmentStatusSchema = Joi.object({
@@ -42,6 +43,7 @@ export const oneOnOneEnrollmentSchema = Joi.object({
   ).min(1).optional(),
   isPaid: Joi.boolean().required(),
   fcmToken: Joi.string().min(10).optional(),
+  method: Joi.string().valid("satim", "baridimob", "ccp_transfer").default("satim"),
 })
   .custom((value, helpers) => {
     if (value.sessions) {
@@ -52,24 +54,24 @@ export const oneOnOneEnrollmentSchema = Joi.object({
         // "we dont need it , i think , right??" -> Refers to my proposed validation "sessions.length matches sessionsNumber".
         // So I'll remove that strict check.
       }
-      
+
       // If not paid, only 1 session allowed
       if (!value.isPaid && value.sessions.length > 1) {
-          return helpers.error("sessions.tooManyForUnpaid");
+        return helpers.error("sessions.tooManyForUnpaid");
       }
     } else {
-        if (!value.availabilityIds || value.availabilityIds.length === 0) {
-            return helpers.error("availabilityIds.requiredWithoutSessions");
-        }
-        if (!value.sessionsNumber) {
-             return helpers.error("sessionsNumber.requiredWithoutSessions");
-        }
-        if (value.availabilityIds.length > value.sessionsNumber) {
-          return helpers.error("availabilityIds.greaterThanSessions", {
-            availability: value.availabilityIds.length,
-            sessions: value.sessionsNumber,
-          });
-        }
+      if (!value.availabilityIds || value.availabilityIds.length === 0) {
+        return helpers.error("availabilityIds.requiredWithoutSessions");
+      }
+      if (!value.sessionsNumber) {
+        return helpers.error("sessionsNumber.requiredWithoutSessions");
+      }
+      if (value.availabilityIds.length > value.sessionsNumber) {
+        return helpers.error("availabilityIds.greaterThanSessions", {
+          availability: value.availabilityIds.length,
+          sessions: value.sessionsNumber,
+        });
+      }
     }
     return value;
   }, "one-on-one enrollment custom validation")

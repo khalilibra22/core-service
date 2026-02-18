@@ -40,7 +40,8 @@ export class EnrollmentController {
       const { topic } = await this.enrollmentOrchestrator.enrollStudentInCourse(
         req.params.id,
         studentId,
-        fcmToken
+        fcmToken,
+        req.body.method
       );
 
       res.status(201).json({
@@ -75,7 +76,7 @@ export class EnrollmentController {
     res: Response
   ): Promise<void> => {
     try {
-      const { teacherId, ownerId, topicId, sessionsNumber, isPaid, availabilityIds, sessions, fcmToken, allowUnavailable } =
+      const { teacherId, ownerId, topicId, sessionsNumber, isPaid, availabilityIds, sessions, fcmToken, allowUnavailable, method } =
         req.body;
 
       // Basic validation
@@ -93,6 +94,7 @@ export class EnrollmentController {
         isPaid,
         fcmToken,
         allowUnavailable,
+        method,
       });
 
       res.status(201).json({

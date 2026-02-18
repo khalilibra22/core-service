@@ -29,7 +29,8 @@ export class EnrollmentOrchestratorService {
     async enrollStudentInCourse(
         courseId: string,
         studentId: string,
-        fcmToken?: string
+        fcmToken?: string,
+        method: string = "satim"
     ): Promise<EnrollmentResult> {
         const course = await this.courseService.getCourseByIdWithEnrollments(courseId);
         if (!course) {
@@ -76,7 +77,8 @@ export class EnrollmentOrchestratorService {
             enrollment.id!,
             `Enrollment in course '${course.name}'`,
             `${frontendUrl}/enrollment/${enrollment.id}/success`, // TODO: Config
-            `${frontendUrl}/enrollment/${enrollment.id}/fail`
+            `${frontendUrl}/enrollment/${enrollment.id}/fail`,
+            method
         );
 
         if (paymentResult) {
@@ -93,7 +95,6 @@ export class EnrollmentOrchestratorService {
 
         return { enrollment, topic };
     }
-
     async enrollStudentOneOnOne(payload: {
         teacherId: string;
         studentId: string;
@@ -104,6 +105,7 @@ export class EnrollmentOrchestratorService {
         isPaid: boolean;
         fcmToken?: string;
         allowUnavailable?: boolean;
+        method?: string;
     }): Promise<EnrollmentResult> {
         const {
             teacherId,
@@ -113,6 +115,7 @@ export class EnrollmentOrchestratorService {
             availabilityIds,
             sessions: manualSessions,
             fcmToken,
+            method = "satim",
         } = payload;
 
         const effectiveAvailabilityIds = manualSessions
@@ -216,7 +219,8 @@ export class EnrollmentOrchestratorService {
             enrollment.id!,
             `1-on-1 sessions for topic '${userTopic?.topic?.name || topicId}'`,
             `${frontendUrl}/enrollment/${enrollment.id}/success`,
-            `${frontendUrl}/enrollment/${enrollment.id}/fail`
+            `${frontendUrl}/enrollment/${enrollment.id}/fail`,
+            method
         );
 
         if (paymentResult) {
@@ -233,7 +237,8 @@ export class EnrollmentOrchestratorService {
         referenceId: string,
         description: string,
         returnUrl: string,
-        failUrl: string
+        failUrl: string,
+        method: string = "satim"
     ): Promise<{ paymentUrl?: string; transactionId: string } | null> {
         if (!amount || amount <= 0) {
             return null;
@@ -243,7 +248,7 @@ export class EnrollmentOrchestratorService {
             userId,
             amount,
             currency: "DZD",
-            method: "satim",
+            method,
             referenceType,
             referenceId,
             description,
