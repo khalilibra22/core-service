@@ -29,11 +29,14 @@ export const startPaymentCleanupCron = () => {
             }
 
             const now = new Date();
-            const satimLimit = new Date(now);
-            satimLimit.setMinutes(satimLimit.getMinutes() - 30); // 30 mins for SATIM/Direct
+            const manualInitiationLimit = new Date(now);
+            manualInitiationLimit.setHours(manualInitiationLimit.getHours() - 24); // 24 hours to initiate manual
+
+            const baselineLimit = new Date(now);
+            baselineLimit.setHours(baselineLimit.getHours() - 1); // 1 hour for others (Satim/Wallet/Default)
 
             const manualLimit = new Date(now);
-            manualLimit.setHours(manualLimit.getHours() - 72); // 3 days for Manual
+            manualLimit.setHours(manualLimit.getHours() - 72); // 3 days for Manual (initiated)
 
             let expiredCount = 0;
 
@@ -44,27 +47,62 @@ export const startPaymentCleanupCron = () => {
                 const type = enrollment.type === "one-on-one" ? "ONE_ON_ONE_ENROLLMENT" : "COURSE_ENROLLMENT";
                 const transaction = await httpService.getTransactionStatus(type, enrollment.id);
 
+                // --- NEW SUCCESS PROTECTION ---
+                if (transaction && transaction.status === "success") {
+                    logger.info({ enrollmentId: enrollment.id }, "Syncing missed successful payment discovered by cron");
+                    try {
+                        const { container } = require("tsyringe");
+                        const { EnrollmentOrchestratorService } = require("../services/enrollment-orchestrator.service");
+                        const orchestrator = container.resolve(EnrollmentOrchestratorService);
+                        await orchestrator.handlePaymentWebhook({
+                            transactionId: transaction.id,
+                            externalId: transaction.externalId,
+                            referenceId: enrollment.id,
+                            referenceType: type,
+                            status: "success",
+                            provider: transaction.provider,
+                            method: transaction.method
+                        });
+                        continue; // Successfully synced, move to next
+                    } catch (err) {
+                        logger.error({ err, enrollmentId: enrollment.id }, "Failed to sync missed successful payment");
+                    }
+                }
+
+                // If transaction failed or canceled, expire it immediately
+                if (transaction && (transaction.status === "failed" || transaction.status === "canceled")) {
+                    logger.info({ enrollmentId: enrollment.id, status: transaction.status }, "Expiring enrollment due to failed/canceled transaction");
+                    enrollment.status = "expired";
+                    await enrollmentRepo.save(enrollment);
+                    if (enrollment.id) await releaseResources(enrollment);
+                    expiredCount++;
+                    continue;
+                }
+
                 let shouldExpire = false;
 
                 if (!transaction) {
-                    // No transaction found? Fallback to 30 mins
-                    if (enrollment.createdAt && enrollment.createdAt < satimLimit) {
+                    // No transaction found? (Student hasn't clicked "Pay" or "Initiate" yet)
+                    const isManual = enrollment.paymentMethod === "baridimob" || enrollment.paymentMethod === "transfer";
+                    const limit = isManual ? manualInitiationLimit : baselineLimit;
+
+                    if (enrollment.createdAt && enrollment.createdAt < limit) {
                         shouldExpire = true;
                     }
                 } else if (transaction.provider === "satim") {
-                    // Automated payment: 30 minutes
-                    if (enrollment.createdAt && enrollment.createdAt < satimLimit) {
+                    // Automated payment: 1 hour (extended from 30 mins)
+                    if (transaction.status === "pending" && enrollment.createdAt && enrollment.createdAt < baselineLimit) {
                         shouldExpire = true;
                     }
                 } else {
-                    // Manual payment
+                    // Manual payment (Baridimob/Transfer)
                     if (transaction.status === "pending_verification") {
                         // Receipt uploaded, waiting for admin. DO NOT EXPIRE.
                         continue;
                     }
 
-                    // No receipt uploaded yet: 3 days
-                    if (enrollment.createdAt && enrollment.createdAt < manualLimit) {
+                    // No receipt uploaded yet (Status: pending): 3 days (keeps existing 72h window)
+                    if (transaction.status === "pending" && enrollment.createdAt && enrollment.createdAt < manualLimit) {
                         shouldExpire = true;
                     }
                 }
@@ -72,24 +110,25 @@ export const startPaymentCleanupCron = () => {
                 if (shouldExpire) {
                     enrollment.status = "expired";
                     await enrollmentRepo.save(enrollment);
-                    logger.info({ enrollmentId: enrollment.id }, "Marked enrollment as expired due to layout timeout");
+                    logger.info({ enrollmentId: enrollment.id }, "Marked enrollment as expired due to timeout");
 
-                    try {
-                        const { container } = require("tsyringe");
-                        const { EnrollmentOrchestratorService } = require("../services/enrollment-orchestrator.service");
-                        const orchestrator = container.resolve(EnrollmentOrchestratorService);
-                        await (orchestrator as any).releaseEnrollmentResources(enrollment);
-                    } catch (err) {
-                        logger.error({ err, enrollmentId: enrollment.id }, "Failed to release resources for expired enrollment");
-                    }
-
+                    if (enrollment.id) await releaseResources(enrollment);
                     expiredCount++;
                 }
             }
-
-            logger.info(`Payment cleanup cron job completed. Expired ${expiredCount} enrollments.`);
         } catch (error) {
             logger.error({ err: error }, "Error in payment cleanup cron job");
         }
     });
+};
+
+const releaseResources = async (enrollment: EnrollmentModel) => {
+    try {
+        const { container } = require("tsyringe");
+        const { EnrollmentOrchestratorService } = require("../services/enrollment-orchestrator.service");
+        const orchestrator = container.resolve(EnrollmentOrchestratorService);
+        await (orchestrator as any).releaseEnrollmentResources(enrollment);
+    } catch (err) {
+        logger.error({ err, enrollmentId: enrollment.id }, "Failed to release resources for expired enrollment");
+    }
 };

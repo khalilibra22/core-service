@@ -7,12 +7,25 @@ import { CourseModel } from "../models/course.model";
 import { EnrollmentModel } from "../models/enrollment.model";
 import { LruInMemoryCache } from "../cache/lru-in-memory.cache";
 import { logger } from "../utils/logger";
+import { publish } from "../events";
+import * as fs from "fs";
+import * as path from "path";
 import { injectable, inject } from "tsyringe";
 
 interface EnrollmentResult {
     enrollment: EnrollmentModel;
     topic: string;
-    paymentUrl?: string;
+    paymentData?: {
+        amount: number;
+        currency: string;
+        description: string;
+        referenceId: string;
+        referenceType: "COURSE_ENROLLMENT" | "ONE_ON_ONE_ENROLLMENT";
+        returnUrl: string;
+        failUrl: string;
+        metadata?: any;
+    };
+    paymentUrl?: string; // Kept for backward compatibility if needed, but will likely be empty
     transactionId?: string;
 }
 
@@ -44,6 +57,7 @@ export class EnrollmentOrchestratorService {
             course,
             type: "course",
             status: "pending_payment",
+            paymentMethod: method,
             amount: course.price || 0,
             currency: "DZD",
         } as any;
@@ -69,22 +83,19 @@ export class EnrollmentOrchestratorService {
 
         const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
 
-        // Handle Payment
-        const paymentResult = await this.initiatePaymentFlow(
-            studentId,
-            course.price || 0,
-            "COURSE_ENROLLMENT",
-            enrollment.id!,
-            `Enrollment in course '${course.name}'`,
-            `${frontendUrl}/enrollment/${enrollment.id}/success`, // TODO: Config
-            `${frontendUrl}/enrollment/${enrollment.id}/fail`,
+        // Prepare Payment Data
+        const paymentData = {
+            amount: course.price || 0,
+            currency: "DZD",
             method,
-            { teacherId: course.ownerId, courseType: course.type }
-        );
+            referenceType: "COURSE_ENROLLMENT" as const,
+            referenceId: enrollment.id!,
+            description: `Enrollment in course '${course.name}'`,
+            returnUrl: `${frontendUrl}/enrollment/${enrollment.id}/success`,
+            failUrl: `${frontendUrl}/enrollment/${enrollment.id}/fail`,
+            metadata: { teacherId: course.ownerId, courseType: course.type }
+        };
 
-        if (paymentResult) {
-            return { enrollment, topic, ...paymentResult };
-        }
         if (fcmToken) {
             try {
                 await this.notificationService.subscribeTokenToTopic(fcmToken, topic);
@@ -94,7 +105,7 @@ export class EnrollmentOrchestratorService {
             }
         }
 
-        return { enrollment, topic };
+        return { enrollment, topic, paymentData };
     }
     async enrollStudentOneOnOne(payload: {
         teacherId: string;
@@ -173,6 +184,7 @@ export class EnrollmentOrchestratorService {
             type: "one-on-one",
             groupId,
             status: "pending_payment",
+            paymentMethod: method,
             amount,
             currency: "DZD",
         } as any;
@@ -212,24 +224,20 @@ export class EnrollmentOrchestratorService {
 
         const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
 
-        // Handle Payment
-        const paymentResult = await this.initiatePaymentFlow(
-            studentId,
+        // Prepare Payment Data
+        const paymentData = {
             amount,
-            "ONE_ON_ONE_ENROLLMENT",
-            enrollment.id!,
-            `1-on-1 sessions for topic '${userTopic?.topic?.name || topicId}'`,
-            `${frontendUrl}/enrollment/${enrollment.id}/success`,
-            `${frontendUrl}/enrollment/${enrollment.id}/fail`,
+            currency: "DZD",
             method,
-            { teacherId, courseType: "one_on_one" }
-        );
+            referenceType: "ONE_ON_ONE_ENROLLMENT" as const,
+            referenceId: enrollment.id!,
+            description: `1-on-1 sessions for topic '${userTopic?.topic?.name || topicId}'`,
+            returnUrl: `${frontendUrl}/enrollment/${enrollment.id}/success`,
+            failUrl: `${frontendUrl}/enrollment/${enrollment.id}/fail`,
+            metadata: { teacherId, courseType: "one_on_one" }
+        };
 
-        if (paymentResult) {
-            return { enrollment, topic, ...paymentResult };
-        }
-
-        return { enrollment, topic };
+        return { enrollment, topic, paymentData };
     }
 
     private async initiatePaymentFlow(
@@ -343,11 +351,17 @@ export class EnrollmentOrchestratorService {
 
     async handlePaymentWebhook(payload: {
         transactionId: string;
+        externalId?: string;
         referenceId: string;
         referenceType: string;
         status: "success" | "failed";
+        provider?: string;
+        method?: string;
     }): Promise<void> {
-        const { referenceId, status, transactionId } = payload;
+        const debugPath = path.join(process.cwd(), "webhook-debug.log");
+        const { referenceId, status, transactionId, externalId, provider, method } = payload;
+
+        fs.appendFileSync(debugPath, `[${new Date().toISOString()}] Received webhook: ${JSON.stringify(payload)}\n`);
 
         logger.info({ referenceId, status, transactionId }, "Handling payment webhook");
 
@@ -357,18 +371,23 @@ export class EnrollmentOrchestratorService {
             throw new Error(`Enrollment not found: ${referenceId}`);
         }
 
+        logger.info({ enrollmentId: enrollment.id, currentStatus: enrollment.status }, "Found enrollment for webhook");
+
         if (status === "success") {
             enrollment.status = "approved";
             enrollment.paymentStatus = "paid";
-            enrollment.paymentId = transactionId;
+            enrollment.paymentId = externalId || transactionId;
+            enrollment.paymentProvider = method || provider;
+            logger.info({ paymentId: enrollment.paymentId, provider: enrollment.paymentProvider }, "Setting enrollment to PAID/APPROVED");
         } else {
             enrollment.status = "rejected";
             enrollment.paymentStatus = "failed";
+            logger.info("Setting enrollment to REJECTED/FAILED");
             await this.releaseEnrollmentResources(enrollment);
         }
 
-        await this.enrollmentService.updateEnrollment(enrollment);
-        logger.info({ enrollmentId: enrollment.id, status: enrollment.status }, "Enrollment status updated via webhook");
+        const updated = await this.enrollmentService.updateEnrollment(enrollment);
+        logger.info({ enrollmentId: updated.id, status: updated.status, paymentId: updated.paymentId, paymentStatus: updated.paymentStatus }, "Enrollment successfully updated and saved in DB");
     }
 
     async cancelAndRefund(enrollmentId: string, canceledBy: string, reason: string): Promise<void> {

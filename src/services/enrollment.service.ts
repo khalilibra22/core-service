@@ -78,10 +78,13 @@ export class EnrollmentService {
     enrollment: EnrollmentModel
   ): Promise<EnrollmentModel> {
     try {
-      return await this.enrollmentRepo.save(enrollment);
+      logger.info({ enrollmentId: enrollment.id }, "Saving enrollment to database...");
+      const saved = await this.enrollmentRepo.save(enrollment);
+      logger.info({ enrollmentId: saved.id }, "Enrollment saved successfully");
+      return saved;
     } catch (error) {
-      logger.error({ err: error }, "updateEnrollment failed");
-      throw new Error("Error creating course enrollment");
+      logger.error({ err: error, enrollmentId: enrollment.id }, "updateEnrollment failed");
+      throw new Error("Error updating enrollment");
     }
   }
 
@@ -92,10 +95,6 @@ export class EnrollmentService {
       return await this.enrollmentRepo.findOne({
         where: {
           id: enrollmentId,
-        },
-        cache: {
-          id: CACHE_KEYS.ENROLLMENT(enrollmentId),
-          milliseconds: CACHE_TTL.STATIC_CONTENT,
         },
       });
     } catch (error) {

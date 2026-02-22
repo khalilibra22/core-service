@@ -61,6 +61,9 @@ export class EnrollmentModel {
   @Column({ name: "payment_status", nullable: true })
   paymentStatus?: string;
 
+  @Column({ name: "payment_method", nullable: true })
+  paymentMethod?: string; // Tracks the method selected by the user
+
   @OneToMany(() => SessionModel, (session) => session.enrollment, {
     cascade: true,
   })

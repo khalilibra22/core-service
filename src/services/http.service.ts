@@ -12,6 +12,7 @@ export class HttpService implements ExternalService {
         try {
             this.baseURL = process.env.USER_SERVICE_URL || 'http://localhost:5000/v1';
             this.httpClient = new RestApiSetup(`${this.baseURL}`);
+            this.httpClient.setApiKey(process.env.INBOUND_API_KEY || '12345');
             this.chatBaseURL = process.env.CHAT_SERVICE_URL || 'http://localhost:5002/v1';
             this.chatHttpClient = new RestApiSetup(this.chatBaseURL);
             //this.httpClient.setAuthToken(process.env.USER_SERVICE_API_KEY || 'default-api-key-for-development');

@@ -11,16 +11,20 @@ export class PaymentWebhookController {
 
     handlePaymentWebhook = async (req: Request, res: Response): Promise<void> => {
         try {
-            const { transactionId, referenceId, referenceType, status } = req.body;
+            const { transactionId, externalId, referenceId, referenceType, status, provider, method } = req.body;
 
-            logger.info({ transactionId, referenceId, status }, "Received payment webhook");
+            logger.info({ body: req.body }, "Received payment webhook - RAW BODY");
+            logger.info({ transactionId, referenceId, status, provider, method }, "Received payment webhook");
 
             if (referenceType === "COURSE_ENROLLMENT" || referenceType === "ONE_ON_ONE_ENROLLMENT") {
                 await this.orchestrator.handlePaymentWebhook({
                     transactionId,
+                    externalId,
                     referenceId,
                     referenceType,
-                    status
+                    status,
+                    provider,
+                    method
                 });
             }
 

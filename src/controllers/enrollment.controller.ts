@@ -37,7 +37,7 @@ export class EnrollmentController {
       const studentId = req.body.ownerId;
       const fcmToken = req.body.fcmToken as string | undefined;
 
-      const { topic } = await this.enrollmentOrchestrator.enrollStudentInCourse(
+      const { topic, paymentData, enrollment } = await this.enrollmentOrchestrator.enrollStudentInCourse(
         req.params.id,
         studentId,
         fcmToken,
@@ -46,6 +46,9 @@ export class EnrollmentController {
 
       res.status(201).json({
         message: "Enrollment created successfully",
+        enrollmentId: enrollment.id,
+        status: enrollment.status,
+        paymentData,
         notificationTopics: {
           course: topic,
         },
@@ -84,7 +87,7 @@ export class EnrollmentController {
         // checks...
       }
 
-      const { topic } = await this.enrollmentOrchestrator.enrollStudentOneOnOne({
+      const { topic, paymentData, enrollment } = await this.enrollmentOrchestrator.enrollStudentOneOnOne({
         teacherId,
         studentId: ownerId,
         topicId,
@@ -99,6 +102,9 @@ export class EnrollmentController {
 
       res.status(201).json({
         message: "Enrollment created successfully",
+        enrollmentId: enrollment.id,
+        status: enrollment.status,
+        paymentData,
         notificationTopics: { oneOnOne: topic },
       });
     } catch (error: any) {
