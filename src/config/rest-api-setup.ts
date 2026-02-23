@@ -40,7 +40,12 @@ export class RestApiSetup {
         // use global logger to keep consistency
         try {
           const { logger } = require("../utils/logger");
-          logger.error({ err: error, data: error.response?.data }, "External API Error");
+          const status = error.response?.status;
+          if (status === 404) {
+            logger.info({ url: error.config?.url, method: error.config?.method }, "External API Resource not found (404)");
+          } else {
+            logger.error({ err: error, data: error.response?.data }, "External API Error");
+          }
         } catch (_) { }
         return Promise.reject(error);
       }

@@ -69,29 +69,19 @@ export const startPaymentCleanupCron = () => {
                     }
                 }
 
-                // If transaction failed or canceled, expire it immediately
-                if (transaction && (transaction.status === "failed" || transaction.status === "canceled")) {
-                    logger.info({ enrollmentId: enrollment.id, status: transaction.status }, "Expiring enrollment due to failed/canceled transaction");
-                    enrollment.status = "expired";
-                    await enrollmentRepo.save(enrollment);
-                    if (enrollment.id) await releaseResources(enrollment);
-                    expiredCount++;
-                    continue;
-                }
+                const statusRequiringTimeout = ["pending", "failed", "canceled"];
 
                 let shouldExpire = false;
 
                 if (!transaction) {
                     // No transaction found? (Student hasn't clicked "Pay" or "Initiate" yet)
-                    const isManual = enrollment.paymentMethod === "baridimob" || enrollment.paymentMethod === "transfer";
-                    const limit = isManual ? manualInitiationLimit : baselineLimit;
-
-                    if (enrollment.createdAt && enrollment.createdAt < limit) {
+                    // We allow 24 hours to initiate for EVERYTHING (Safer than checking paymentMethod which might be null/default)
+                    if (enrollment.createdAt && new Date(enrollment.createdAt).getTime() < manualInitiationLimit.getTime()) {
                         shouldExpire = true;
                     }
                 } else if (transaction.provider === "satim") {
                     // Automated payment: 1 hour (extended from 30 mins)
-                    if (transaction.status === "pending" && enrollment.createdAt && enrollment.createdAt < baselineLimit) {
+                    if (statusRequiringTimeout.includes(transaction.status) && enrollment.createdAt && new Date(enrollment.createdAt).getTime() < baselineLimit.getTime()) {
                         shouldExpire = true;
                     }
                 } else {
@@ -102,7 +92,7 @@ export const startPaymentCleanupCron = () => {
                     }
 
                     // No receipt uploaded yet (Status: pending): 3 days (keeps existing 72h window)
-                    if (transaction.status === "pending" && enrollment.createdAt && enrollment.createdAt < manualLimit) {
+                    if (statusRequiringTimeout.includes(transaction.status) && enrollment.createdAt && new Date(enrollment.createdAt).getTime() < manualLimit.getTime()) {
                         shouldExpire = true;
                     }
                 }
@@ -110,10 +100,18 @@ export const startPaymentCleanupCron = () => {
                 if (shouldExpire) {
                     enrollment.status = "expired";
                     await enrollmentRepo.save(enrollment);
-                    logger.info({ enrollmentId: enrollment.id }, "Marked enrollment as expired due to timeout");
+                    logger.info({
+                        enrollmentId: enrollment.id,
+                        createdAt: enrollment.createdAt,
+                        limit: (transaction?.provider === "satim" || !transaction) ? baselineLimit : manualLimit,
+                        transactionStatus: transaction?.status || "none"
+                    }, "Marked enrollment as expired due to timeout");
 
                     if (enrollment.id) await releaseResources(enrollment);
                     expiredCount++;
+                } else {
+                    // Log skipped enrollments for debugging if they are close to expiring
+                    logger.debug({ enrollmentId: enrollment.id, createdAt: enrollment.createdAt, status: enrollment.status }, "Enrollment within grace period, skipping expiration");
                 }
             }
         } catch (error) {

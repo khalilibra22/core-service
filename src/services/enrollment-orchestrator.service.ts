@@ -25,8 +25,9 @@ interface EnrollmentResult {
         failUrl: string;
         metadata?: any;
     };
-    paymentUrl?: string; // Kept for backward compatibility if needed, but will likely be empty
+    paymentUrl?: string;
     transactionId?: string;
+    paymentMessage?: string;
 }
 
 @injectable()
@@ -102,6 +103,33 @@ export class EnrollmentOrchestratorService {
                 logger.info({ topic, enrollmentId: enrollment.id }, "Auto-subscribed to course topic");
             } catch (err) {
                 logger.warn({ err, topic }, "Failed to auto-subscribe to course topic");
+            }
+        }
+
+        if (method === "wallet") {
+            try {
+                const initResult = await this.initiatePaymentFlow(
+                    studentId,
+                    paymentData.amount,
+                    "COURSE_ENROLLMENT",
+                    enrollment.id!,
+                    paymentData.description,
+                    paymentData.returnUrl,
+                    paymentData.failUrl,
+                    "wallet",
+                    paymentData.metadata
+                );
+                if (initResult) {
+                    return {
+                        enrollment,
+                        topic,
+                        paymentData,
+                        transactionId: initResult.transactionId,
+                        paymentMessage: "Payment processed via wallet"
+                    };
+                }
+            } catch (err) {
+                logger.error({ err, enrollmentId: enrollment.id }, "Auto-initiating wallet payment failed");
             }
         }
 
@@ -236,6 +264,33 @@ export class EnrollmentOrchestratorService {
             failUrl: `${frontendUrl}/enrollment/${enrollment.id}/fail`,
             metadata: { teacherId, courseType: "one_on_one" }
         };
+
+        if (method === "wallet") {
+            try {
+                const initResult = await this.initiatePaymentFlow(
+                    studentId,
+                    amount,
+                    "ONE_ON_ONE_ENROLLMENT",
+                    enrollment.id!,
+                    paymentData.description,
+                    paymentData.returnUrl,
+                    paymentData.failUrl,
+                    "wallet",
+                    paymentData.metadata
+                );
+                if (initResult) {
+                    return {
+                        enrollment,
+                        topic,
+                        paymentData,
+                        transactionId: initResult.transactionId,
+                        paymentMessage: "Payment processed via wallet"
+                    };
+                }
+            } catch (err) {
+                logger.error({ err, enrollmentId: enrollment.id }, "Auto-initiating wallet payment failed");
+            }
+        }
 
         return { enrollment, topic, paymentData };
     }
@@ -380,10 +435,10 @@ export class EnrollmentOrchestratorService {
             enrollment.paymentProvider = method || provider;
             logger.info({ paymentId: enrollment.paymentId, provider: enrollment.paymentProvider }, "Setting enrollment to PAID/APPROVED");
         } else {
-            enrollment.status = "rejected";
+            // enrollment.status = "rejected"; // Don't reject immediately, allow the student to retry within the timeout window
             enrollment.paymentStatus = "failed";
-            logger.info("Setting enrollment to REJECTED/FAILED");
-            await this.releaseEnrollmentResources(enrollment);
+            logger.info({ enrollmentId: enrollment.id, status }, "Payment failed or was canceled. Keeping enrollment active (pending_payment) for potential retry until timeout.");
+            // We don't call releaseEnrollmentResources here anymore; the cleanup cron will do it when the time expires.
         }
 
         const updated = await this.enrollmentService.updateEnrollment(enrollment);

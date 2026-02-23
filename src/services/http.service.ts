@@ -123,6 +123,7 @@ export class HttpService implements ExternalService {
     }
 
     async initiatePayment(payload: any): Promise<{ transactionId: string; paymentUrl?: string; message?: string }> {
+        logger.info({ payload }, "Initiating payment request to user-service");
         try {
             const response = await this.httpClient.post(`/payments/initiate`, payload);
             return response.data as { transactionId: string; paymentUrl?: string; message?: string };
