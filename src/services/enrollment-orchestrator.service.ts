@@ -179,7 +179,8 @@ export class EnrollmentOrchestratorService {
                 sessionsNumber
             );
 
-        const effectiveSessionsNumber = manualSessions ? manualSessions.length : sessionsNumber;
+
+
 
         // Create chat group
         let groupId: string | null = null;
@@ -203,7 +204,20 @@ export class EnrollmentOrchestratorService {
         }
 
         const userTopic = await LruInMemoryCache.getUserTopic(topicId);
-        const amount = (userTopic?.price || 0) * effectiveSessionsNumber;
+        const pricePerHour = Number(userTopic?.price || 0);
+
+        // Price is per hour. Sum the duration of all paid sessions (duration is stored in minutes)
+        // and convert to hours to get the correct billable amount.
+        const totalPaidMinutes = sessions
+            .filter(s => s.isPaid !== false) // exclude free sessions
+            .reduce((sum, s) => sum + (Number(s.duration) || 0), 0);
+        const totalHours = totalPaidMinutes / 60;
+        const amount = Math.round(pricePerHour * totalHours * 100) / 100; // round to 2 decimal places
+
+        logger.info(
+            { topicId, pricePerHour, totalPaidMinutes, totalHours, amount },
+            "Calculated one-on-one enrollment amount"
+        );
 
         const enrollmentBody = {
             studentId,
