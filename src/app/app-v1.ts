@@ -10,6 +10,7 @@ import { storageRouter } from "../routes/v1/storage.routes";
 import { notificationRouter } from "../routes/v1/notification.routes";
 import { studentRequestRouter } from "../routes/v1/student-request.routes";
 import { paymentRouter } from "../routes/v1/payment.routes";
+import { inboundCourseRouter } from "../routes/v1/inbound-course.routes";
 
 const app = express.Router();
 
@@ -19,18 +20,14 @@ const requireInboundKey = (
     next: express.NextFunction
 ): void => {
     const INBOUND_API_KEY = process.env.INBOUND_API_KEY;
-    console.log(`[AUTH] requireInboundKey check. Key in env: ${INBOUND_API_KEY}`);
 
     if (!INBOUND_API_KEY) {
-        console.error("[AUTH] Inbound API key not configured in .env");
         res.status(503).json({ message: "Inbound endpoint not configured" });
         return;
     }
     const provided = req.headers["x-internal-api-key"];
-    console.log(`[AUTH] Provided key: ${provided}`);
 
     if (provided !== INBOUND_API_KEY) {
-        console.warn(`[AUTH] Unauthorized inbound request. Provided: ${provided}, Expected: ${INBOUND_API_KEY}`);
         res.status(401).json({ message: "Unauthorized" });
         return;
     }
@@ -48,5 +45,7 @@ app.use("/uploads", storageRouter);
 app.use("/notifications", notificationRouter);
 app.use("/student-requests", studentRequestRouter);
 app.use("/payments", requireInboundKey, paymentRouter);
+// Internal-only course count for subscription quota checks (called by user-service)
+app.use("/inbounds/courses", requireInboundKey, inboundCourseRouter);
 
 export { app as appV1 };

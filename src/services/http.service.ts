@@ -269,4 +269,34 @@ export class HttpService implements ExternalService {
             throw new Error(`Failed to join chat group: ${error?.message || error}`);
         }
     }
+
+    async checkSubscriptionQuota(teacherId: string, courseType: "group" | "live"): Promise<{
+        hasActiveSubscription: boolean;
+        canCreateGroup: boolean;
+        canCreateLive: boolean;
+        groupCourseLimit: number;
+        liveCourseLimit: number;
+        groupCoursesCreated: number;
+        liveCoursesCreated: number;
+        groupCourseRemaining: number;
+        liveCourseRemaining: number;
+    }> {
+        try {
+            const response = await this.httpClient.get(`/inbounds/subscriptions/quota/${teacherId}`);
+            return response.data as any;
+        } catch (error: any) {
+            logger.error({ err: error, teacherId, courseType }, "Failed to check subscription quota — failing open");
+            return {
+                hasActiveSubscription: true,
+                canCreateGroup: true,
+                canCreateLive: true,
+                groupCourseLimit: 999,
+                liveCourseLimit: 999,
+                groupCoursesCreated: 0,
+                liveCoursesCreated: 0,
+                groupCourseRemaining: 999,
+                liveCourseRemaining: 999,
+            };
+        }
+    }
 }
