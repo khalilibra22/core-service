@@ -17,12 +17,9 @@ interface EnrollmentResult {
     topic: string;
     paymentData?: {
         amount: number;
-        currency: string;
         description: string;
         referenceId: string;
         referenceType: "COURSE_ENROLLMENT" | "ONE_ON_ONE_ENROLLMENT";
-        returnUrl: string;
-        failUrl: string;
         metadata?: any;
     };
     paymentUrl?: string;
@@ -82,18 +79,14 @@ export class EnrollmentOrchestratorService {
         // Auto-subscribe to course notifications
         const topic = `course-${course.id}`;
 
-        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
 
         // Prepare Payment Data
         const paymentData = {
             amount: course.price || 0,
-            currency: "DZD",
             method,
             referenceType: "COURSE_ENROLLMENT" as const,
             referenceId: enrollment.id!,
             description: `Enrollment in course '${course.name}'`,
-            returnUrl: `${frontendUrl}/enrollment/${enrollment.id}/success`,
-            failUrl: `${frontendUrl}/enrollment/${enrollment.id}/fail`,
             metadata: { teacherId: course.ownerId, courseType: course.type }
         };
 
@@ -114,8 +107,6 @@ export class EnrollmentOrchestratorService {
                     "COURSE_ENROLLMENT",
                     enrollment.id!,
                     paymentData.description,
-                    paymentData.returnUrl,
-                    paymentData.failUrl,
                     "wallet",
                     paymentData.metadata
                 );
@@ -264,18 +255,14 @@ export class EnrollmentOrchestratorService {
 
         await this.httpService.updateAvailabilitiesToUnavailable(availabilityUpdates);
 
-        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
 
         // Prepare Payment Data
         const paymentData = {
             amount,
-            currency: "DZD",
             method,
             referenceType: "ONE_ON_ONE_ENROLLMENT" as const,
             referenceId: enrollment.id!,
             description: `1-on-1 sessions for topic '${userTopic?.topic?.name || topicId}'`,
-            returnUrl: `${frontendUrl}/enrollment/${enrollment.id}/success`,
-            failUrl: `${frontendUrl}/enrollment/${enrollment.id}/fail`,
             metadata: { teacherId, courseType: "one_on_one" }
         };
 
@@ -287,8 +274,6 @@ export class EnrollmentOrchestratorService {
                     "ONE_ON_ONE_ENROLLMENT",
                     enrollment.id!,
                     paymentData.description,
-                    paymentData.returnUrl,
-                    paymentData.failUrl,
                     "wallet",
                     paymentData.metadata
                 );
@@ -315,8 +300,6 @@ export class EnrollmentOrchestratorService {
         referenceType: string,
         referenceId: string,
         description: string,
-        returnUrl: string,
-        failUrl: string,
         method: string = "satim",
         metadata?: any
     ): Promise<{ paymentUrl?: string; transactionId: string } | null> {
@@ -327,13 +310,10 @@ export class EnrollmentOrchestratorService {
         const paymentResponse = await this.httpService.initiatePayment({
             userId,
             amount,
-            currency: "DZD",
             method,
             referenceType,
             referenceId,
             description,
-            returnUrl,
-            failUrl,
             metadata
         });
 
