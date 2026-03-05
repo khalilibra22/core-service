@@ -15,6 +15,7 @@ export class HttpService implements ExternalService {
             this.httpClient.setApiKey(process.env.INBOUND_API_KEY || '12345');
             this.chatBaseURL = process.env.CHAT_SERVICE_URL || 'http://localhost:5002/v1';
             this.chatHttpClient = new RestApiSetup(this.chatBaseURL);
+            this.chatHttpClient.setApiKey(process.env.INBOUND_API_KEY || '12345');
             //this.httpClient.setAuthToken(process.env.USER_SERVICE_API_KEY || 'default-api-key-for-development');
         } catch (error) {
             logger.error({ err: error }, 'HttpService initialization failed');
