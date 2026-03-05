@@ -34,8 +34,8 @@ export class EnrollmentModel {
   @Column({ default: "course" })
   type?: "course" | "one-on-one";
 
-  @Column({ default: "pending" })
-  status?: string; // "pending" | "approved" | "rejected"
+  @Column({ default: "pending_payment" })
+  status?: string; // "pending_payment" | "approved" | "rejected" | "expired"
 
   @Column({ name: "cancellation_reason", nullable: true })
   cancellationReason?: string;
@@ -60,6 +60,9 @@ export class EnrollmentModel {
 
   @Column({ name: "payment_status", nullable: true })
   paymentStatus?: string;
+
+  @Column({ name: "payment_method", nullable: true })
+  paymentMethod?: string; // Tracks the method selected by the user
 
   @OneToMany(() => SessionModel, (session) => session.enrollment, {
     cascade: true,

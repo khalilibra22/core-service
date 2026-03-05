@@ -29,11 +29,12 @@ export class AuthMiddleware {
       }
 
       const decoded = await AuthMiddleware.decodeToken(token);
-      req.body.ownerId = decoded.id; // Assuming the token contains an 'id' field
-      req.body.user = decoded;
-      req.body.userRole = decoded.roles;
-      res.locals.ownerId = decoded.id;
+      // Store identity in res.locals (safe, not user-controlled)
       res.locals.user = decoded;
+      res.locals.ownerId = decoded.id;
+      res.locals.userRole = decoded.roles;
+      // Keep ownerId in body for backward compatibility with controllers
+      req.body.ownerId = decoded.id;
       next();
     } catch (error) {
       req.log?.error({ err: error }, "verifyToken failed");
@@ -45,8 +46,11 @@ export class AuthMiddleware {
   static authorize(resource: Resource, action: Action) {
     return (req: Request, res: Response, next: NextFunction): void => {
       try {
-        const user = req.body.user;
-        delete req.body.user;
+        const user = res.locals.user;
+        if (!user) {
+          res.status(403).json({ message: "Forbidden" });
+          return;
+        }
         const roleId = (user.roles ??
           UserRole.GUEST) as keyof typeof permissions;
         const rolePermissions = permissions[roleId];

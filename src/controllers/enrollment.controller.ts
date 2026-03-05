@@ -37,14 +37,19 @@ export class EnrollmentController {
       const studentId = req.body.ownerId;
       const fcmToken = req.body.fcmToken as string | undefined;
 
-      const { topic } = await this.enrollmentOrchestrator.enrollStudentInCourse(
+      const { topic, paymentData, enrollment, transactionId, paymentMessage } = await this.enrollmentOrchestrator.enrollStudentInCourse(
         req.params.id,
         studentId,
-        fcmToken
+        fcmToken,
+        req.body.method
       );
 
       res.status(201).json({
-        message: "Enrollment created successfully",
+        message: paymentMessage || "Enrollment created successfully",
+        enrollmentId: enrollment.id,
+        status: enrollment.status,
+        paymentData,
+        transactionId,
         notificationTopics: {
           course: topic,
         },
@@ -75,7 +80,7 @@ export class EnrollmentController {
     res: Response
   ): Promise<void> => {
     try {
-      const { teacherId, ownerId, topicId, sessionsNumber, isPaid, availabilityIds, sessions, fcmToken, allowUnavailable } =
+      const { teacherId, ownerId, topicId, sessionsNumber, isPaid, availabilityIds, sessions, fcmToken, allowUnavailable, method } =
         req.body;
 
       // Basic validation
@@ -83,7 +88,7 @@ export class EnrollmentController {
         // checks...
       }
 
-      const { topic } = await this.enrollmentOrchestrator.enrollStudentOneOnOne({
+      const { topic, paymentData, enrollment, transactionId, paymentMessage } = await this.enrollmentOrchestrator.enrollStudentOneOnOne({
         teacherId,
         studentId: ownerId,
         topicId,
@@ -93,10 +98,15 @@ export class EnrollmentController {
         isPaid,
         fcmToken,
         allowUnavailable,
+        method,
       });
 
       res.status(201).json({
-        message: "Enrollment created successfully",
+        message: paymentMessage || "Enrollment created successfully",
+        enrollmentId: enrollment.id,
+        status: enrollment.status,
+        paymentData,
+        transactionId,
         notificationTopics: { oneOnOne: topic },
       });
     } catch (error: any) {
@@ -303,24 +313,16 @@ export class EnrollmentController {
         res.status(409).json({ error: "Enrollment is already canceled" });
         return;
       }
-      const enrollmentBody = {
-        ...enrollment,
-        status: "canceled",
-        canceledBy: req.body.ownerId,
-        cancellationReason: req.body.reason,
-      };
-      await this.enrollmentService.updateEnrollment(enrollmentBody);
-      /*
-      TODO: add logic to free up the teacher's availability slots
-      by calling the external service to update the availability status
 
-      Check if is there is a payment service to handle refunds
-      If yes, call the payment service to process the refund, in app refund policy
-      */
+      await this.enrollmentOrchestrator.cancelAndRefund(
+        enrollmentId,
+        req.body.ownerId,
+        req.body.reason
+      );
 
       res
         .status(200)
-        .json({ message: "One-on-one enrollment canceled successfully" });
+        .json({ message: "One-on-one enrollment canceled successfully. Refund processed to student wallet if applicable." });
     } catch (error) {
       req.log.error({ err: error, enrollmentId: req.params.id }, "cancelOneOnOneEnrollment failed");
       res.status(500).json({ error: "Internal Server Error" });
@@ -599,12 +601,28 @@ export class EnrollmentController {
       const updatedRefund = await this.feedbackService.updateComplaint(
         refundBody
       );
+
+      if (!updatedRefund) {
+        res.status(500).json({ error: "Failed to update complaint" });
+        return;
+      }
+
+      const enrollment = updatedRefund.enrollment;
+
+      // Trigger actual refund if approved/resolved
+      if (enrollment && enrollment.paymentStatus === "paid" && enrollment.amount && enrollment.amount > 0) {
+        await this.enrollmentOrchestrator.cancelAndRefund(
+          enrollment.id!,
+          req.body.resolvedBy,
+          "Refund approved by admin"
+        );
+      }
+
       //get student details
       const student = await LruInMemoryCache.getUserDetails(updatedRefund?.studentId ?? "keynotfound");
       const refundDto = plainToInstance(RefundDto, { ...updatedRefund, studentFullname: student?.fullname ?? "keynotfound" }, {
         excludeExtraneousValues: true,
       });
-      // TODO : in app refund
       res.status(200).json(refundDto);
     } catch (error) {
       req.log.error({ err: error, refundId: req.params.refundId }, "refundAdminResolve failed");

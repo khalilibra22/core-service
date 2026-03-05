@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 
 export class RestApiSetup {
   private httpClient: AxiosInstance;
+  private apiKey: string | null = null;
 
   constructor(baseURL?: string, timeout: number = 10000) {
     this.httpClient = axios.create({
@@ -24,6 +25,9 @@ export class RestApiSetup {
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
+        if (this.apiKey) {
+          config.headers["x-internal-api-key"] = this.apiKey;
+        }
         return config;
       },
       (error) => Promise.reject(error)
@@ -36,8 +40,13 @@ export class RestApiSetup {
         // use global logger to keep consistency
         try {
           const { logger } = require("../utils/logger");
-          logger.error({ err: error, data: error.response?.data }, "External API Error");
-        } catch (_) {}
+          const status = error.response?.status;
+          if (status === 404) {
+            logger.info({ url: error.config?.url, method: error.config?.method }, "External API Resource not found (404)");
+          } else {
+            logger.error({ err: error, data: error.response?.data }, "External API Error");
+          }
+        } catch (_) { }
         return Promise.reject(error);
       }
     );
@@ -46,6 +55,10 @@ export class RestApiSetup {
   private getAuthToken(): string | null {
     // Implement your token retrieval logic
     return process.env.API_TOKEN || null;
+  }
+
+  public setApiKey(key: string): void {
+    this.apiKey = key;
   }
 
   async get<T>(

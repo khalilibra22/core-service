@@ -27,6 +27,41 @@ export class CourseController {
 
   createDraftCourse = async (req: Request, res: Response): Promise<void> => {
     try {
+      const courseType = req.body.type as string;
+
+      // ── Quota Guard: group and live courses require an active subscription ──
+      if (courseType === "group" || courseType === "live") {
+        const teacherId = req.body.ownerId as string;
+        if (!teacherId) {
+          res.status(400).json({ error: "ownerId is required" });
+          return;
+        }
+        try {
+          const quota = await this.httpService.checkSubscriptionQuota(teacherId, courseType as "group" | "live");
+          if (!quota.hasActiveSubscription) {
+            res.status(402).json({
+              error: `You need an active subscription to create ${courseType} courses.`,
+              code: "NO_ACTIVE_SUBSCRIPTION",
+            });
+            return;
+          }
+          const canCreate = courseType === "group" ? quota.canCreateGroup : quota.canCreateLive;
+          if (!canCreate) {
+            const used = courseType === "group" ? quota.groupCoursesCreated : quota.liveCoursesCreated;
+            const limit = courseType === "group" ? quota.groupCourseLimit : quota.liveCourseLimit;
+            res.status(403).json({
+              error: `${courseType.charAt(0).toUpperCase() + courseType.slice(1)} course limit reached (${used}/${limit}). Upgrade your plan to create more.`,
+              code: "QUOTA_EXCEEDED",
+              quota,
+            });
+            return;
+          }
+        } catch (quotaError: any) {
+          // Fail open: if quota service is unreachable don't block the teacher
+          req.log.warn({ err: quotaError, teacherId, courseType }, "Quota check failed — proceeding with course creation");
+        }
+      }
+
       const courseSettings = await this.courseService.createCourseSettings({});
       const courseSettingsBody = {
         ...req.body,
@@ -42,6 +77,7 @@ export class CourseController {
       res.status(500).json({ error: "Internal Server Error" });
     }
   };
+
 
   updateCourse = async (req: Request, res: Response): Promise<void> => {
     try {

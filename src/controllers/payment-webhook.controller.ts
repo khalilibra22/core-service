@@ -1,24 +1,31 @@
 import { Request, Response } from "express";
 import { injectable, inject } from "tsyringe";
-import { EnrollmentService } from "../services/enrollment.service";
+import { EnrollmentOrchestratorService } from "../services/enrollment-orchestrator.service";
 import { logger } from "../utils/logger";
 
 @injectable()
 export class PaymentWebhookController {
     constructor(
-        @inject(EnrollmentService) private enrollmentService: EnrollmentService
+        @inject(EnrollmentOrchestratorService) private orchestrator: EnrollmentOrchestratorService
     ) { }
 
     handlePaymentWebhook = async (req: Request, res: Response): Promise<void> => {
         try {
-            const { transactionId, referenceId, referenceType, status, method } = req.body;
+            const { transactionId, externalId, referenceId, referenceType, status, provider, method } = req.body;
 
-            logger.info({ transactionId, referenceId, status }, "Received payment webhook");
+            logger.info({ body: req.body }, "Received payment webhook - RAW BODY");
+            logger.info({ transactionId, referenceId, status, provider, method }, "Received payment webhook");
 
-            if (status === "success") {
-                if (referenceType === "COURSE_ENROLLMENT" || referenceType === "ONE_ON_ONE_ENROLLMENT") {
-                    await this.enrollmentService.updateEnrollmentPaymentStatus(referenceId, "paid", transactionId, method);
-                }
+            if (referenceType === "COURSE_ENROLLMENT" || referenceType === "ONE_ON_ONE_ENROLLMENT") {
+                await this.orchestrator.handlePaymentWebhook({
+                    transactionId,
+                    externalId,
+                    referenceId,
+                    referenceType,
+                    status,
+                    provider,
+                    method
+                });
             }
 
             res.status(200).json({ received: true });

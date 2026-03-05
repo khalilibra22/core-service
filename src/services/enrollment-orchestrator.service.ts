@@ -7,7 +7,25 @@ import { CourseModel } from "../models/course.model";
 import { EnrollmentModel } from "../models/enrollment.model";
 import { LruInMemoryCache } from "../cache/lru-in-memory.cache";
 import { logger } from "../utils/logger";
+import { publish } from "../events";
+import * as fs from "fs";
+import * as path from "path";
 import { injectable, inject } from "tsyringe";
+
+interface EnrollmentResult {
+    enrollment: EnrollmentModel;
+    topic: string;
+    paymentData?: {
+        amount: number;
+        description: string;
+        referenceId: string;
+        referenceType: "COURSE_ENROLLMENT" | "ONE_ON_ONE_ENROLLMENT";
+        metadata?: any;
+    };
+    paymentUrl?: string;
+    transactionId?: string;
+    paymentMessage?: string;
+}
 
 @injectable()
 export class EnrollmentOrchestratorService {
@@ -22,8 +40,9 @@ export class EnrollmentOrchestratorService {
     async enrollStudentInCourse(
         courseId: string,
         studentId: string,
-        fcmToken?: string
-    ): Promise<{ enrollment: EnrollmentModel; topic: string }> {
+        fcmToken?: string,
+        method: string = "satim"
+    ): Promise<EnrollmentResult> {
         const course = await this.courseService.getCourseByIdWithEnrollments(courseId);
         if (!course) {
             throw new Error(`Course not found: ${courseId}`);
@@ -35,6 +54,8 @@ export class EnrollmentOrchestratorService {
             studentId,
             course,
             type: "course",
+            status: "pending_payment",
+            paymentMethod: method,
             amount: course.price || 0,
             currency: "DZD",
         } as any;
@@ -58,22 +79,17 @@ export class EnrollmentOrchestratorService {
         // Auto-subscribe to course notifications
         const topic = `course-${course.id}`;
 
-        // Handle Payment
-        if (course.price && course.price > 0) {
-            const paymentResponse = await this.httpService.initiatePayment({
-                userId: studentId,
-                amount: course.price,
-                currency: "DZD",
-                method: "satim", // Default or passed in args?
-                referenceType: "COURSE_ENROLLMENT",
-                referenceId: enrollment.id,
-                returnUrl: `http://localhost:3000/enrollment/${enrollment.id}/success`, // TODO: Config
-                failUrl: `http://localhost:3000/enrollment/${enrollment.id}/fail`,
-            });
 
-            // We can return the payment URL in the response
-            return { enrollment, topic, paymentUrl: paymentResponse.paymentUrl, transactionId: paymentResponse.transactionId } as any;
-        }
+        // Prepare Payment Data
+        const paymentData = {
+            amount: course.price || 0,
+            method,
+            referenceType: "COURSE_ENROLLMENT" as const,
+            referenceId: enrollment.id!,
+            description: `Enrollment in course '${course.name}'`,
+            metadata: { teacherId: course.ownerId, courseType: course.type }
+        };
+
         if (fcmToken) {
             try {
                 await this.notificationService.subscribeTokenToTopic(fcmToken, topic);
@@ -83,9 +99,33 @@ export class EnrollmentOrchestratorService {
             }
         }
 
-        return { enrollment, topic };
-    }
+        if (method === "wallet") {
+            try {
+                const initResult = await this.initiatePaymentFlow(
+                    studentId,
+                    paymentData.amount,
+                    "COURSE_ENROLLMENT",
+                    enrollment.id!,
+                    paymentData.description,
+                    "wallet",
+                    paymentData.metadata
+                );
+                if (initResult) {
+                    return {
+                        enrollment,
+                        topic,
+                        paymentData,
+                        transactionId: initResult.transactionId,
+                        paymentMessage: "Payment processed via wallet"
+                    };
+                }
+            } catch (err) {
+                logger.error({ err, enrollmentId: enrollment.id }, "Auto-initiating wallet payment failed");
+            }
+        }
 
+        return { enrollment, topic, paymentData };
+    }
     async enrollStudentOneOnOne(payload: {
         teacherId: string;
         studentId: string;
@@ -96,7 +136,8 @@ export class EnrollmentOrchestratorService {
         isPaid: boolean;
         fcmToken?: string;
         allowUnavailable?: boolean;
-    }): Promise<{ enrollment: EnrollmentModel; topic: string }> {
+        method?: string;
+    }): Promise<EnrollmentResult> {
         const {
             teacherId,
             studentId,
@@ -105,10 +146,8 @@ export class EnrollmentOrchestratorService {
             availabilityIds,
             sessions: manualSessions,
             fcmToken,
-            allowUnavailable,
+            method = "satim",
         } = payload;
-
-        // TODO: Validate payment/free session logic if needed
 
         const effectiveAvailabilityIds = manualSessions
             ? Array.from(new Set(manualSessions.map(s => s.availabilityId)))
@@ -131,7 +170,8 @@ export class EnrollmentOrchestratorService {
                 sessionsNumber
             );
 
-        const effectiveSessionsNumber = manualSessions ? manualSessions.length : sessionsNumber;
+
+
 
         // Create chat group
         let groupId: string | null = null;
@@ -155,7 +195,20 @@ export class EnrollmentOrchestratorService {
         }
 
         const userTopic = await LruInMemoryCache.getUserTopic(topicId);
-        const amount = (userTopic?.price || 0) * effectiveSessionsNumber;
+        const pricePerHour = Number(userTopic?.price || 0);
+
+        // Price is per hour. Sum the duration of all paid sessions (duration is stored in minutes)
+        // and convert to hours to get the correct billable amount.
+        const totalPaidMinutes = sessions
+            .filter(s => s.isPaid !== false) // exclude free sessions
+            .reduce((sum, s) => sum + (Number(s.duration) || 0), 0);
+        const totalHours = totalPaidMinutes / 60;
+        const amount = Math.round(pricePerHour * totalHours * 100) / 100; // round to 2 decimal places
+
+        logger.info(
+            { topicId, pricePerHour, totalPaidMinutes, totalHours, amount },
+            "Calculated one-on-one enrollment amount"
+        );
 
         const enrollmentBody = {
             studentId,
@@ -163,6 +216,8 @@ export class EnrollmentOrchestratorService {
             sessions,
             type: "one-on-one",
             groupId,
+            status: "pending_payment",
+            paymentMethod: method,
             amount,
             currency: "DZD",
         } as any;
@@ -185,7 +240,6 @@ export class EnrollmentOrchestratorService {
             const sessionsForThisAvailability = sessions.filter(s => s.availabilityId === id);
             if (sessionsForThisAvailability.length === 0) return { availabilityId: id };
 
-            // Get the last session for this availability
             const lastSession = sessionsForThisAvailability.reduce((prev, current) =>
                 (prev.date!.getTime() > current.date!.getTime()) ? prev : current
             );
@@ -201,7 +255,72 @@ export class EnrollmentOrchestratorService {
 
         await this.httpService.updateAvailabilitiesToUnavailable(availabilityUpdates);
 
-        return { enrollment, topic };
+
+        // Prepare Payment Data
+        const paymentData = {
+            amount,
+            method,
+            referenceType: "ONE_ON_ONE_ENROLLMENT" as const,
+            referenceId: enrollment.id!,
+            description: `1-on-1 sessions for topic '${userTopic?.topic?.name || topicId}'`,
+            metadata: { teacherId, courseType: "one_on_one" }
+        };
+
+        if (method === "wallet") {
+            try {
+                const initResult = await this.initiatePaymentFlow(
+                    studentId,
+                    amount,
+                    "ONE_ON_ONE_ENROLLMENT",
+                    enrollment.id!,
+                    paymentData.description,
+                    "wallet",
+                    paymentData.metadata
+                );
+                if (initResult) {
+                    return {
+                        enrollment,
+                        topic,
+                        paymentData,
+                        transactionId: initResult.transactionId,
+                        paymentMessage: "Payment processed via wallet"
+                    };
+                }
+            } catch (err) {
+                logger.error({ err, enrollmentId: enrollment.id }, "Auto-initiating wallet payment failed");
+            }
+        }
+
+        return { enrollment, topic, paymentData };
+    }
+
+    private async initiatePaymentFlow(
+        userId: string,
+        amount: number,
+        referenceType: string,
+        referenceId: string,
+        description: string,
+        method: string = "satim",
+        metadata?: any
+    ): Promise<{ paymentUrl?: string; transactionId: string } | null> {
+        if (!amount || amount <= 0) {
+            return null;
+        }
+
+        const paymentResponse = await this.httpService.initiatePayment({
+            userId,
+            amount,
+            method,
+            referenceType,
+            referenceId,
+            description,
+            metadata
+        });
+
+        return {
+            paymentUrl: paymentResponse.paymentUrl,
+            transactionId: paymentResponse.transactionId,
+        };
     }
 
     private validateCourseEnrollment(course: CourseModel, studentId: string) {
@@ -217,7 +336,11 @@ export class EnrollmentOrchestratorService {
             throw new Error("User already enrolled in this course");
         }
         if (course.type === "group" || course.type === "live") {
-            if ((course.enrollments?.length ?? 0) >= (course.maxParticipants ?? 0)) {
+            const activeEnrollmentsCount = course.enrollments?.filter(
+                e => e.status === "approved" || e.status === "pending_payment"
+            ).length ?? 0;
+
+            if (activeEnrollmentsCount >= (course.maxParticipants ?? 0)) {
                 throw new Error(
                     `Course is full. Max students: ${course.maxParticipants}`
                 );
@@ -231,7 +354,6 @@ export class EnrollmentOrchestratorService {
         teacherId: string,
         studentFcmToken?: string
     ) {
-        // Subscribe student
         if (studentFcmToken) {
             try {
                 await this.notificationService.subscribeTokenToTopic(
@@ -243,7 +365,6 @@ export class EnrollmentOrchestratorService {
             }
         }
 
-        // Notify Teacher
         try {
             const teacher = await LruInMemoryCache.getUserDetails(teacherId);
             if (teacher?.fcmToken) {
@@ -275,5 +396,106 @@ export class EnrollmentOrchestratorService {
                 "Failed to handle teacher notifications for 1:1"
             );
         }
+    }
+
+    async handlePaymentWebhook(payload: {
+        transactionId: string;
+        externalId?: string;
+        referenceId: string;
+        referenceType: string;
+        status: "success" | "failed";
+        provider?: string;
+        method?: string;
+    }): Promise<void> {
+        const debugPath = path.join(process.cwd(), "webhook-debug.log");
+        const { referenceId, status, transactionId, externalId, provider, method } = payload;
+
+        fs.appendFileSync(debugPath, `[${new Date().toISOString()}] Received webhook: ${JSON.stringify(payload)}\n`);
+
+        logger.info({ referenceId, status, transactionId }, "Handling payment webhook");
+
+        const enrollment = await this.enrollmentService.getEnrollmentById(referenceId);
+        if (!enrollment) {
+            logger.error({ referenceId }, "Enrollment not found for webhook");
+            throw new Error(`Enrollment not found: ${referenceId}`);
+        }
+
+        logger.info({ enrollmentId: enrollment.id, currentStatus: enrollment.status }, "Found enrollment for webhook");
+
+        if (status === "success") {
+            enrollment.status = "approved";
+            enrollment.paymentStatus = "paid";
+            enrollment.paymentId = externalId || transactionId;
+            enrollment.paymentProvider = method || provider;
+            logger.info({ paymentId: enrollment.paymentId, provider: enrollment.paymentProvider }, "Setting enrollment to PAID/APPROVED");
+        } else {
+            // enrollment.status = "rejected"; // Don't reject immediately, allow the student to retry within the timeout window
+            enrollment.paymentStatus = "failed";
+            logger.info({ enrollmentId: enrollment.id, status }, "Payment failed or was canceled. Keeping enrollment active (pending_payment) for potential retry until timeout.");
+            // We don't call releaseEnrollmentResources here anymore; the cleanup cron will do it when the time expires.
+        }
+
+        const updated = await this.enrollmentService.updateEnrollment(enrollment);
+        logger.info({ enrollmentId: updated.id, status: updated.status, paymentId: updated.paymentId, paymentStatus: updated.paymentStatus }, "Enrollment successfully updated and saved in DB");
+    }
+
+    async cancelAndRefund(enrollmentId: string, canceledBy: string, reason: string): Promise<void> {
+        logger.info({ enrollmentId, canceledBy, reason }, "Canceling and refunding enrollment");
+
+        const enrollment = await this.enrollmentService.getEnrollmentById(enrollmentId);
+        if (!enrollment) throw new Error("Enrollment not found");
+
+        if (enrollment.status === "canceled" || enrollment.status === "refunded") {
+            throw new Error("Enrollment is already canceled or refunded");
+        }
+
+        // 1. Update Enrollment Status
+        enrollment.status = "canceled";
+        enrollment.canceledBy = canceledBy;
+        enrollment.cancellationReason = reason;
+        await this.enrollmentService.updateEnrollment(enrollment);
+
+        // 2. Process Virtual Refund to Student Wallet
+        // Only if it was paid
+        if (enrollment.paymentStatus === "paid" && enrollment.amount && enrollment.amount > 0) {
+            await this.httpService.refundToWallet({
+                userId: enrollment.studentId as string,
+                amount: enrollment.amount as number,
+                referenceType: enrollment.type === "one-on-one" ? "ONE_ON_ONE_ENROLLMENT" : "COURSE_ENROLLMENT",
+                referenceId: enrollment.id!
+            });
+            enrollment.status = "refunded";
+            await this.enrollmentService.updateEnrollment(enrollment);
+            logger.info({ enrollmentId, studentId: enrollment.studentId }, "Refund issued to student wallet");
+        }
+
+        // 3. Release resources
+        await this.releaseEnrollmentResources(enrollment);
+
+        // 4. Notify participants? (TODO)
+    }
+
+    private async releaseEnrollmentResources(enrollment: EnrollmentModel): Promise<void> {
+        logger.info({ enrollmentId: enrollment.id, type: enrollment.type }, "Releasing enrollment resources");
+
+        if (enrollment.type === "one-on-one") {
+            try {
+                // Get availability IDs from sessions before deleting them
+                const sessions = await this.sessionService.getOneOnOneSessionsByEnrollmentId(enrollment.id!);
+                const availabilityIds = Array.from(new Set(sessions.map(s => s.availabilityId).filter((id): id is string => !!id)));
+
+                // Delete sessions
+                await this.sessionService.deleteSessionsByEnrollmentId(enrollment.id!);
+
+                // Release availabilities in user-service
+                if (availabilityIds.length > 0) {
+                    await this.httpService.releaseAvailabilities(availabilityIds);
+                }
+            } catch (error) {
+                logger.error({ err: error, enrollmentId: enrollment.id }, "Failed to release resources for one-on-one enrollment");
+            }
+        }
+
+        // For 'course' type, capacity is dynamically calculated by filtering active enrollments in validateCourseEnrollment.
     }
 }
