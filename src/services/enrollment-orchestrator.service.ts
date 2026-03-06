@@ -50,12 +50,18 @@ export class EnrollmentOrchestratorService {
 
         this.validateCourseEnrollment(course, studentId);
 
+        let isAcademyCourse = false;
+        if (course.ownerId) {
+            const ownerDetails = await LruInMemoryCache.getUserDetails(course.ownerId);
+            isAcademyCourse = ownerDetails?.role === 3; // ACADEMY
+        }
+
         const enrollmentBody = {
             studentId,
             course,
             type: "course",
-            status: "pending_payment",
-            paymentMethod: method,
+            status: isAcademyCourse ? "pending" : "pending_payment",
+            paymentMethod: isAcademyCourse ? "external" : method,
             amount: course.price || 0,
             currency: "DZD",
         } as any;
@@ -97,6 +103,15 @@ export class EnrollmentOrchestratorService {
             } catch (err) {
                 logger.warn({ err, topic }, "Failed to auto-subscribe to course topic");
             }
+        }
+
+        if (isAcademyCourse) {
+            return {
+                enrollment,
+                topic,
+                paymentData: undefined,
+                paymentMessage: "Enrollment pending academy validation."
+            };
         }
 
         if (method === "wallet") {
