@@ -13,6 +13,8 @@ import { setPaginationHeaders } from "../utils";
 import { DtoService } from "../services/dto.service";
 import { StudentRequestDto } from "../dtos/student-request.dto";
 import { CourseProgressDto } from "../dtos/course-progress.dto";
+import { LruInMemoryCache } from "../cache/lru-in-memory.cache";
+import { UserRole } from "../enums/user-roles.enum";
 
 @injectable()
 export class CourseController {
@@ -28,14 +30,24 @@ export class CourseController {
   createDraftCourse = async (req: Request, res: Response): Promise<void> => {
     try {
       const courseType = req.body.type as string;
+      const teacherId = req.body.ownerId as string;
+
+      if (!teacherId) {
+        res.status(400).json({ error: "ownerId is required" });
+        return;
+      }
+
+      const ownerDetails = await LruInMemoryCache.getUserDetails(teacherId);
+      if (ownerDetails?.role === UserRole.ACADEMY) {
+        if (courseType !== "group" && courseType !== "live") {
+          res.status(403).json({ error: "Academies can only create group and live courses." });
+          return;
+        }
+      }
 
       // ── Quota Guard: group and live courses require an active subscription ──
       if (courseType === "group" || courseType === "live") {
-        const teacherId = req.body.ownerId as string;
-        if (!teacherId) {
-          res.status(400).json({ error: "ownerId is required" });
-          return;
-        }
+
         try {
           const quota = await this.httpService.checkSubscriptionQuota(teacherId, courseType as "group" | "live");
           if (!quota.hasActiveSubscription) {

@@ -42,9 +42,9 @@ app.use("/settings", settingRouter);
 app.use("/quizzes", quizRouter);
 app.use("/sessions", sessionRouter);
 app.use("/uploads", storageRouter);
-app.use("/notifications", notificationRouter);
+app.use("/fcm-notifications", notificationRouter);
 app.use("/student-requests", studentRequestRouter);
-app.use("/payments", requireInboundKey, paymentRouter);
+app.use("/payment-webhooks", requireInboundKey, paymentRouter);
 // Internal-only course count for subscription quota checks (called by user-service)
 app.use("/inbounds/courses", requireInboundKey, inboundCourseRouter);
 
