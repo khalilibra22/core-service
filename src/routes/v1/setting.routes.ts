@@ -12,6 +12,7 @@ const settingController = container.resolve(SettingController);
 router.put(
   "/",
   AuthMiddleware.verifyToken,
+  AuthMiddleware.authorize("settings", "manage"),
   ValidationMiddleware.validate(settingValidationSchema),
   settingController.createOrUpdateSettings
 );

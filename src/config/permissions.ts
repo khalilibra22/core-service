@@ -9,6 +9,7 @@ export const permissions: Record<UserRole, Record<Resource, Action[]>> = {
     reviews: ["manage_all_reviews"],
     complaints: ["manage_all_complaints"],
     payments: ["manage_all_payments"],
+    settings: ["manage"],
   },
   [UserRole.TEACHER]: {
     enrollments: ["manage_enrollments", "cancel_enrollment", "view"],
@@ -29,6 +30,7 @@ export const permissions: Record<UserRole, Record<Resource, Action[]>> = {
     reviews: ["respond_reviews", "view"],
     complaints: ["respond_complaints"],
     payments: [],
+    settings: [],
   },
   [UserRole.STUDENT]: {
     enrollments: ["enroll_course", "cancel_enrollment", "view"],
@@ -43,6 +45,7 @@ export const permissions: Record<UserRole, Record<Resource, Action[]>> = {
     reviews: ["submit_review", "manage_reviews", "view"],
     complaints: ["complain", "student_complaint_veiw"],
     payments: ["make_payments"],
+    settings: [],
   },
   [UserRole.ACADEMY]: {
     enrollments: ["manage_enrollments", "cancel_enrollment", "view"],
@@ -58,6 +61,7 @@ export const permissions: Record<UserRole, Record<Resource, Action[]>> = {
     reviews: ["respond_reviews", "view"],
     complaints: ["respond_complaints", "view"],
     payments: ["make_payments"],
+    settings: [],
   },
   [UserRole.ADMIN]: {
     enrollments: ["manage_enrollments"],
@@ -66,6 +70,7 @@ export const permissions: Record<UserRole, Record<Resource, Action[]>> = {
     reviews: ["manage_all_reviews"],
     complaints: ["manage_all_complaints"],
     payments: [],
+    settings: ["manage"],
   },
   [UserRole.ACADEMY_TEACHER]: {
     enrollments: ["view"],
@@ -80,6 +85,7 @@ export const permissions: Record<UserRole, Record<Resource, Action[]>> = {
     reviews: ["view"],
     complaints: [],
     payments: [],
+    settings: [],
   },
   [UserRole.GUEST]: {
     enrollments: [],
@@ -88,5 +94,6 @@ export const permissions: Record<UserRole, Record<Resource, Action[]>> = {
     reviews: [],
     complaints: [],
     payments: [],
+    settings: [],
   },
 };

@@ -45,7 +45,8 @@ type AdminAction =
   | "manage_all_enrollments"
   | "manage_all_reviews"
   | "manage_all_payments"
-  | "overview_platform";
+  | "overview_platform"
+  | "manage";
 
 export type Action =
   | "view"
@@ -61,4 +62,5 @@ export type Resource =
   | "sessions"
   | "reviews"
   | "complaints"
-  | "payments";
+  | "payments"
+  | "settings";
