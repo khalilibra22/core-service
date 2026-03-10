@@ -59,10 +59,7 @@ export class CourseService {
           id: id,
         },
         relations: ["couresSettings", "enrollments", "sessions"],
-        cache: {
-          id: `course-${id}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error: any) {
       logger.error({ err: error, id }, "getCourseById failed");
@@ -133,10 +130,7 @@ export class CourseService {
         relations: ["couresSettings", "enrollments", "sessions"],
         skip: (page - 1) * limit,
         take: limit,
-        cache: {
-          id: `teacher-courses-${teacherId}-${type}-${page}-${limit}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
       return { data, total };
     } catch (error) {
@@ -155,10 +149,7 @@ export class CourseService {
         relations: ["couresSettings", "enrollments"],
         skip: (page - 1) * limit,
         take: limit,
-        cache: {
-          id: `live-courses-${page}-${limit}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
       return { data, total };
     } catch (error) {
@@ -179,10 +170,7 @@ export class CourseService {
         relations: ["couresSettings", "enrollments"],
         skip: (page - 1) * limit,
         take: limit,
-        cache: {
-          id: `group-courses-${page}-${limit}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
       return { data, total };
     } catch (error) {
@@ -204,10 +192,7 @@ export class CourseService {
         relations: ["couresSettings", "enrollments", "sessions"],
         skip: (page - 1) * limit,
         take: limit,
-        cache: {
-          id: `prerecorded-courses-${page}-${limit}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
       return { data, total };
     } catch (error) {
@@ -244,10 +229,7 @@ export class CourseService {
         where: {
           id: id,
         },
-        cache: {
-          id: `lesson-${id}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error: any) {
       logger.error({ err: error, id }, "getLessonById failed");
@@ -265,10 +247,7 @@ export class CourseService {
           },
         },
         relations: ["materialLinks", "materialLinks.material"],
-        cache: {
-          id: `session-lessons-${sessionId}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error: any) {
       logger.error({ err: error, sessionId }, "getLessonsBySessionId failed");
@@ -417,10 +396,15 @@ export class CourseService {
         }
       }
 
+      // Build a deterministic cache key from all search params so each unique
+      // search combination gets its own Redis entry. TTL = 60 seconds.
+      const cacheKey = `search:courses:${type}:${page}:${limit}:${searchQuery ?? ''}:${JSON.stringify(filters ?? {})}`;
+
       query
         .orderBy("course.createdAt", "DESC")
         .skip(skip)
-        .take(limit);
+        .take(limit)
+        .cache(cacheKey, 60000);
 
       const [data, total] = await query.getManyAndCount();
       return { data, total };
