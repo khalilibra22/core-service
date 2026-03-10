@@ -28,10 +28,7 @@ export class StudentRequestService {
       return await this.studentRequestRepo.findOne({
         where: { id },
         relations: ["course"],
-        cache: {
-          id: `student-request-${id}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, id }, "getStudentRequestById failed");
@@ -49,10 +46,7 @@ export class StudentRequestService {
         },
         relations: ["course"],
         order: { createdAt: "DESC" },
-        cache: {
-          id: `course-student-requests-${courseId}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, courseId }, "getStudentRequestsByCourseId failed");
@@ -72,10 +66,7 @@ export class StudentRequestService {
         order: { createdAt: "DESC" },
         skip: (page - 1) * limit,
         take: limit,
-        cache: {
-          id: `student-requests-${studentId}-${page}-${limit}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
       return { data, total };
     } catch (error) {
@@ -98,10 +89,7 @@ export class StudentRequestService {
         order: { createdAt: "DESC" },
         skip: (page - 1) * limit,
         take: limit,
-        cache: {
-          id: `owner-student-requests-${ownerId}-${page}-${limit}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
       return { data, total };
     } catch (error) {
@@ -118,10 +106,7 @@ export class StudentRequestService {
         where: { status },
         relations: ["course"],
         order: { createdAt: "DESC" },
-        cache: {
-          id: `student-requests-status-${status}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, status }, "getStudentRequestsByStatus failed");
@@ -137,10 +122,7 @@ export class StudentRequestService {
         where: { type },
         relations: ["course"],
         order: { createdAt: "DESC" },
-        cache: {
-          id: `student-requests-type-${type}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, type }, "getStudentRequestsByType failed");
@@ -201,10 +183,7 @@ export class StudentRequestService {
         },
         relations: ["course"],
         order: { createdAt: "DESC" },
-        cache: {
-          id: `student-certificate-request-${studentId}-${courseId}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, studentId, courseId }, "getStudentCertificateRequestByCourseId failed");
