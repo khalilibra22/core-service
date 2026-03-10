@@ -10,8 +10,8 @@ export class LruInMemoryCache {
   // });
   private static externalService = new HttpService();
   private static cache = new LRUCache<string, any>({
-    max: parseInt(process.env.CACHE_MAX_SIZE || "10000"), // max 10000 items
-    ttl: parseInt(process.env.CACHE_TTL || "300000"), // 5 minutes
+    max: parseInt(process.env.CACHE_MAX_SIZE || "2000"),  // 2000 items ≈ 1–2 MB RAM per pod
+    ttl: parseInt(process.env.CACHE_TTL    || "600000"), // 10 minutes — profile data changes rarely
   });
   private static inflight = new Map<string, Promise<MinimalUser | null>>();
 
@@ -49,7 +49,7 @@ export class LruInMemoryCache {
           this.inflight.delete(key);
           //console.log(`Request timeout for user: ${userId}`);
           resolve(null);
-        }, 5000); // 5 second timeout
+        }, 3000); // 3s — fail fast if user-service is unresponsive
       });
 
       const servicePromise = this.externalService
@@ -124,7 +124,7 @@ export class LruInMemoryCache {
           this.topicInflight.delete(key);
           //console.log(`Request timeout for topic: ${userTopicId}`);
           resolve(null);
-        }, 5000); // 5 second timeout
+        }, 3000); // 3s — fail fast if user-service is unresponsive
       });
 
       const servicePromise = this.externalService
@@ -192,7 +192,7 @@ export class LruInMemoryCache {
         setTimeout(() => {
           this.generalTopicInflight.delete(key);
           resolve(null);
-        }, 5000); // 5 second timeout
+        }, 3000); // 3s — fail fast if user-service is unresponsive
       });
 
       const servicePromise = this.externalService
@@ -249,7 +249,7 @@ export class LruInMemoryCache {
         setTimeout(() => {
           this.subjectInflight.delete(key);
           resolve(null);
-        }, 5000); // 5 second timeout
+        }, 3000); // 3s — fail fast if user-service is unresponsive
       });
 
       const servicePromise = this.externalService

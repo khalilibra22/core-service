@@ -212,10 +212,7 @@ export class SessionService {
             return await this.sessionRepo.findOne({
                 where: { id },
                 relations: ["course", "enrollment"],
-                cache: {
-                    id: CACHE_KEYS.SESSION(id),
-                    milliseconds: CACHE_TTL.STATIC_CONTENT,
-                },
+                cache: false,
             });
         } catch (error) {
             logger.error({ err: error, id }, "getSessionById failed");
@@ -245,10 +242,7 @@ export class SessionService {
         try {
             return await this.sessionRepo.find({
                 where: { course: { id: courseId } },
-                cache: {
-                    id: CACHE_KEYS.COURSE_SESSIONS(courseId),
-                    milliseconds: CACHE_TTL.STATIC_CONTENT,
-                },
+                cache: false,
             });
         } catch (error) {
             logger.error({ err: error, courseId }, "getCourseSessions failed");
@@ -261,10 +255,7 @@ export class SessionService {
             return await this.sessionRepo.find({
                 where: { enrollment: { teacherId } },
                 relations: ["materialLinks", "materialLinks.material"],
-                cache: {
-                    id: CACHE_KEYS.TEACHER_ONE_ON_ONE_SESSIONS(teacherId),
-                    milliseconds: CACHE_TTL.STATIC_CONTENT,
-                },
+                cache: false,
             });
         } catch (error) {
             logger.error({ err: error, teacherId }, "getTeacherOneOnOneSessions failed");
@@ -277,10 +268,7 @@ export class SessionService {
             return await this.sessionRepo.find({
                 where: { enrollment: { id: enrollmentId } },
                 relations: ["materialLinks", "materialLinks.material", "enrollment"],
-                cache: {
-                    id: CACHE_KEYS.ENROLLMENT_SESSIONS(enrollmentId),
-                    milliseconds: CACHE_TTL.STATIC_CONTENT,
-                },
+                cache: false,
             });
         } catch (error) {
             logger.error({ err: error, enrollmentId }, "getOneOnOneSessionsByEnrollmentId failed");
@@ -293,10 +281,7 @@ export class SessionService {
             return await this.sessionRepo.findOne({
                 where: { id },
                 relations: ["lessons", "lessons.materialLinks", "lessons.materialLinks.material", "quizzes", "course"],
-                cache: {
-                    id: CACHE_KEYS.PRERECORDED_SESSION(id),
-                    milliseconds: CACHE_TTL.STATIC_CONTENT,
-                },
+                cache: false,
             });
         } catch (error: any) {
             logger.error({ err: error, id }, "getPrerecordedSessionDetails failed");
@@ -309,10 +294,7 @@ export class SessionService {
             return await this.sessionRepo.find({
                 where: { course: { id: courseId } },
                 relations: ["lessons", "lessons.materialLinks", "lessons.materialLinks.material", "quizzes"],
-                cache: {
-                    id: CACHE_KEYS.PRERECORDED_COURSE_SECTIONS(courseId),
-                    milliseconds: CACHE_TTL.STATIC_CONTENT,
-                },
+                cache: false,
             });
         } catch (error: any) {
             logger.error({ err: error, courseId }, "getPrerecordedCourseSections failed");

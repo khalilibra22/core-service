@@ -49,19 +49,17 @@ export const AppDataSource = new DataSource({
     CourseProgressModel
   ],
   synchronize: true,
-  cache: false,
-  // cache: {
-  //   type: "ioredis",
-  //   options: {
-  //     host:
-  //       process.env.REDIS_HOST ||
-  //       "redis-13699.c135.eu-central-1-1.ec2.redns.redis-cloud.com", // Your Redis host
-  //     port: Number(process.env.REDIS_PORT) || 13699, // Your Redis port
-  //     password:
-  //       process.env.REDIS_PASSWORD || "ttpcXXzePDYevUgWEQ7lxgNCrZWb5Oao", // Redis password if any
-  //   },
-  //   duration: 60000, // Cache duration in milliseconds (1 minute)
-  // },
+  // Cache is ENABLED but only activated on specific queries (search endpoints).
+  // All other queries use cache: false explicitly to avoid stale data.
+  cache: {
+    type: "ioredis",
+    options: {
+      host: process.env.REDIS_HOST || "redis-13699.c135.eu-central-1-1.ec2.redns.redis-cloud.com",
+      port: Number(process.env.REDIS_PORT) || 13699,
+      password: process.env.REDIS_PASSWORD || "ttpcXXzePDYevUgWEQ7lxgNCrZWb5Oao",
+    },
+    duration: 60000, // Fallback duration — overridden per-query
+  },
 });
 
 AppDataSource.initialize()

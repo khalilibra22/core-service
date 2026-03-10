@@ -42,10 +42,7 @@ export class EnrollmentService {
       return await this.enrollmentRepo.find({
         where: { course: { id: courseId }, type: "course" },
         relations: ["course"],
-        cache: {
-          id: CACHE_KEYS.COURSE_ENROLLMENTS(courseId),
-          milliseconds: CACHE_TTL.STATIC_CONTENT,
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, courseId }, "getCourseEnrollments failed");
@@ -63,10 +60,7 @@ export class EnrollmentService {
           type: "one-on-one",
         },
         relations: ["sessions", "materialLinks", "materialLinks.material"],
-        cache: {
-          id: CACHE_KEYS.TEACHER_ONE_ON_ONE_ENROLLMENTS(teacherId),
-          milliseconds: CACHE_TTL.STATIC_CONTENT,
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, teacherId }, "getOneOnOneEnrollmentByTeacherId failed");
@@ -114,12 +108,9 @@ export class EnrollmentService {
           type: "course",
           course: { type: In(["live", "group", "prerecorded"]) },
         },
-        relations: ["course", "course.couresSettings", "course.sessions"], //group by createdAt , newest first
+        relations: ["course", "course.couresSettings", "course.sessions"],
         order: { createdAt: "DESC" },
-        cache: {
-          id: CACHE_KEYS.STUDENT_COURSE_ENROLLMENTS(studentId),
-          milliseconds: CACHE_TTL.STATIC_CONTENT,
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, studentId }, "getStudentCoursesEnrollments failed");
@@ -135,10 +126,7 @@ export class EnrollmentService {
         where: { studentId: studentId, type: "one-on-one" },
         relations: ["sessions", "materialLinks", "materialLinks.material"],
         order: { createdAt: "DESC" },
-        cache: {
-          id: CACHE_KEYS.STUDENT_ONE_ON_ONE_ENROLLMENTS(studentId),
-          milliseconds: CACHE_TTL.STATIC_CONTENT,
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, studentId }, "getStudentOneOnOneEnrollments failed");

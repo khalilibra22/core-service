@@ -32,10 +32,7 @@ export class SessionTimeRequestService {
           id: id,
         },
         relations: ["session", "session.enrollment"],
-        cache: {
-          id: `session-time-request-${id}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, id }, "getSessionTimeRequestById failed");
@@ -76,10 +73,7 @@ export class SessionTimeRequestService {
         where,
         relations: ["session", "session.enrollment"],
         order: { createdAt: "DESC" },
-        cache: {
-          id: `filtered-session-time-requests-${JSON.stringify(filters)}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, filters }, "getAllSessionTimeRequests failed");

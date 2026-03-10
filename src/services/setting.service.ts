@@ -28,10 +28,7 @@ export class SettingService {
         where: {
           id: id,
         },
-        cache: {
-          id: `settings-${id}`,
-          milliseconds: 600000, // 10 minutes - settings change less frequently
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, id }, "getSettingsById failed");
