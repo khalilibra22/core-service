@@ -118,10 +118,7 @@ export class FeedbackService {
   async getAllReviews(): Promise<ReviewModel[]> {
     try {
       return await this.reviewRepo.find({
-        cache: {
-          id: "all-reviews",
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error }, "getAllReviews failed");
@@ -132,10 +129,7 @@ export class FeedbackService {
   async getAllComplaints(): Promise<ComplaintModel[]> {
     try {
       return await this.complaintRepo.find({
-        cache: {
-          id: "all-complaints",
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error }, "getAllComplaints failed");
@@ -150,10 +144,7 @@ export class FeedbackService {
           id: id,
         },
         relations: ["course"],
-        cache: {
-          id: `review-${id}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, id }, "getReviewById failed");
@@ -166,10 +157,7 @@ export class FeedbackService {
       return await this.complaintRepo.findOne({
         where: { id },
         relations: ["session", "session.course", "enrollment", "enrollment.course"],
-        cache: {
-          id: `complaint-detailed-${id}`,
-          milliseconds: 60000, // 1 min for detailed view
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, id }, "getComplaintById failed");
@@ -196,10 +184,7 @@ export class FeedbackService {
             id: courseId,
           },
         },
-        cache: {
-          id: `course-reviews-${courseId}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, courseId }, "getReviewsByCourseId failed");
@@ -255,10 +240,7 @@ export class FeedbackService {
           studentId: studentId,
         },
         relations: ["session", "session.course", "enrollment", "enrollment.course"],
-        cache: {
-          id: `student-complaints-${studentId}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, studentId }, "getComplaintsByStudentId failed");
@@ -272,10 +254,7 @@ export class FeedbackService {
         where: {
           status: status as any,
         },
-        cache: {
-          id: `complaints-status-${status}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, status }, "getComplaintsByStatus failed");
@@ -307,10 +286,7 @@ export class FeedbackService {
         },
         skip: (page - 1) * limit,
         take: limit,
-        cache: {
-          id: `prerecorded-reviews-${page}-${limit}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
       return { data, total };
     } catch (error) {
@@ -328,10 +304,7 @@ export class FeedbackService {
             ownerId: teacherId,
           },
         },
-        cache: {
-          id: `teacher-reviews-${teacherId}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, teacherId }, "getReviewsByTeacherId failed");
@@ -348,10 +321,7 @@ export class FeedbackService {
         where: {
           teacherId: teacherId,
         },
-        cache: {
-          id: `one-on-one-teacher-reviews-${teacherId}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, teacherId }, "getReviewsByOneOnOneTeacherId failed");
@@ -367,10 +337,7 @@ export class FeedbackService {
           { course: { ownerId: teacherId } }, // courses
           { teacherId }, // one-on-one
         ],
-        cache: {
-          id: `all-teacher-reviews-${teacherId}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, teacherId }, "getAllReviewsByTeacherId failed");
@@ -391,7 +358,6 @@ export class FeedbackService {
         .leftJoinAndSelect("session.enrollment", "enrollment")
         .where("course.ownerId = :teacherId", { teacherId })
         .orWhere("enrollment.teacherId = :teacherId", { teacherId })
-        .cache(`teacher-complaints-${teacherId}`, 300000) // 5 minutes in milliseconds
         .getMany();
     } catch (error) {
       logger.error({ err: error, teacherId }, "getComplaintsByTeacherId failed");
@@ -404,10 +370,7 @@ export class FeedbackService {
       const complaint = await this.complaintRepo.findOne({
         where: { id: complaintId },
         relations: ["session", "session.course"],
-        cache: {
-          id: `complaint-teacher-${complaintId}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
       return complaint?.session?.course?.ownerId ?? null;
     } catch (error) {
@@ -424,10 +387,7 @@ export class FeedbackService {
           type: "refund",
         },
         relations: ["enrollment", "enrollment.course"],
-        cache: {
-          id: `refund-complaint-${id}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, id }, "getRefundComplaintById failed");

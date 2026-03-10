@@ -85,10 +85,7 @@ export class QuizService {
     try {
       return await this.quizRepo.findOne({
         where: { id: quizId },
-        cache: {
-          id: `quiz-${quizId}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, quizId }, "getQuizById failed");
@@ -101,10 +98,7 @@ export class QuizService {
       return await this.quizRepo.findOne({
         where: { id: quizId },
         relations: ["questions"],
-        cache: {
-          id: `quiz-details-${quizId}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, quizId }, "getQuizDetails failed");
@@ -125,10 +119,7 @@ export class QuizService {
     try {
       return await this.questionRepo.findOne({
         where: { id: questionId },
-        cache: {
-          id: `question-${questionId}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, questionId }, "getQuestionById failed");
@@ -142,10 +133,7 @@ export class QuizService {
         where: { session: { id: sessionId } },
         relations: ["questions"],
         order: { order: "ASC" },
-        cache: {
-          id: `session-quizzes-${sessionId}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, sessionId }, "getSessionQuizzes failed");
@@ -158,10 +146,7 @@ export class QuizService {
       const quiz = await this.quizRepo.findOne({
         where: { id: quizId },
         relations: ["session", "session.course"],
-        cache: {
-          id: `quiz-owner-${quizId}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
       return quiz?.session?.course?.ownerId ?? null;
     } catch (error) {
@@ -233,10 +218,7 @@ export class QuizService {
       return await this.quizRepo.findOne({
         where: { id: quizId },
         relations: ["questions"],
-        cache: {
-          id: `quiz-with-questions-${quizId}`,
-          milliseconds: 300000, // 5 minutes
-        },
+        cache: false,
       });
     } catch (error) {
       logger.error({ err: error, quizId }, "getQuizWithQuestions failed");
