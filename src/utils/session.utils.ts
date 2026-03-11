@@ -50,10 +50,10 @@ export function generateSessionsFromAvailabilities(
                     .map(Number);
 
                 const start = new Date(tempDate);
-                start.setHours(startHour, startMinute, 0, 0);
+                start.setUTCHours(startHour, startMinute, 0, 0);
 
                 const end = new Date(tempDate);
-                end.setHours(endHour, endMinute, 0, 0);
+                end.setUTCHours(endHour, endMinute, 0, 0);
 
                 const durationMs = end.getTime() - start.getTime();
                 if (durationMs <= 0) continue;

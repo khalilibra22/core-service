@@ -36,8 +36,8 @@ export class SessionTimeRequestController {
 
     const [hours, minutes] = startTime.split(":").map(Number);
 
-    // Set time first to compare with current time
-    resultDate.setHours(hours, minutes, 0, 0);
+    // Set time in UTC to match availability times (stored/expressed in UTC)
+    resultDate.setUTCHours(hours, minutes, 0, 0);
 
     const diff = (targetDay + 7 - currentDay) % 7;
 

@@ -73,7 +73,7 @@ export class SessionService {
                         .map(Number);
 
                     const start = new Date(tempDate);
-                    start.setHours(startHour, startMinute, 0, 0);
+                    start.setUTCHours(startHour, startMinute, 0, 0);
 
                     // Ensure we are truly after reservedUntil (considering time)
                     if (availability.reservedUntil) {
@@ -86,7 +86,7 @@ export class SessionService {
                     }
 
                     const end = new Date(start);
-                    end.setHours(endHour, endMinute, 0, 0);
+                    end.setUTCHours(endHour, endMinute, 0, 0);
 
 
                     const durationMs = end.getTime() - start.getTime();
@@ -138,20 +138,17 @@ export class SessionService {
                     throw new Error(`Availability not found: ${availabilityId}`);
                 }
 
-                const sessionDate = new Date(date);
+                // Parse the date string safely to avoid timezone issues.
+                // new Date("YYYY-MM-DD") is treated as UTC midnight by JS, so we must
+                // extract the parts and construct the date in LOCAL time to correctly
+                // represent the user-intended date in the server's local timezone (Africa/Algiers).
+                const dateStr = typeof date === "string" ? date : date.toISOString();
+                const [yearStr, monthStr, dayStr] = dateStr.split("T")[0].split("-");
+                const year = parseInt(yearStr, 10);
+                const month = parseInt(monthStr, 10) - 1; // months are 0-indexed
+                const day = parseInt(dayStr, 10);
 
-                // Integrity Check 1: Ensure date is in the future
-                if (sessionDate < new Date()) {
-                    throw new Error(`Date ${sessionDate.toISOString().split('T')[0]} is in the past`);
-                }
-
-                // Integrity Check 2: Ensure the selected date matches the availability's day of week
-                const dayName = sessionDate.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
-                if (dayName !== availability.dayOfWeek?.toLowerCase()) {
-                    throw new Error(`Date ${sessionDate.toISOString().split('T')[0]} is a ${dayName}, but the availability is for ${availability.dayOfWeek}`);
-                }
-
-                // Parse start time and end time to calculate duration
+                // Parse start time and end time
                 if (!availability.startTime || !availability.endTime) {
                     throw new Error(`Availability ${availabilityId} is missing start or end time`);
                 }
@@ -159,11 +156,25 @@ export class SessionService {
                 const [startHour, startMinute] = availability.startTime.split(":").map(Number);
                 const [endHour, endMinute] = availability.endTime.split(":").map(Number);
 
-                const start = new Date(sessionDate);
-                start.setHours(startHour, startMinute, 0, 0);
+                // Build start/end in UTC so that the stored time matches the availability times exactly.
+                // Availability startTime/endTime are expressed in UTC (e.g. "18:30" = 18:30 UTC).
+                // Using new Date(Date.UTC(...)) avoids the server's +01:00 local offset shifting the time.
+                const start = new Date(Date.UTC(year, month, day, startHour, startMinute, 0, 0));
+                const end = new Date(Date.UTC(year, month, day, endHour, endMinute, 0, 0));
 
-                const end = new Date(sessionDate);
-                end.setHours(endHour, endMinute, 0, 0);
+                // Use the correctly constructed UTC date for validations
+                const sessionDate = new Date(Date.UTC(year, month, day));
+
+                // Integrity Check 1: Ensure date is in the future
+                if (sessionDate < new Date()) {
+                    throw new Error(`Date ${dateStr.split('T')[0]} is in the past`);
+                }
+
+                // Integrity Check 2: Ensure the selected date matches the availability's day of week
+                const dayName = sessionDate.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
+                if (dayName !== availability.dayOfWeek?.toLowerCase()) {
+                    throw new Error(`Date ${dateStr.split('T')[0]} is a ${dayName}, but the availability is for ${availability.dayOfWeek}`);
+                }
 
                 // Integrity Check 3: Collision check in database for this specific date
                 const existingSession = await this.sessionRepo.findOne({
