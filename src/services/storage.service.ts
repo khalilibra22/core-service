@@ -17,23 +17,30 @@ export class StorageService {
   private s3: S3Client;
   private bucketName: string;
   private endpoint: string;
+  private publicEndpoint: string;
   private materialRepo: any;
 
   constructor() {
+    // Raw R2 API endpoint — used for all S3 API calls (upload, delete, head)
     this.endpoint =
       process.env.S3_ENDPOINT || "https://s3.eu-central-2.wasabisys.com";
+
+    // Custom domain — used only to BUILD public/download URLs.
+    // R2 custom domains map directly to the bucket, so paths are just /{key}.
+    this.publicEndpoint =
+      process.env.S3_PUBLIC_ENDPOINT || this.endpoint;
+
     this.s3 = new S3Client({
       endpoint: this.endpoint,
       credentials: {
-        accessKeyId: process.env.S3_ACCESS_KEY_ID || "GSQE53P3LXBXHDHYDAPV",
-        secretAccessKey:
-          process.env.S3_SECRET_ACCESS_KEY ||
-          "wTiv7aijVH9zsKFKBplIigVS8vUJhH29Yc6SdCTs",
+        accessKeyId: process.env.S3_ACCESS_KEY_ID || "",
+        secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || "",
       },
       forcePathStyle: true,
-      region: process.env.S3_REGION || "us-east-1",
+      region: process.env.S3_REGION || "auto",
     });
-    this.bucketName = process.env.S3_BUCKET_NAME || "courses-dev-assets"; // Default bucket name if not set in environment variables
+
+    this.bucketName = process.env.S3_BUCKET_NAME || "dev-assets";
     this.materialRepo = AppDataSource.getRepository(MaterialModel);
   }
 
@@ -121,8 +128,8 @@ export class StorageService {
   }
 
   getPermanentUrl(storageId: string): string {
-    // Generate permanent URL for public-read files
-    return `${this.endpoint}/${this.bucketName}/${storageId}`;
+    // Custom domain maps directly to the bucket — path is just /{key}
+    return `${this.publicEndpoint}/${storageId}`;
   }
 
   async deleteFile(materialId: string): Promise<void> {
@@ -174,22 +181,14 @@ export class StorageService {
     }
   }
 
-  async getFileUrl(fileName: string): Promise<string> {
-    try {
-      const command = new GetObjectCommand({
-        Bucket: this.bucketName,
-        Key: fileName,
-      });
-
-      return getSignedUrl(this.s3, command, { expiresIn: 60 * 5 }); // 5 minutes
-    } catch (error) {
-      logger.error({ err: error, fileName }, "getFileUrl failed");
-      throw new Error(`Failed to get file URL: ${error}`);
-    }
+  getFileUrl(fileName: string): string {
+    // Files are uploaded with public-read ACL, so no presigned URL is needed.
+    // Custom domain maps directly to the bucket — path is just /{key}.
+    return `${this.publicEndpoint}/${fileName}`;
   }
 
-  // generate persigned upload url
-  async generatePresignedUploadUrl(fileName: string,type: string): Promise<string> {
+  // Generate presigned upload URL — must use raw R2 API endpoint, not custom domain
+  async generatePresignedUploadUrl(fileName: string, type: string): Promise<string> {
     try {
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
